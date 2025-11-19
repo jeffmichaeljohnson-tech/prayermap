@@ -73,3 +73,5 @@ export function formatLocation(city: string | null, region: string | null): stri
   return city || region || 'Unknown location'
 }
 
+
+
