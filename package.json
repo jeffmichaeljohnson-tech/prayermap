@@ -7,7 +7,13 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "screenshots": "tsx scripts/capture-screenshots.ts",
+    "extract-figma": "tsx scripts/extract-figma-assets.ts",
+    "extract-figma-enhanced": "tsx scripts/extract-figma-enhanced.ts",
+    "extract-figma-interactive": "tsx scripts/extract-figma-interactive.ts",
+    "optimize-figma-assets": "./scripts/optimize-figma-assets.sh",
+    "sync-figma-screenshots": "node scripts/sync-figma-screenshots.js"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -22,6 +28,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.48.0",
     "@tailwindcss/vite": "^4.1.17",
     "@tanstack/react-query-devtools": "^5.90.2",
     "@types/mapbox-gl": "^3.4.1",
@@ -34,6 +41,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "playwright": "^1.48.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.18",
     "tsx": "^4.20.6",
