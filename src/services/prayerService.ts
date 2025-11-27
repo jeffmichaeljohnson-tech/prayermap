@@ -19,7 +19,7 @@ interface PrayerRow {
   title?: string;
   content: string;
   content_type: 'text' | 'audio' | 'video';
-  content_url?: string;
+  media_url?: string; // Database column is media_url, not content_url
   location: { lat: number; lng: number } | string; // PostGIS POINT or JSON
   user_name?: string;
   is_anonymous: boolean;
@@ -113,7 +113,7 @@ function rowToPrayer(row: PrayerRow): Prayer {
     title: row.title,
     content: row.content,
     content_type: row.content_type,
-    content_url: row.content_url,
+    content_url: row.media_url, // Database uses media_url, frontend uses content_url
     location: convertLocation(row.location),
     user_name: row.user_name,
     is_anonymous: row.is_anonymous,
@@ -334,12 +334,22 @@ export async function updatePrayer(
   }
 
   try {
+    // Map content_url to media_url for database
+    const dbUpdates: {
+      updated_at: string;
+      title?: string;
+      content?: string;
+      media_url?: string;
+    } = {
+      updated_at: new Date().toISOString(),
+    };
+    if (updates.title !== undefined) dbUpdates.title = updates.title;
+    if (updates.content !== undefined) dbUpdates.content = updates.content;
+    if (updates.content_url !== undefined) dbUpdates.media_url = updates.content_url;
+
     const { data, error } = await supabase
       .from('prayers')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString(),
-      })
+      .update(dbUpdates as never)
       .eq('id', prayerId)
       .eq('user_id', userId) // Ensure user owns the prayer
       .select()
