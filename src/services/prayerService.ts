@@ -277,7 +277,7 @@ export async function fetchNearbyPrayers(
 }
 
 /**
- * Create a new prayer using direct table insert with PostGIS point
+ * Create a new prayer using RPC function for proper PostGIS geography handling
  */
 export async function createPrayer(
   prayer: Omit<Prayer, 'id' | 'created_at' | 'updated_at'>
@@ -288,29 +288,32 @@ export async function createPrayer(
   }
 
   try {
-    // Use direct insert with ST_MakePoint for PostGIS compatibility
-    const { data, error } = await supabase
-      .from('prayers')
-      .insert({
-        user_id: prayer.user_id,
-        title: prayer.title || null,
-        content: prayer.content,
-        content_type: prayer.content_type,
-        content_url: prayer.content_url || null,
-        location: `POINT(${prayer.location.lng} ${prayer.location.lat})`,
-        user_name: prayer.user_name || null,
-        is_anonymous: prayer.is_anonymous,
-        status: 'active', // Set status to active for immediate visibility on the global map
-      })
-      .select()
-      .single();
+    // Use RPC function to properly create prayer with PostGIS geography
+    const { data, error } = await supabase.rpc('create_prayer', {
+      p_user_id: prayer.user_id,
+      p_title: prayer.title || '',
+      p_content: prayer.content,
+      p_content_type: prayer.content_type,
+      p_content_url: prayer.content_url || '',
+      p_lat: prayer.location.lat,
+      p_lng: prayer.location.lng,
+      p_user_name: prayer.user_name || '',
+      p_is_anonymous: prayer.is_anonymous,
+    });
 
     if (error) {
       console.error('Error creating prayer:', error);
       throw error;
     }
 
-    return rowToPrayer(data as PrayerRow);
+    // RPC returns an array, get the first element
+    const prayerData = Array.isArray(data) ? data[0] : data;
+    if (!prayerData) {
+      console.error('No prayer data returned from create_prayer');
+      return null;
+    }
+
+    return rowToPrayer(prayerData as PrayerRow);
   } catch (error) {
     console.error('Failed to create prayer:', error);
     return null;
