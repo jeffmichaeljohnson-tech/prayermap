@@ -4,7 +4,8 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import type { Prayer, PrayerConnection } from '../types/prayer';
 import { PrayerMarker } from './PrayerMarker';
-import { PrayerDetailModal } from './PrayerDetailModal';
+import { PrayerDetailModal, PrayerReplyData } from './PrayerDetailModal';
+import { uploadAudio } from '../services/storageService';
 import { RequestPrayerModal } from './RequestPrayerModal';
 import { PrayerAnimationLayer } from './PrayerAnimationLayer';
 import { PrayerCreationAnimation } from './PrayerCreationAnimation';
@@ -181,7 +182,7 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
     console.log('Animation layer complete callback (no-op)');
   }, []);
 
-  const handlePrayerSubmit = async (prayer: Prayer) => {
+  const handlePrayerSubmit = async (prayer: Prayer, replyData?: PrayerReplyData) => {
     if (!user) return;
 
     // Close modal and trigger the beautiful animation
@@ -191,16 +192,34 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
     // Start the animation
     setAnimatingPrayer({ prayer, userLocation });
 
-    // Submit the prayer response to Supabase (fire and forget - don't await)
-    console.log('Submitting prayer response for:', prayer.id, 'with location:', userLocation);
+    // Extract reply data with defaults
+    const message = replyData?.message || 'Praying for you!';
+    const contentType = replyData?.contentType || 'text';
+    const isAnonymous = replyData?.isAnonymous || false;
+
+    // Upload audio if present
+    let contentUrl: string | undefined;
+    if (replyData?.audioBlob && contentType === 'audio') {
+      console.log('Uploading audio response...');
+      const audioUrl = await uploadAudio(replyData.audioBlob, user.id);
+      if (audioUrl) {
+        contentUrl = audioUrl;
+        console.log('Audio uploaded:', audioUrl);
+      } else {
+        console.error('Failed to upload audio');
+      }
+    }
+
+    // Submit the prayer response to Supabase
+    console.log('Submitting prayer response for:', prayer.id, 'with location:', userLocation, 'contentType:', contentType);
     respondToPrayer(
       prayer.id,
       user.id,
       userName,
-      'Praying for you!',
-      'text',
-      undefined,
-      false,
+      message,
+      contentType,
+      contentUrl,
+      isAnonymous,
       userLocation // Pass user's location to create prayer connection line
     ).then(success => {
       console.log('Prayer response result:', success);
@@ -218,7 +237,7 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
       fromLocation: prayer.location,
       toLocation: userLocation,
       requesterName: prayer.is_anonymous ? 'Anonymous' : (prayer.user_name || 'Anonymous'),
-      replierName: userName,
+      replierName: isAnonymous ? 'Anonymous' : userName,
       createdAt: createdDate,
       expiresAt: expiresDate
     };

@@ -13,12 +13,14 @@ interface InboxModalProps {
 
 interface SelectedConversation {
   id: string;
+  prayerId: string; // The actual prayer ID for sending responses
   senderName: string;
   message: string;
   date: Date;
   prayerTitle: string;
   originalPrayerContent: string;
   contentType: 'text' | 'audio' | 'video';
+  responses: import('../types/prayer').PrayerResponse[];
 }
 
 export function InboxModal({ onClose }: InboxModalProps) {
@@ -59,14 +61,19 @@ export function InboxModal({ onClose }: InboxModalProps) {
   };
 
   const handleSelectConversation = (item: typeof displayItems[0]) => {
+    // Find the full inbox item to get all responses
+    const inboxItem = inbox.find(i => i.prayer.id === item.prayerId);
+
     setSelectedConversation({
       id: item.id,
+      prayerId: item.prayerId,
       senderName: item.senderName,
       message: item.message,
       date: item.date instanceof Date ? item.date : new Date(item.date),
       prayerTitle: item.prayerTitle,
       originalPrayerContent: item.originalPrayerContent,
       contentType: item.contentType,
+      responses: inboxItem?.responses || [],
     });
     // Mark the prayer as read when opened
     if ('prayerId' in item) {
@@ -213,7 +220,7 @@ export function InboxModal({ onClose }: InboxModalProps) {
         <AnimatePresence>
           {selectedConversation && (
             <ConversationThread
-              conversationId={selectedConversation.id}
+              conversationId={selectedConversation.prayerId}
               otherPersonName={selectedConversation.senderName}
               originalPrayer={{
                 title: selectedConversation.prayerTitle,
@@ -221,6 +228,7 @@ export function InboxModal({ onClose }: InboxModalProps) {
                 contentType: selectedConversation.contentType
               }}
               initialMessage={selectedConversation.message}
+              initialResponses={selectedConversation.responses}
               onBack={() => setSelectedConversation(null)}
             />
           )}

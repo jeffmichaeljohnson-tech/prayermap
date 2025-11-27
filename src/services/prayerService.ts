@@ -109,6 +109,7 @@ function rowToPrayerResponse(row: PrayerResponseRow): PrayerResponse {
     content_type: row.content_type,
     content_url: row.content_url,
     created_at: new Date(row.created_at),
+    read_at: row.read_at ? new Date(row.read_at) : null,
   };
 }
 

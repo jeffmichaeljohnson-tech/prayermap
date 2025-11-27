@@ -27,11 +27,13 @@ export interface PrayerResponse {
   content_type: 'text' | 'audio' | 'video';
   content_url?: string;
   created_at: Date;
+  read_at?: Date | null; // When the response was marked as read
 }
 
 export interface PrayerConnection {
   id: string;
   prayerId: string;
+  prayerResponseId?: string; // Links to the prayer_response that created this connection
   fromLocation: {
     lat: number;
     lng: number;

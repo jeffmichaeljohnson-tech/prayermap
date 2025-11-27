@@ -1,6 +1,11 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Send, Mic, Video, StopCircle, Play, Pause } from 'lucide-react';
+import { ArrowLeft, Send, Mic, Video, StopCircle, Play, Pause, Loader2 } from 'lucide-react';
+import { respondToPrayer, fetchPrayerResponses } from '../services/prayerService';
+import { uploadAudio } from '../services/storageService';
+import { useAuth } from '../contexts/AuthContext';
+import { useAudioRecorder } from '../hooks/useAudioRecorder';
+import type { PrayerResponse } from '../types/prayer';
 
 interface Message {
   id: string;
@@ -14,101 +19,205 @@ interface Message {
 }
 
 interface ConversationThreadProps {
-  conversationId: string;
+  conversationId: string; // This is the prayer_id
   otherPersonName: string;
   originalPrayer: {
     title?: string;
     content: string;
     contentType: 'text' | 'audio' | 'video';
+    userId?: string; // The prayer creator's ID
   };
   initialMessage?: string;
+  initialResponses?: PrayerResponse[];
   onBack: () => void;
 }
 
 export function ConversationThread({
+  conversationId,
   otherPersonName,
   originalPrayer,
   initialMessage,
+  initialResponses,
   onBack
 }: ConversationThreadProps) {
-  const [messages, setMessages] = useState<Message[]>(
-    initialMessage ? [{
-      id: '1',
-      content: initialMessage,
-      contentType: 'text',
-      sender: 'user',
-      senderName: otherPersonName,
-      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000)
-    }] : []
-  );
+  const { user } = useAuth();
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputMode, setInputMode] = useState<'text' | 'audio' | 'video'>('text');
   const [textInput, setTextInput] = useState('');
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
+  const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Audio recorder hook
+  const {
+    isRecording,
+    duration: recordingTime,
+    audioBlob,
+    startRecording,
+    stopRecording,
+    resetRecording,
+  } = useAudioRecorder();
+
+  // Convert PrayerResponse to Message format
+  const responseToMessage = useCallback((response: PrayerResponse): Message => {
+    const isCurrentUser = response.responder_id === user?.id;
+    return {
+      id: response.id,
+      content: response.message,
+      contentType: response.content_type,
+      sender: isCurrentUser ? 'user' : 'other',
+      senderName: isCurrentUser ? 'You' : (response.responder_name || 'Anonymous'),
+      timestamp: new Date(response.created_at),
+      audioUrl: response.content_type === 'audio' ? response.content_url : undefined,
+      videoUrl: response.content_type === 'video' ? response.content_url : undefined,
+    };
+  }, [user?.id]);
+
+  // Initialize messages from initial responses or initial message
+  useEffect(() => {
+    if (initialResponses && initialResponses.length > 0) {
+      const convertedMessages = initialResponses.map(responseToMessage);
+      setMessages(convertedMessages);
+    } else if (initialMessage) {
+      setMessages([{
+        id: '1',
+        content: initialMessage,
+        contentType: 'text',
+        sender: 'other',
+        senderName: otherPersonName,
+        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000)
+      }]);
+    }
+  }, [initialResponses, initialMessage, otherPersonName, responseToMessage]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Recording timer
-  useEffect(() => {
-    if (isRecording) {
-      recordingTimerRef.current = setInterval(() => {
-        setRecordingTime(prev => prev + 1);
-      }, 1000);
-    } else {
-      if (recordingTimerRef.current) {
-        clearInterval(recordingTimerRef.current);
-      }
-      setRecordingTime(0);
-    }
-    return () => {
-      if (recordingTimerRef.current) {
-        clearInterval(recordingTimerRef.current);
-      }
-    };
-  }, [isRecording]);
+  // Send a text message
+  const handleSendText = async () => {
+    if (!textInput.trim() || !user || isSending) return;
 
-  const handleSendText = () => {
-    if (!textInput.trim()) return;
+    setIsSending(true);
+    const messageContent = textInput.trim();
+    setTextInput(''); // Clear input immediately for better UX
 
-    const newMessage: Message = {
-      id: `msg-${Date.now()}`,
-      content: textInput,
+    // Create optimistic message
+    const optimisticMessage: Message = {
+      id: `temp-${Date.now()}`,
+      content: messageContent,
       contentType: 'text',
       sender: 'user',
       senderName: 'You',
       timestamp: new Date()
     };
 
-    setMessages([...messages, newMessage]);
-    setTextInput('');
+    // Add optimistic message to UI
+    setMessages(prev => [...prev, optimisticMessage]);
+
+    try {
+      const userName = user.user_metadata?.name || user.email?.split('@')[0] || 'Anonymous';
+      const result = await respondToPrayer(
+        conversationId,
+        user.id,
+        userName,
+        messageContent,
+        'text',
+        undefined,
+        false
+      );
+
+      if (result) {
+        // Replace optimistic message with real one
+        setMessages(prev => prev.map(msg =>
+          msg.id === optimisticMessage.id
+            ? { ...msg, id: result.response.id }
+            : msg
+        ));
+        console.log('Message sent successfully');
+      } else {
+        // Remove optimistic message on failure
+        setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+        console.error('Failed to send message');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+    } finally {
+      setIsSending(false);
+    }
   };
 
+  // Handle audio recording start
   const handleStartRecording = () => {
-    setIsRecording(true);
-    // In a real app, start actual recording here
+    startRecording();
   };
 
-  const handleStopRecording = () => {
-    setIsRecording(false);
-    
-    // Create mock audio/video message
-    const newMessage: Message = {
-      id: `msg-${Date.now()}`,
-      content: inputMode === 'audio' ? 'Audio message' : 'Video message',
-      contentType: inputMode,
-      sender: 'user',
-      senderName: 'You',
-      timestamp: new Date(),
-      audioUrl: inputMode === 'audio' ? 'mock-audio-url' : undefined,
-      videoUrl: inputMode === 'video' ? 'mock-video-url' : undefined
-    };
+  // Handle audio recording stop and send
+  const handleStopRecording = async () => {
+    stopRecording();
 
-    setMessages([...messages, newMessage]);
+    // Wait for the audioBlob to be set by the hook
+    setTimeout(async () => {
+      if (!user) return;
+
+      setIsSending(true);
+
+      try {
+        const userName = user.user_metadata?.name || user.email?.split('@')[0] || 'Anonymous';
+
+        // Upload audio first
+        let contentUrl: string | undefined;
+        if (audioBlob) {
+          console.log('Uploading audio message...');
+          const uploadedUrl = await uploadAudio(audioBlob, user.id);
+          if (uploadedUrl) {
+            contentUrl = uploadedUrl;
+            console.log('Audio uploaded:', uploadedUrl);
+          }
+        }
+
+        // Create optimistic message
+        const optimisticMessage: Message = {
+          id: `temp-${Date.now()}`,
+          content: 'Audio message',
+          contentType: 'audio',
+          sender: 'user',
+          senderName: 'You',
+          timestamp: new Date(),
+          audioUrl: contentUrl
+        };
+
+        setMessages(prev => [...prev, optimisticMessage]);
+
+        // Send to backend
+        const result = await respondToPrayer(
+          conversationId,
+          user.id,
+          userName,
+          'Audio message',
+          'audio',
+          contentUrl,
+          false
+        );
+
+        if (result) {
+          setMessages(prev => prev.map(msg =>
+            msg.id === optimisticMessage.id
+              ? { ...msg, id: result.response.id }
+              : msg
+          ));
+        } else {
+          setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+        }
+
+        resetRecording();
+      } catch (error) {
+        console.error('Error sending audio message:', error);
+      } finally {
+        setIsSending(false);
+      }
+    }, 100);
   };
 
   const formatTime = (seconds: number) => {
@@ -212,10 +321,14 @@ export function ConversationThread({
             />
             <button
               onClick={handleSendText}
-              disabled={!textInput.trim()}
+              disabled={!textInput.trim() || isSending}
               className="px-6 py-3 bg-gradient-to-r from-blue-500/30 to-purple-500/30 hover:from-blue-500/40 hover:to-purple-500/40 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all"
             >
-              <Send className="w-5 h-5 text-gray-800" />
+              {isSending ? (
+                <Loader2 className="w-5 h-5 text-gray-800 animate-spin" />
+              ) : (
+                <Send className="w-5 h-5 text-gray-800" />
+              )}
             </button>
           </div>
         ) : (

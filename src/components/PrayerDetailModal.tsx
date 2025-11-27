@@ -8,11 +8,18 @@ import { Switch } from './ui/switch';
 import { AudioPlayer } from './AudioPlayer';
 import { AudioRecorder } from './AudioRecorder';
 
+export interface PrayerReplyData {
+  message: string;
+  contentType: 'text' | 'audio' | 'video';
+  audioBlob?: Blob;
+  isAnonymous: boolean;
+}
+
 interface PrayerDetailModalProps {
   prayer: Prayer;
   userLocation: { lat: number; lng: number };
   onClose: () => void;
-  onPray: (prayer: Prayer) => void;
+  onPray: (prayer: Prayer, replyData?: PrayerReplyData) => void;
 }
 
 // Calculate distance between two coordinates using Haversine formula
@@ -58,17 +65,29 @@ export function PrayerDetailModal({ prayer, userLocation, onClose, onPray }: Pra
     setShowSpotlight(true);
 
     setTimeout(() => {
-      onPray(prayer);
+      // Pass reply data along with the prayer
+      const replyData: PrayerReplyData = {
+        message: replyContent || 'Praying for you!',
+        contentType: replyType,
+        audioBlob: replyAudioBlob || undefined,
+        isAnonymous,
+      };
+      onPray(prayer, replyData);
     }, 2500);
   };
 
   const handleQuickPray = useCallback(() => {
-    // Quick one-touch prayer response
+    // Quick one-touch prayer response (no custom message)
     setIsPraying(true);
     setShowSpotlight(true);
 
     setTimeout(() => {
-      onPray(prayer);
+      // Quick pray uses default message, not anonymous
+      onPray(prayer, {
+        message: 'Praying for you!',
+        contentType: 'text',
+        isAnonymous: false,
+      });
     }, 2500);
   }, [prayer, onPray]);
 

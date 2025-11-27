@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Prayer, PrayerResponse } from '../types/prayer';
-import { fetchUserInbox, subscribeToUserInbox } from '../services/prayerService';
+import { fetchUserInbox, subscribeToUserInbox, markAllResponsesRead } from '../services/prayerService';
 
 export interface InboxItem {
   prayer: Prayer;
@@ -97,13 +97,28 @@ export function useInbox({
     };
   }, [userId, enableRealtime]);
 
-  // Mark a prayer as read
-  const markAsRead = useCallback((prayerId: string) => {
+  // Mark a prayer as read - persists to database and updates local state
+  const markAsRead = useCallback(async (prayerId: string) => {
+    // Optimistically update local state first
     setReadPrayers((prev) => {
       const next = new Set(prev);
       next.add(prayerId);
       return next;
     });
+
+    // Persist to database
+    try {
+      const count = await markAllResponsesRead(prayerId);
+      console.log(`Marked ${count} responses as read for prayer ${prayerId}`);
+    } catch (error) {
+      console.error('Failed to mark responses as read:', error);
+      // Revert optimistic update on failure
+      setReadPrayers((prev) => {
+        const next = new Set(prev);
+        next.delete(prayerId);
+        return next;
+      });
+    }
   }, []);
 
   return {
