@@ -62,50 +62,46 @@ WHERE status IS NULL;
 DROP FUNCTION IF EXISTS get_all_prayers();
 
 -- Create function to get ALL prayers globally (no radius filter)
+-- Returns the same columns as get_nearby_prayers for consistency
 CREATE OR REPLACE FUNCTION get_all_prayers()
 RETURNS TABLE (
-  id uuid,
-  user_id uuid,
-  content text,
-  location geography,
-  latitude double precision,
-  longitude double precision,
-  created_at timestamp with time zone,
-  updated_at timestamp with time zone,
-  status text,
-  is_anonymous boolean,
-  user_display_name text
+  id UUID,
+  user_id UUID,
+  title TEXT,
+  content TEXT,
+  content_type TEXT,
+  media_url TEXT,
+  location TEXT,  -- Return as text POINT format, not geography
+  user_name TEXT,
+  is_anonymous BOOLEAN,
+  created_at TIMESTAMPTZ,
+  updated_at TIMESTAMPTZ,
+  status TEXT
 )
+LANGUAGE sql
+STABLE
 SECURITY DEFINER
-SET search_path = public
-LANGUAGE plpgsql
 AS $$
-BEGIN
-  RETURN QUERY
   SELECT
     p.id,
     p.user_id,
+    p.title,
     p.content,
-    p.location,
-    ST_Y(p.location::geometry) as latitude,
-    ST_X(p.location::geometry) as longitude,
+    p.content_type::TEXT,
+    p.media_url,
+    ST_AsText(p.location::geometry) as location,  -- Convert to POINT(lng lat) text
+    p.user_name,
+    p.is_anonymous,
     p.created_at,
     p.updated_at,
-    p.status,
-    p.is_anonymous,
-    CASE
-      WHEN p.is_anonymous THEN 'Anonymous'
-      ELSE COALESCE(u.display_name, u.email, 'Unknown')
-    END as user_display_name
+    p.status
   FROM prayers p
-  LEFT JOIN auth.users u ON p.user_id = u.id
   WHERE
     -- Filter out only hidden/removed prayers (moderated content)
     (p.status IS NULL OR p.status NOT IN ('hidden', 'removed'))
     -- Users can see their own prayers regardless of status
     OR p.user_id = auth.uid()
   ORDER BY p.created_at DESC;
-END;
 $$;
 
 -- Grant execute permissions to all users (authenticated and anonymous)
@@ -120,43 +116,43 @@ GRANT EXECUTE ON FUNCTION get_all_prayers() TO anon;
 DROP FUNCTION IF EXISTS get_all_connections();
 
 -- Create function to get ALL prayer connections globally (not expired)
+-- Returns columns matching what the frontend PrayerConnectionRow interface expects
 CREATE OR REPLACE FUNCTION get_all_connections()
 RETURNS TABLE (
-  id uuid,
-  from_prayer_id uuid,
-  to_prayer_id uuid,
-  user_id uuid,
-  created_at timestamp with time zone,
-  expires_at timestamp with time zone,
-  from_location text,
-  to_location text
+  id UUID,
+  prayer_id UUID,
+  prayer_response_id UUID,
+  from_location TEXT,
+  to_location TEXT,
+  requester_name TEXT,
+  replier_name TEXT,
+  created_at TIMESTAMPTZ,
+  expires_at TIMESTAMPTZ
 )
+LANGUAGE sql
+STABLE
 SECURITY DEFINER
-SET search_path = public
-LANGUAGE plpgsql
 AS $$
-BEGIN
-  RETURN QUERY
   SELECT
     pc.id,
-    pc.from_prayer_id,
-    pc.to_prayer_id,
-    pc.user_id,
+    pc.prayer_id,
+    NULL::UUID as prayer_response_id,  -- Column not in table, return NULL for compatibility
+    ST_AsText(pc.from_location::geometry) as from_location,
+    ST_AsText(pc.to_location::geometry) as to_location,
+    COALESCE(from_profile.display_name, 'Anonymous') AS requester_name,
+    COALESCE(to_profile.display_name, 'Anonymous') AS replier_name,
     pc.created_at,
-    pc.expires_at,
-    ST_AsText(p1.location::geometry) as from_location,
-    ST_AsText(p2.location::geometry) as to_location
+    pc.expires_at
   FROM prayer_connections pc
-  INNER JOIN prayers p1 ON pc.from_prayer_id = p1.id
-  INNER JOIN prayers p2 ON pc.to_prayer_id = p2.id
+  INNER JOIN prayers p ON pc.prayer_id = p.id
+  LEFT JOIN profiles from_profile ON pc.from_user_id = from_profile.id
+  LEFT JOIN profiles to_profile ON pc.to_user_id = to_profile.id
   WHERE
     -- Only show connections that haven't expired
-    (pc.expires_at IS NULL OR pc.expires_at > NOW())
-    -- Only show connections between visible prayers
-    AND (p1.status IS NULL OR p1.status NOT IN ('hidden', 'removed'))
-    AND (p2.status IS NULL OR p2.status NOT IN ('hidden', 'removed'))
+    pc.expires_at > NOW()
+    -- Only show connections for visible prayers (not moderated)
+    AND (p.status IS NULL OR p.status NOT IN ('hidden', 'removed'))
   ORDER BY pc.created_at DESC;
-END;
 $$;
 
 -- Grant execute permissions to all users (authenticated and anonymous)
