@@ -3,7 +3,7 @@
  * View and manage users from the admin dashboard
  */
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useUsers, useUpdateUser, useBanUser, useUnbanUser, type AdminUser } from '../hooks/useUsers'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -385,10 +385,15 @@ function EditUserDialog({ user, onClose, onSave, isLoading }: EditUserDialogProp
   const [avatarUrl, setAvatarUrl] = useState('')
 
   // Reset form when user changes
-  if (user && displayName === '' && avatarUrl === '') {
-    setDisplayName(user.display_name || '')
-    setAvatarUrl(user.avatar_url || '')
-  }
+  useEffect(() => {
+    if (user) {
+      setDisplayName(user.display_name || '')
+      setAvatarUrl(user.avatar_url || '')
+    } else {
+      setDisplayName('')
+      setAvatarUrl('')
+    }
+  }, [user])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -396,9 +401,7 @@ function EditUserDialog({ user, onClose, onSave, isLoading }: EditUserDialogProp
       display_name: displayName || undefined,
       avatar_url: avatarUrl || undefined,
     })
-    // Reset form
-    setDisplayName('')
-    setAvatarUrl('')
+    // Form will be reset when user prop becomes null via useEffect
   }
 
   return (
