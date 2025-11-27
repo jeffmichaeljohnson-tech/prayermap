@@ -76,6 +76,12 @@ interface ModeratePrayerParams {
   note?: string
 }
 
+interface BulkModeratePrayersParams {
+  prayerIds: string[]
+  status: 'active' | 'hidden' | 'removed' | 'pending_review'
+  note?: string
+}
+
 interface BanUserParams {
   userId: string
   reason: string
@@ -137,6 +143,7 @@ export function useModeratePrayer() {
         p_prayer_id: prayerId,
         p_new_status: status,
         p_note: note ?? null,
+        p_user_agent: navigator.userAgent,
       } as Record<string, unknown>)
 
       if (error) {
@@ -166,6 +173,73 @@ export function useModeratePrayer() {
 }
 
 /**
+ * Bulk moderate multiple prayers (approve, hide, remove)
+ */
+export function useBulkModeratePrayers() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ prayerIds, status, note }: BulkModeratePrayersParams) => {
+      // Process prayers one at a time
+      const results = await Promise.allSettled(
+        prayerIds.map(prayerId =>
+          supabase.rpc('moderate_prayer', {
+            p_prayer_id: prayerId,
+            p_new_status: status,
+            p_note: note ?? null,
+            p_user_agent: navigator.userAgent,
+          } as Record<string, unknown>)
+        )
+      )
+
+      // Check for failures
+      const failures = results.filter(r => r.status === 'rejected')
+      const successes = results.filter(r => r.status === 'fulfilled')
+
+      if (failures.length > 0) {
+        console.error('Some prayers failed to moderate:', failures)
+        // If all failed, throw error
+        if (successes.length === 0) {
+          throw new Error('Failed to moderate all prayers')
+        }
+        // Otherwise just return partial success
+        return {
+          total: prayerIds.length,
+          succeeded: successes.length,
+          failed: failures.length
+        }
+      }
+
+      return {
+        total: prayerIds.length,
+        succeeded: successes.length,
+        failed: 0
+      }
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['moderation-queue'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-prayers'] })
+
+      const actionText = {
+        active: 'approved',
+        hidden: 'hidden',
+        removed: 'removed',
+        pending_review: 'marked for review',
+      }[variables.status]
+
+      if (data.failed > 0) {
+        toast.success(`${data.succeeded} of ${data.total} prayers ${actionText} successfully (${data.failed} failed)`)
+      } else {
+        toast.success(`${data.total} prayer(s) ${actionText} successfully`)
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to moderate prayers: ${error.message}`)
+    },
+  })
+}
+
+/**
  * Ban a user
  */
 export function useBanUser() {
@@ -179,6 +253,7 @@ export function useBanUser() {
         p_ban_type: banType,
         p_duration_days: durationDays ?? null,
         p_note: note ?? null,
+        p_user_agent: navigator.userAgent,
       } as Record<string, unknown>)
 
       if (error) {
@@ -210,6 +285,7 @@ export function useUnbanUser() {
       const { data, error } = await supabase.rpc('unban_user', {
         p_user_id: userId,
         p_note: note ?? null,
+        p_user_agent: navigator.userAgent,
       } as Record<string, unknown>)
 
       if (error) {

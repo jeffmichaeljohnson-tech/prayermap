@@ -122,6 +122,7 @@ export function useUpdatePrayer() {
         p_content: params.content ?? null,
         p_latitude: params.latitude ?? null,
         p_longitude: params.longitude ?? null,
+        p_user_agent: navigator.userAgent,
       } as Record<string, unknown>)
 
       if (error) {
@@ -151,6 +152,7 @@ export function useDeletePrayer() {
     mutationFn: async (id: string) => {
       const { data, error } = await supabase.rpc('delete_prayer_admin', {
         p_prayer_id: id,
+        p_user_agent: navigator.userAgent,
       } as Record<string, unknown>)
 
       if (error) {

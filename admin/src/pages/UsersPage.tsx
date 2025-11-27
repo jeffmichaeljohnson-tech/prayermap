@@ -4,7 +4,7 @@
  */
 
 import { useState } from 'react'
-import { useUsers, useUpdateUser, type AdminUser } from '../hooks/useUsers'
+import { useUsers, useUpdateUser, useBanUser, useUnbanUser, type AdminUser } from '../hooks/useUsers'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Dialog, DialogHeader, DialogTitle, DialogContent, DialogFooter } from '../components/ui/dialog'
@@ -15,10 +15,13 @@ export function UsersPage() {
   const [searchInput, setSearchInput] = useState('')
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null)
   const [viewingUser, setViewingUser] = useState<AdminUser | null>(null)
+  const [unbanningUser, setUnbanningUser] = useState<AdminUser | null>(null)
 
   const pageSize = 10
   const { data, isLoading, error } = useUsers({ page, pageSize, search })
   const updateUser = useUpdateUser()
+  const banUser = useBanUser()
+  const unbanUser = useUnbanUser()
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -76,6 +79,7 @@ export function UsersPage() {
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Display Name</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Prayers</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Role</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Status</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Created</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Last Sign In</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Actions</th>
@@ -84,13 +88,13 @@ export function UsersPage() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
                     Loading...
                   </td>
                 </tr>
               ) : data?.users.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={9} className="px-4 py-8 text-center text-gray-500">
                     No users found
                   </td>
                 </tr>
@@ -118,6 +122,17 @@ export function UsersPage() {
                         <span className="text-gray-400">User</span>
                       )}
                     </td>
+                    <td className="px-4 py-3 text-sm">
+                      {user.is_banned ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800">
+                          Banned ({user.ban_type})
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800">
+                          Active
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-sm text-gray-500">
                       {new Date(user.created_at).toLocaleDateString()}
                     </td>
@@ -131,6 +146,33 @@ export function UsersPage() {
                         <Button size="sm" variant="outline" onClick={() => setEditingUser(user)}>
                           Edit
                         </Button>
+                        {user.is_banned ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setUnbanningUser(user)}
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                          >
+                            Unban
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              if (confirm(`Are you sure you want to ban ${user.email}?`)) {
+                                banUser.mutate({
+                                  userId: user.id,
+                                  reason: 'Banned by admin',
+                                  banType: 'soft',
+                                })
+                              }
+                            }}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            Ban
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -198,6 +240,30 @@ export function UsersPage() {
                 <p>{viewingUser.prayer_count}</p>
               </div>
               <div>
+                <label className="text-sm font-medium text-gray-500">Status</label>
+                <p>
+                  {viewingUser.is_banned ? (
+                    <span className="text-red-600 font-medium">
+                      Banned ({viewingUser.ban_type})
+                    </span>
+                  ) : (
+                    <span className="text-green-600 font-medium">Active</span>
+                  )}
+                </p>
+              </div>
+              {viewingUser.is_banned && (
+                <>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Ban Reason</label>
+                    <p>{viewingUser.ban_reason}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Banned At</label>
+                    <p>{viewingUser.banned_at ? new Date(viewingUser.banned_at).toLocaleString() : 'N/A'}</p>
+                  </div>
+                </>
+              )}
+              <div>
                 <label className="text-sm font-medium text-gray-500">Created</label>
                 <p>{new Date(viewingUser.created_at).toLocaleString()}</p>
               </div>
@@ -250,6 +316,59 @@ export function UsersPage() {
         }}
         isLoading={updateUser.isPending}
       />
+
+      {/* Unban User Confirmation Dialog */}
+      <Dialog isOpen={!!unbanningUser} onClose={() => setUnbanningUser(null)}>
+        <DialogHeader onClose={() => setUnbanningUser(null)}>
+          <DialogTitle>Unban User</DialogTitle>
+        </DialogHeader>
+        <DialogContent>
+          {unbanningUser && (
+            <div className="space-y-4">
+              <p className="text-gray-700">
+                Are you sure you want to unban <strong>{unbanningUser.email}</strong>?
+              </p>
+              {unbanningUser.ban_reason && (
+                <div className="bg-gray-50 p-3 rounded">
+                  <p className="text-sm text-gray-600">
+                    <strong>Ban Reason:</strong> {unbanningUser.ban_reason}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    <strong>Ban Type:</strong> {unbanningUser.ban_type}
+                  </p>
+                  {unbanningUser.banned_at && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      <strong>Banned At:</strong> {new Date(unbanningUser.banned_at).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+              )}
+              <p className="text-sm text-gray-600">
+                This will allow the user to access the application again.
+              </p>
+            </div>
+          )}
+        </DialogContent>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setUnbanningUser(null)} disabled={unbanUser.isPending}>
+            Cancel
+          </Button>
+          <Button
+            onClick={async () => {
+              if (!unbanningUser) return
+              await unbanUser.mutateAsync({
+                userId: unbanningUser.id,
+                note: 'Unbanned by admin',
+              })
+              setUnbanningUser(null)
+            }}
+            isLoading={unbanUser.isPending}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            Unban User
+          </Button>
+        </DialogFooter>
+      </Dialog>
     </div>
   )
 }

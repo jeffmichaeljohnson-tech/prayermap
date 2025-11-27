@@ -11,6 +11,7 @@ export interface Prayer {
   };
   user_name?: string;
   is_anonymous: boolean;
+  status?: 'pending' | 'approved' | 'hidden' | 'removed';
   created_at: Date;
   updated_at?: Date;
   // Client-side only fields (not in DB)

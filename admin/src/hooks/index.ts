@@ -5,7 +5,7 @@
 
 export { useAdminAuth } from './useAuth'
 export { usePrayers, usePrayer, useUpdatePrayer, useDeletePrayer } from './usePrayers'
-export { useUsers, useUser, useUpdateUser, useDeleteUser } from './useUsers'
+export { useUsers, useUser, useUpdateUser, useDeleteUser, useBanUser as useBanUserFromUsers, useUnbanUser as useUnbanUserFromUsers } from './useUsers'
 export { useStats } from './useStats'
 export { useAuditLogs } from './useAuditLogs'
 export {

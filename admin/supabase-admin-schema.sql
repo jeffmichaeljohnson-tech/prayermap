@@ -260,6 +260,10 @@ RETURNS TABLE (
   prayer_count BIGINT,
   is_admin BOOLEAN,
   admin_role TEXT,
+  is_banned BOOLEAN,
+  ban_type TEXT,
+  ban_reason TEXT,
+  banned_at TIMESTAMPTZ,
   total_count BIGINT
 ) AS $$
 DECLARE
@@ -289,6 +293,10 @@ BEGIN
     COALESCE(pc.count, 0) as prayer_count,
     ar.user_id IS NOT NULL as is_admin,
     ar.role as admin_role,
+    COALESCE(ub.is_active, false) as is_banned,
+    ub.ban_type,
+    ub.reason as ban_reason,
+    ub.banned_at,
     total as total_count
   FROM auth.users u
   LEFT JOIN public.profiles pr ON u.id = pr.id
@@ -296,6 +304,15 @@ BEGIN
   LEFT JOIN LATERAL (
     SELECT COUNT(*) as count FROM public.prayers WHERE user_id = u.id
   ) pc ON true
+  LEFT JOIN LATERAL (
+    SELECT is_active, ban_type, reason, banned_at
+    FROM public.user_bans
+    WHERE user_id = u.id
+      AND is_active = true
+      AND (expires_at IS NULL OR expires_at > NOW())
+    ORDER BY banned_at DESC
+    LIMIT 1
+  ) ub ON true
   WHERE p_search IS NULL
     OR u.email ILIKE '%' || p_search || '%'
     OR pr.display_name ILIKE '%' || p_search || '%'

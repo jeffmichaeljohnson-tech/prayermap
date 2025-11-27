@@ -7,6 +7,7 @@ import { useState } from 'react'
 import {
   useModerationQueue,
   useModeratePrayer,
+  useBulkModeratePrayers,
   useBanUser,
   useUserBanStatus,
   type ModerationPrayer,
@@ -28,10 +29,16 @@ export function ModerationPage() {
   } | null>(null)
   const [moderationNote, setModerationNote] = useState('')
   const [banningUser, setBanningUser] = useState<ModerationPrayer | null>(null)
+  const [selectedPrayerIds, setSelectedPrayerIds] = useState<Set<string>>(new Set())
+  const [bulkAction, setBulkAction] = useState<{
+    action: 'approve' | 'hide' | 'remove'
+    note: string
+  } | null>(null)
 
   const pageSize = 20
   const { data, isLoading, error } = useModerationQueue({ page, pageSize, filter })
   const moderatePrayer = useModeratePrayer()
+  const bulkModeratePrayers = useBulkModeratePrayers()
 
   const handleModerate = (prayer: ModerationPrayer, action: 'approve' | 'hide' | 'remove') => {
     setModeratingPrayer({ prayer, action })
@@ -55,6 +62,52 @@ export function ModerationPage() {
 
     setModeratingPrayer(null)
     setModerationNote('')
+  }
+
+  // Bulk selection handlers
+  const handleSelectAll = () => {
+    if (!data?.prayers) return
+
+    if (selectedPrayerIds.size === data.prayers.length) {
+      setSelectedPrayerIds(new Set())
+    } else {
+      setSelectedPrayerIds(new Set(data.prayers.map(p => p.id)))
+    }
+  }
+
+  const handleSelectPrayer = (prayerId: string) => {
+    setSelectedPrayerIds(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(prayerId)) {
+        newSet.delete(prayerId)
+      } else {
+        newSet.add(prayerId)
+      }
+      return newSet
+    })
+  }
+
+  const handleBulkAction = (action: 'approve' | 'hide' | 'remove') => {
+    setBulkAction({ action, note: '' })
+  }
+
+  const confirmBulkAction = async () => {
+    if (!bulkAction) return
+
+    const statusMap = {
+      approve: 'active' as const,
+      hide: 'hidden' as const,
+      remove: 'removed' as const,
+    }
+
+    await bulkModeratePrayers.mutateAsync({
+      prayerIds: Array.from(selectedPrayerIds),
+      status: statusMap[bulkAction.action],
+      note: bulkAction.note || undefined,
+    })
+
+    setSelectedPrayerIds(new Set())
+    setBulkAction(null)
   }
 
   const getStatusBadge = (status: string) => {
@@ -87,6 +140,38 @@ export function ModerationPage() {
           <h1 className="text-2xl font-bold text-gray-900">Content Moderation</h1>
           <p className="text-gray-600">Review and moderate flagged prayer requests</p>
         </div>
+
+        {/* Bulk Actions */}
+        {selectedPrayerIds.size > 0 && (
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-600 font-medium">
+              {selectedPrayerIds.size} selected
+            </span>
+            <Button
+              size="sm"
+              variant="default"
+              onClick={() => handleBulkAction('approve')}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Approve Selected
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleBulkAction('hide')}
+              className="text-yellow-700 border-yellow-300 hover:bg-yellow-50"
+            >
+              Hide Selected
+            </Button>
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={() => handleBulkAction('remove')}
+            >
+              Remove Selected
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Filter Tabs */}
@@ -128,6 +213,23 @@ export function ModerationPage() {
 
         {/* Queue List */}
         <div className="divide-y divide-gray-200">
+          {/* Select All Header */}
+          {!isLoading && data && data.prayers.length > 0 && (
+            <div className="px-6 py-3 bg-gray-50 border-b border-gray-200">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={selectedPrayerIds.size === data.prayers.length && data.prayers.length > 0}
+                  onChange={handleSelectAll}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm font-medium text-gray-700">
+                  Select All ({data.prayers.length})
+                </span>
+              </label>
+            </div>
+          )}
+
           {isLoading ? (
             <div className="px-6 py-12 text-center text-gray-500">Loading...</div>
           ) : data?.prayers.length === 0 ? (
@@ -140,6 +242,16 @@ export function ModerationPage() {
             data?.prayers.map((prayer) => (
               <div key={prayer.id} className="p-6 hover:bg-gray-50 transition-colors">
                 <div className="flex gap-4">
+                  {/* Checkbox */}
+                  <div className="flex items-start pt-1">
+                    <input
+                      type="checkbox"
+                      checked={selectedPrayerIds.has(prayer.id)}
+                      onChange={() => handleSelectPrayer(prayer.id)}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                    />
+                  </div>
+
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start gap-3 mb-2">
@@ -326,6 +438,63 @@ export function ModerationPage() {
 
       {/* Ban User Dialog */}
       <BanUserDialog prayer={banningUser} onClose={() => setBanningUser(null)} />
+
+      {/* Bulk Action Confirmation Dialog */}
+      <Dialog isOpen={!!bulkAction} onClose={() => setBulkAction(null)}>
+        <DialogHeader onClose={() => setBulkAction(null)}>
+          <DialogTitle>
+            {bulkAction?.action === 'approve' && 'Approve Selected Prayers'}
+            {bulkAction?.action === 'hide' && 'Hide Selected Prayers'}
+            {bulkAction?.action === 'remove' && 'Remove Selected Prayers'}
+          </DialogTitle>
+        </DialogHeader>
+        <DialogContent>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              {bulkAction?.action === 'approve' &&
+                `You are about to approve ${selectedPrayerIds.size} prayer(s). They will be visible on the public map and marked as active.`}
+              {bulkAction?.action === 'hide' &&
+                `You are about to hide ${selectedPrayerIds.size} prayer(s). They will be hidden from the public map but not deleted.`}
+              {bulkAction?.action === 'remove' &&
+                `You are about to permanently remove ${selectedPrayerIds.size} prayer(s) from the public map. This action cannot be undone.`}
+            </p>
+            <div className="p-3 bg-gray-50 rounded-md">
+              <p className="text-sm font-medium text-gray-700">
+                Selected prayers: {selectedPrayerIds.size}
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Add a note (optional)
+              </label>
+              <Textarea
+                value={bulkAction?.note || ''}
+                onChange={(e) => setBulkAction(prev => prev ? { ...prev, note: e.target.value } : null)}
+                placeholder="Reason for this action, additional context, etc."
+                rows={3}
+              />
+            </div>
+          </div>
+        </DialogContent>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setBulkAction(null)} disabled={bulkModeratePrayers.isPending}>
+            Cancel
+          </Button>
+          <Button
+            onClick={confirmBulkAction}
+            isLoading={bulkModeratePrayers.isPending}
+            className={
+              bulkAction?.action === 'approve'
+                ? 'bg-green-600 hover:bg-green-700'
+                : bulkAction?.action === 'remove'
+                ? 'bg-red-600 hover:bg-red-700'
+                : undefined
+            }
+          >
+            Confirm
+          </Button>
+        </DialogFooter>
+      </Dialog>
     </div>
   )
 }

@@ -12,6 +12,7 @@ interface PrayerRow {
   location: { lat: number; lng: number } | string; // PostGIS POINT or JSON
   user_name?: string;
   is_anonymous: boolean;
+  status?: 'pending' | 'approved' | 'hidden' | 'removed';
   created_at: string;
   updated_at?: string;
 }
@@ -93,6 +94,7 @@ function rowToPrayer(row: PrayerRow): Prayer {
     location: convertLocation(row.location),
     user_name: row.user_name,
     is_anonymous: row.is_anonymous,
+    status: row.status,
     created_at: new Date(row.created_at),
     updated_at: row.updated_at ? new Date(row.updated_at) : undefined,
   };
@@ -144,7 +146,14 @@ export async function fetchNearbyPrayers(
       throw error;
     }
 
-    return (data as PrayerRow[]).map(rowToPrayer);
+    // Filter out moderated prayers (hidden or removed)
+    // Only include prayers with no status, pending, or approved status
+    const filteredData = (data as PrayerRow[]).filter(row => {
+      const status = row.status;
+      return !status || status === 'pending' || status === 'approved';
+    });
+
+    return filteredData.map(rowToPrayer);
   } catch (error) {
     console.error('Failed to fetch nearby prayers:', error);
     return [];

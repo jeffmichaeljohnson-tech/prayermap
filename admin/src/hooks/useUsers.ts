@@ -18,6 +18,10 @@ export interface AdminUser {
   prayer_count: number
   is_admin: boolean
   admin_role: string | null
+  is_banned: boolean
+  ban_type: string | null
+  ban_reason: string | null
+  banned_at: string | null
   total_count: number
 }
 
@@ -114,6 +118,7 @@ export function useUpdateUser() {
         p_user_id: params.id,
         p_display_name: params.display_name ?? null,
         p_avatar_url: params.avatar_url ?? null,
+        p_user_agent: navigator.userAgent,
       } as Record<string, unknown>)
 
       if (error) {
@@ -152,3 +157,8 @@ export function useDeleteUser() {
     },
   })
 }
+
+/**
+ * Ban a user - re-exported from useModeration for convenience
+ */
+export { useBanUser, useUnbanUser } from './useModeration'
