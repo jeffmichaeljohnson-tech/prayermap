@@ -5,9 +5,36 @@
 -- ip_address and user_agent for better audit trail tracking
 -- ============================================================================
 
--- Update log_admin_action function to accept ip_address and user_agent
--- Also fix the signature to match what moderation functions are calling
-CREATE OR REPLACE FUNCTION log_admin_action(
+-- Update the audit_logs table to match the new schema if columns don't exist
+DO $$
+BEGIN
+  -- Check and add old_values column if it doesn't exist
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'audit_logs' AND column_name = 'old_values'
+  ) THEN
+    ALTER TABLE audit_logs ADD COLUMN old_values JSONB;
+  END IF;
+
+  -- Check and add new_values column if it doesn't exist
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'audit_logs' AND column_name = 'new_values'
+  ) THEN
+    ALTER TABLE audit_logs ADD COLUMN new_values JSONB;
+  END IF;
+END $$;
+
+-- Drop ALL existing versions of log_admin_action to avoid conflicts
+-- We need to drop all overloaded versions before creating the new one
+DROP FUNCTION IF EXISTS log_admin_action(TEXT, TEXT, UUID);
+DROP FUNCTION IF EXISTS log_admin_action(TEXT, TEXT, UUID, JSONB);
+DROP FUNCTION IF EXISTS log_admin_action(TEXT, TEXT, UUID, JSONB, JSONB);
+DROP FUNCTION IF EXISTS log_admin_action(TEXT, TEXT, UUID, JSONB, JSONB, TEXT);
+DROP FUNCTION IF EXISTS log_admin_action(TEXT, TEXT, UUID, JSONB, JSONB, TEXT, TEXT);
+
+-- Create the new unified log_admin_action function with user_agent and ip_address support
+CREATE FUNCTION log_admin_action(
   p_action TEXT,
   p_entity_type TEXT,
   p_entity_id UUID,
@@ -58,28 +85,8 @@ BEGIN
 END;
 $$;
 
--- Update the audit_logs table to match the new schema if columns don't exist
-DO $$
-BEGIN
-  -- Check and add old_values column if it doesn't exist
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'audit_logs' AND column_name = 'old_values'
-  ) THEN
-    ALTER TABLE audit_logs ADD COLUMN old_values JSONB;
-  END IF;
-
-  -- Check and add new_values column if it doesn't exist
-  IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns
-    WHERE table_name = 'audit_logs' AND column_name = 'new_values'
-  ) THEN
-    ALTER TABLE audit_logs ADD COLUMN new_values JSONB;
-  END IF;
-END $$;
-
--- Grant execute permission
-GRANT EXECUTE ON FUNCTION log_admin_action TO authenticated;
+-- Grant execute permission to authenticated users
+GRANT EXECUTE ON FUNCTION log_admin_action(TEXT, TEXT, UUID, JSONB, JSONB, TEXT, TEXT) TO authenticated;
 
 -- Add comment
-COMMENT ON FUNCTION log_admin_action IS 'Helper function to create audit log entries with IP address and user agent tracking';
+COMMENT ON FUNCTION log_admin_action(TEXT, TEXT, UUID, JSONB, JSONB, TEXT, TEXT) IS 'Helper function to create audit log entries with IP address and user agent tracking';
