@@ -112,8 +112,6 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
     targetLocation: { lat: number; lng: number };
   } | null>(null);
 
-  // Ref to store pending connection data (set by handlePrayerSubmit when API succeeds)
-  const pendingConnectionRef = useRef<PrayerConnection | null>(null);
 
   // Group prayers by location to handle overlapping markers
   const prayerGroups = useMemo(() => groupPrayersByLocation(prayers), [prayers]);
@@ -175,21 +173,12 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
     setSelectedPrayer(prayer);
   };
 
+  // Note: Animation completion is now handled by setTimeout in handlePrayerSubmit
+  // This callback is still passed to PrayerAnimationLayer but is a no-op since
+  // setTimeout handles both adding the connection and clearing animatingPrayer
   const handleAnimationComplete = useCallback(() => {
-    // Add the pending connection if API call succeeded
-    if (pendingConnectionRef.current) {
-      console.log('Adding connection after animation:', pendingConnectionRef.current);
-      const newConnection = pendingConnectionRef.current;
-      setConnections(prev => {
-        console.log('Previous connections:', prev.length, 'Adding new:', newConnection.id);
-        return [...prev, newConnection];
-      });
-      pendingConnectionRef.current = null;
-    } else {
-      console.log('No pending connection to add');
-    }
-    // Clear animation state - do NOT reopen the modal
-    setAnimatingPrayer(null);
+    // No-op - setTimeout in handlePrayerSubmit handles everything
+    console.log('Animation layer complete callback (no-op)');
   }, []);
 
   const handlePrayerSubmit = async (prayer: Prayer) => {
@@ -199,15 +188,12 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
     setSelectedPrayer(null);
     const userName = user.user_metadata?.name || user.email?.split('@')[0] || 'Anonymous';
 
-    // Clear any pending connection from previous animations
-    pendingConnectionRef.current = null;
-
     // Start the animation
     setAnimatingPrayer({ prayer, userLocation });
 
-    // Submit the prayer response to Supabase
+    // Submit the prayer response to Supabase (fire and forget - don't await)
     console.log('Submitting prayer response for:', prayer.id, 'with location:', userLocation);
-    const success = await respondToPrayer(
+    respondToPrayer(
       prayer.id,
       user.id,
       userName,
@@ -216,27 +202,36 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
       undefined,
       false,
       userLocation // Pass user's location to create prayer connection line
-    );
-    console.log('Prayer response result:', success);
+    ).then(success => {
+      console.log('Prayer response result:', success);
+    });
 
-    // If successful, prepare the connection data for when animation completes
-    if (success) {
-      console.log('API succeeded, preparing connection data');
-      const createdDate = new Date();
-      const expiresDate = new Date(createdDate);
-      expiresDate.setFullYear(expiresDate.getFullYear() + 1);
+    // Create connection data and add it after animation completes (6 seconds)
+    // Following the original Figma design pattern with setTimeout
+    const createdDate = new Date();
+    const expiresDate = new Date(createdDate);
+    expiresDate.setFullYear(expiresDate.getFullYear() + 1);
 
-      pendingConnectionRef.current = {
-        id: `conn-${Date.now()}`,
-        prayerId: prayer.id,
-        fromLocation: prayer.location,
-        toLocation: userLocation,
-        requesterName: prayer.is_anonymous ? 'Anonymous' : (prayer.user_name || 'Anonymous'),
-        replierName: userName,
-        createdAt: createdDate,
-        expiresAt: expiresDate
-      };
-    }
+    const newConnection: PrayerConnection = {
+      id: `conn-${Date.now()}`,
+      prayerId: prayer.id,
+      fromLocation: prayer.location,
+      toLocation: userLocation,
+      requesterName: prayer.is_anonymous ? 'Anonymous' : (prayer.user_name || 'Anonymous'),
+      replierName: userName,
+      createdAt: createdDate,
+      expiresAt: expiresDate
+    };
+
+    // Add connection after animation completes (matching animation duration)
+    setTimeout(() => {
+      console.log('Animation complete - adding connection:', newConnection.id);
+      setConnections(prev => {
+        console.log('Previous connections:', prev.length, 'Adding new connection');
+        return [...prev, newConnection];
+      });
+      setAnimatingPrayer(null);
+    }, 6000);
   };
 
   const handleRequestPrayer = async (newPrayer: Omit<Prayer, 'id' | 'created_at' | 'updated_at'>) => {
