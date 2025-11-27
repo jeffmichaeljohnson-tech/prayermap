@@ -1,3 +1,14 @@
+/**
+ * PrayerMap Prayer Service
+ *
+ * GLOBAL LIVING MAP CONCEPT:
+ * PrayerMap is a GLOBAL LIVING MAP where all prayers are visible to everyone worldwide.
+ * Every prayer, every response, every connection creates a living tapestry of faith
+ * connecting people across the globe in real-time. This is not a local or regional
+ * prayer map - it's a worldwide community where geographic boundaries fade away
+ * and spiritual connections transcend distance.
+ */
+
 import { supabase } from '../lib/supabase';
 import type { Prayer, PrayerResponse } from '../types/prayer';
 
@@ -12,7 +23,7 @@ interface PrayerRow {
   location: { lat: number; lng: number } | string; // PostGIS POINT or JSON
   user_name?: string;
   is_anonymous: boolean;
-  status?: 'pending' | 'approved' | 'hidden' | 'removed';
+  status?: 'pending' | 'approved' | 'active' | 'hidden' | 'removed';
   created_at: string;
   updated_at?: string;
 }
@@ -40,6 +51,18 @@ interface PrayerConnectionRow {
   replier_name: string;
   created_at: string;
   expires_at: string;
+}
+
+export interface PrayerConnection {
+  id: string;
+  prayer_id: string;
+  prayer_response_id: string;
+  from_location: { lat: number; lng: number };
+  to_location: { lat: number; lng: number };
+  requester_name: string;
+  replier_name: string;
+  created_at: Date;
+  expires_at: Date;
 }
 
 // Type guards and converters
@@ -115,8 +138,101 @@ function rowToPrayerResponse(row: PrayerResponseRow): PrayerResponse {
   };
 }
 
+function rowToPrayerConnection(row: PrayerConnectionRow): PrayerConnection {
+  return {
+    id: row.id,
+    prayer_id: row.prayer_id,
+    prayer_response_id: row.prayer_response_id,
+    from_location: convertLocation(row.from_location),
+    to_location: convertLocation(row.to_location),
+    requester_name: row.requester_name,
+    replier_name: row.replier_name,
+    created_at: new Date(row.created_at),
+    expires_at: new Date(row.expires_at),
+  };
+}
+
+/**
+ * Fetch ALL prayers globally for the GLOBAL LIVING MAP
+ *
+ * This function retrieves every active prayer from around the world,
+ * making them visible to all users. This is the core of the Living Map concept -
+ * a worldwide view of prayers connecting people across all geographic boundaries.
+ *
+ * @returns Promise<Prayer[]> - Array of all active prayers worldwide
+ */
+export async function fetchAllPrayers(): Promise<Prayer[]> {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return [];
+  }
+
+  try {
+    // Call the Supabase RPC function to get all prayers globally
+    const { data, error } = await supabase.rpc('get_all_prayers');
+
+    if (error) {
+      console.error('Error fetching all prayers:', error);
+      throw error;
+    }
+
+    // Filter out moderated prayers (hidden or removed)
+    // Only include prayers with no status, pending, approved, or active status
+    const filteredData = (data as PrayerRow[]).filter(row => {
+      const status = row.status;
+      return !status || status === 'pending' || status === 'approved' || status === 'active';
+    });
+
+    return filteredData.map(rowToPrayer);
+  } catch (error) {
+    console.error('Failed to fetch all prayers:', error);
+    return [];
+  }
+}
+
+/**
+ * Fetch ALL prayer connections globally for the GLOBAL LIVING MAP
+ *
+ * Prayer connections are the visual lines drawn on the map between
+ * a prayer location and the location of someone who responded to it.
+ * These connections represent the living web of faith and support
+ * spanning across the globe.
+ *
+ * @returns Promise<PrayerConnection[]> - Array of all active prayer connections worldwide
+ */
+export async function fetchAllConnections(): Promise<PrayerConnection[]> {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return [];
+  }
+
+  try {
+    // Call the Supabase RPC function to get all prayer connections globally
+    const { data, error } = await supabase.rpc('get_all_connections');
+
+    if (error) {
+      console.error('Error fetching all connections:', error);
+      throw error;
+    }
+
+    if (!data) {
+      return [];
+    }
+
+    return (data as PrayerConnectionRow[]).map(rowToPrayerConnection);
+  } catch (error) {
+    console.error('Failed to fetch all connections:', error);
+    return [];
+  }
+}
+
 /**
  * Fetch prayers within a radius using PostGIS
+ *
+ * @deprecated Use fetchAllPrayers() instead for the GLOBAL LIVING MAP.
+ * This function is kept for backward compatibility but the Living Map
+ * concept displays all prayers globally, not just nearby ones.
+ *
  * @param lat - Latitude of center point
  * @param lng - Longitude of center point
  * @param radiusKm - Radius in kilometers (default: 50km)
@@ -147,10 +263,10 @@ export async function fetchNearbyPrayers(
     }
 
     // Filter out moderated prayers (hidden or removed)
-    // Only include prayers with no status, pending, or approved status
+    // Only include prayers with no status, pending, approved, or active status
     const filteredData = (data as PrayerRow[]).filter(row => {
       const status = row.status;
-      return !status || status === 'pending' || status === 'approved';
+      return !status || status === 'pending' || status === 'approved' || status === 'active';
     });
 
     return filteredData.map(rowToPrayer);
@@ -184,6 +300,7 @@ export async function createPrayer(
         location: `POINT(${prayer.location.lng} ${prayer.location.lat})`,
         user_name: prayer.user_name || null,
         is_anonymous: prayer.is_anonymous,
+        status: 'active', // Set status to active for immediate visibility on the global map
       })
       .select()
       .single();
@@ -446,7 +563,59 @@ export async function fetchUserInbox(userId: string): Promise<
 }
 
 /**
+ * Subscribe to ALL prayers globally in real-time for the GLOBAL LIVING MAP
+ *
+ * This subscription listens for any changes to prayers worldwide and
+ * automatically fetches the updated global prayer list. This keeps the
+ * Living Map dynamic and responsive to new prayers and updates from
+ * anywhere in the world.
+ *
+ * @param callback - Function to call with updated prayer list
+ * @returns Unsubscribe function
+ */
+export function subscribeToPrayers(
+  callback: (prayers: Prayer[]) => void
+) {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return () => {};
+  }
+
+  // Subscribe to all prayer inserts/updates globally
+  const subscription = supabase
+    .channel('global_prayers_channel')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'prayers',
+      },
+      async () => {
+        // Fetch all prayers globally when any change occurs
+        const prayers = await fetchAllPrayers();
+        callback(prayers);
+      }
+    )
+    .subscribe();
+
+  // Return unsubscribe function
+  return () => {
+    subscription.unsubscribe();
+  };
+}
+
+/**
+ * Alias for subscribeToPrayers for backward compatibility
+ * @see subscribeToPrayers
+ */
+export const subscribeToAllPrayers = subscribeToPrayers;
+
+/**
  * Subscribe to nearby prayers in real-time
+ *
+ * @deprecated Use subscribeToPrayers() instead for the GLOBAL LIVING MAP.
+ * The Living Map displays all prayers globally, not just nearby ones.
  */
 export function subscribeToNearbyPrayers(
   lat: number,
@@ -542,6 +711,45 @@ export function subscribeToUserInbox(userId: string, callback: (inbox: any[]) =>
     )
     .subscribe();
 
+  return () => {
+    subscription.unsubscribe();
+  };
+}
+
+/**
+ * GLOBAL LIVING MAP: Subscribe to ALL prayer connections worldwide in real-time
+ *
+ * Real-time updates for all prayer connections as they're created anywhere
+ * in the world, making the Living Map truly dynamic and responsive.
+ *
+ * @param callback - Function called with updated global connections list on any change
+ * @returns Unsubscribe function
+ */
+export function subscribeToAllConnections(callback: (connections: PrayerConnection[]) => void) {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return () => {};
+  }
+
+  // Subscribe to all connection inserts/updates globally
+  const subscription = supabase
+    .channel('global_connections_channel')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'prayer_connections',
+      },
+      async () => {
+        // Fetch all updated connections globally
+        const connections = await fetchAllConnections();
+        callback(connections);
+      }
+    )
+    .subscribe();
+
+  // Return unsubscribe function
   return () => {
     subscription.unsubscribe();
   };

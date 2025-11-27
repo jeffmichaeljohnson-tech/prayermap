@@ -376,64 +376,115 @@ export function ConversationThread({
 
 // Message Bubble Component
 function MessageBubble({ message }: { message: Message }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const isUser = message.sender === 'user';
+
+  // Handle audio playback events
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handleTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const handleLoadedMetadata = () => setDuration(audio.duration);
+    const handlePlay = () => setIsPlaying(true);
+    const handlePause = () => setIsPlaying(false);
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setCurrentTime(0);
+    };
+
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('play', handlePlay);
+    audio.addEventListener('pause', handlePause);
+    audio.addEventListener('ended', handleEnded);
+
+    return () => {
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('play', handlePlay);
+      audio.removeEventListener('pause', handlePause);
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, [message.audioUrl]);
+
+  const toggleAudioPlay = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (isPlaying) {
+      audio.pause();
+    } else {
+      audio.play().catch(console.error);
+    }
+  };
+
+  const formatDuration = (seconds: number) => {
+    if (isNaN(seconds)) return '0:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const renderContent = () => {
     if (message.contentType === 'text') {
       return <p className="text-sm">{message.content}</p>;
     }
 
-    if (message.contentType === 'audio') {
+    if (message.contentType === 'audio' && message.audioUrl) {
+      const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
       return (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 min-w-[200px]">
+          <audio ref={audioRef} src={message.audioUrl} preload="metadata" />
           <button
-            onClick={() => setIsPlaying(!isPlaying)}
-            className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors"
+            onClick={toggleAudioPlay}
+            className="p-2 bg-white/20 rounded-full hover:bg-white/30 transition-colors flex-shrink-0"
           >
             {isPlaying ? (
               <Pause className="w-4 h-4" />
             ) : (
-              <Play className="w-4 h-4" />
+              <Play className="w-4 h-4 ml-0.5" />
             )}
           </button>
           <div className="flex-1">
-            <div className="h-8 flex items-center gap-1">
-              {[...Array(20)].map((_, i) => (
-                <div
-                  key={i}
-                  className="flex-1 bg-white/40 rounded-full"
-                  style={{ height: `${Math.random() * 100}%` }}
-                />
-              ))}
+            <div className="h-1.5 bg-white/20 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-white/60 rounded-full transition-all"
+                style={{ width: `${progress}%` }}
+              />
             </div>
           </div>
-          <span className="text-xs opacity-70">0:42</span>
+          <span className="text-xs opacity-70 tabular-nums flex-shrink-0">
+            {formatDuration(isPlaying ? currentTime : duration)}
+          </span>
         </div>
       );
     }
 
-    if (message.contentType === 'video') {
+    if (message.contentType === 'video' && message.videoUrl) {
       return (
-        <div className="relative">
-          <div className="w-full h-40 bg-gradient-to-br from-gray-300 to-gray-400 rounded-lg flex items-center justify-center">
-            <button
-              onClick={() => setIsPlaying(!isPlaying)}
-              className="p-4 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
-            >
-              {isPlaying ? (
-                <Pause className="w-8 h-8 text-white" />
-              ) : (
-                <Play className="w-8 h-8 text-white" />
-              )}
-            </button>
-          </div>
-          <div className="absolute bottom-2 right-2 px-2 py-1 bg-black/50 rounded text-xs text-white">
-            1:23
-          </div>
+        <div className="rounded-lg overflow-hidden max-w-xs">
+          <video
+            src={message.videoUrl}
+            controls
+            preload="metadata"
+            className="w-full"
+          />
         </div>
       );
     }
+
+    // Fallback for audio/video without URLs
+    if (message.contentType === 'audio') {
+      return <p className="text-sm italic opacity-70">Audio message (loading...)</p>;
+    }
+    if (message.contentType === 'video') {
+      return <p className="text-sm italic opacity-70">Video message (loading...)</p>;
+    }
+
+    return null;
   };
 
   return (

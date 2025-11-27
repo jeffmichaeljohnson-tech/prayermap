@@ -1,3 +1,22 @@
+/**
+ * PrayerMap - GLOBAL LIVING MAP
+ *
+ * This is the heart of PrayerMap - a GLOBAL LIVING MAP where everyone sees
+ * all prayers from around the world in real-time. This is not a local or
+ * regional prayer map; it's a worldwide community where:
+ *
+ * - ALL prayers are visible globally, not just nearby ones
+ * - ALL prayer connections (lines) are displayed worldwide
+ * - Real-time updates show new prayers and connections as they happen anywhere
+ * - Users start at their location but can zoom out to see the entire world
+ * - Geographic boundaries fade away, creating a living tapestry of global faith
+ *
+ * The map displays:
+ * 1. Prayer markers (dots) for every prayer request worldwide
+ * 2. Connection lines showing when someone prays for someone else
+ * 3. Real-time animations as new prayers are created and answered
+ */
+
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import mapboxgl from 'mapbox-gl';
@@ -17,6 +36,7 @@ import { Inbox, Settings, Info } from 'lucide-react';
 import { usePrayers } from '../hooks/usePrayers';
 import { useAuth } from '../contexts/AuthContext';
 import { useInbox } from '../hooks/useInbox';
+import { fetchAllConnections, subscribeToAllConnections } from '../services/prayerService';
 
 // Helper to group prayers by approximate location
 interface PrayerGroup {
@@ -79,7 +99,8 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
   const map = useRef<mapboxgl.Map | null>(null);
   const { user } = useAuth();
 
-  // Use the usePrayers hook for real-time data from Supabase
+  // GLOBAL LIVING MAP: Fetch ALL prayers worldwide, not just nearby ones
+  // This creates a living tapestry of prayer connecting people across the globe
   const {
     prayers,
     loading: prayersLoading,
@@ -87,8 +108,9 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
     respondToPrayer
   } = usePrayers({
     location: userLocation,
-    radiusKm: 50,
-    enableRealtime: true
+    radiusKm: 50, // Not used in global mode, but kept for compatibility
+    enableRealtime: true,
+    globalMode: true // Enable GLOBAL LIVING MAP - show all prayers worldwide
   });
 
   // Use the useInbox hook to get unread count
@@ -120,20 +142,46 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
   // Debug: log connections state
   console.log('PrayerMap render - connections:', connections.length, 'mapLoaded:', mapLoaded);
 
+  // GLOBAL LIVING MAP: Fetch and subscribe to ALL prayer connections worldwide
+  // This displays the beautiful web of prayer connections spanning the entire globe
+  useEffect(() => {
+    // Initial fetch of all global connections
+    fetchAllConnections().then((globalConnections) => {
+      console.log('Loaded global connections:', globalConnections.length);
+      setConnections(globalConnections);
+    });
+
+    // Subscribe to real-time updates for all connections worldwide
+    const unsubscribe = subscribeToAllConnections((updatedConnections) => {
+      console.log('Real-time connection update:', updatedConnections.length);
+      setConnections(updatedConnections);
+    });
+
+    // Cleanup subscription on unmount
+    return () => {
+      unsubscribe();
+    };
+  }, []); // Empty dependency array - only run once on mount
+
   // Initialize map with ethereal style
+  // GLOBAL LIVING MAP: Starts centered on user's location but allows zooming out to see the entire world
+  // Users can explore prayers and connections from anywhere on the planet
   useEffect(() => {
     if (!mapContainer.current || map.current) return;
 
-    console.log('Initializing Mapbox map at:', userLocation);
+    console.log('Initializing GLOBAL LIVING MAP at user location:', userLocation);
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/light-v11',
       center: [userLocation.lng, userLocation.lat],
-      zoom: 12,
+      zoom: 12, // Start at local zoom but allow global zoom out
       pitch: 0,
       bearing: 0,
-      attributionControl: false
+      attributionControl: false,
+      // Allow zooming out to see the entire world
+      minZoom: 1, // World view
+      maxZoom: 18 // Street-level detail
     });
 
     // Don't add navigation controls - users will use touch gestures

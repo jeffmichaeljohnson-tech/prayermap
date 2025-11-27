@@ -2,9 +2,11 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Prayer } from '../types/prayer';
 import {
   fetchNearbyPrayers,
+  fetchAllPrayers,
   createPrayer as createPrayerService,
   respondToPrayer as respondToPrayerService,
   subscribeToNearbyPrayers,
+  subscribeToAllPrayers,
 } from '../services/prayerService';
 
 interface UsePrayersOptions {
@@ -12,6 +14,7 @@ interface UsePrayersOptions {
   radiusKm?: number;
   autoFetch?: boolean;
   enableRealtime?: boolean;
+  globalMode?: boolean; // GLOBAL LIVING MAP: When true, fetches all prayers worldwide
 }
 
 interface UsePrayersReturn {
@@ -34,12 +37,16 @@ interface UsePrayersReturn {
 
 /**
  * Hook to manage prayers state with real-time updates
+ *
+ * GLOBAL LIVING MAP: Set globalMode to true to fetch and subscribe to ALL prayers worldwide
+ * instead of just nearby prayers within a radius.
  */
 export function usePrayers({
   location,
   radiusKm = 50,
   autoFetch = true,
   enableRealtime = true,
+  globalMode = false, // GLOBAL LIVING MAP: Default to global mode
 }: UsePrayersOptions): UsePrayersReturn {
   const [prayers, setPrayers] = useState<Prayer[]>([]);
   const [loading, setLoading] = useState(false);
@@ -52,7 +59,10 @@ export function usePrayers({
     setError(null);
 
     try {
-      const fetchedPrayers = await fetchNearbyPrayers(location.lat, location.lng, radiusKm);
+      // GLOBAL LIVING MAP: Fetch all prayers globally or nearby prayers based on mode
+      const fetchedPrayers = globalMode
+        ? await fetchAllPrayers()
+        : await fetchNearbyPrayers(location.lat, location.lng, radiusKm);
       setPrayers(fetchedPrayers);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch prayers';
@@ -61,9 +71,9 @@ export function usePrayers({
     } finally {
       setLoading(false);
     }
-  }, [location.lat, location.lng, radiusKm]);
+  }, [location.lat, location.lng, radiusKm, globalMode]);
 
-  // Fetch prayers on mount and when location changes
+  // Fetch prayers on mount and when location or mode changes
   useEffect(() => {
     if (autoFetch) {
       fetchPrayers();
@@ -79,26 +89,30 @@ export function usePrayers({
       unsubscribeRef.current();
     }
 
-    // Subscribe to updates
-    const unsubscribe = subscribeToNearbyPrayers(
-      location.lat,
-      location.lng,
-      radiusKm,
-      (updatedPrayers) => {
-        setPrayers(updatedPrayers);
-      }
-    );
+    // GLOBAL LIVING MAP: Subscribe to all prayers globally or nearby prayers based on mode
+    const unsubscribe = globalMode
+      ? subscribeToAllPrayers((updatedPrayers) => {
+          setPrayers(updatedPrayers);
+        })
+      : subscribeToNearbyPrayers(
+          location.lat,
+          location.lng,
+          radiusKm,
+          (updatedPrayers) => {
+            setPrayers(updatedPrayers);
+          }
+        );
 
     unsubscribeRef.current = unsubscribe;
 
-    // Cleanup on unmount or when location changes
+    // Cleanup on unmount or when location/mode changes
     return () => {
       if (unsubscribeRef.current) {
         unsubscribeRef.current();
         unsubscribeRef.current = null;
       }
     };
-  }, [location.lat, location.lng, radiusKm, enableRealtime]);
+  }, [location.lat, location.lng, radiusKm, enableRealtime, globalMode]);
 
   // Create a new prayer
   const createPrayer = useCallback(

@@ -9,6 +9,8 @@ import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Dialog, DialogHeader, DialogTitle, DialogContent, DialogFooter } from '../components/ui/dialog'
 import { ConfirmDialog } from '../components/ui/confirm-dialog'
+import { MediaPlayer } from '../components/ui/media-player'
+import { Mic, Video, FileText } from 'lucide-react'
 
 export function PrayersPage() {
   const [page, setPage] = useState(0)
@@ -89,6 +91,7 @@ export function PrayersPage() {
             <thead className="bg-gray-50 border-b">
               <tr>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">ID</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Type</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Title</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">User</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Location</th>
@@ -99,13 +102,13 @@ export function PrayersPage() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
                     Loading...
                   </td>
                 </tr>
               ) : data?.prayers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-500">
                     No prayers found
                   </td>
                 </tr>
@@ -118,6 +121,9 @@ export function PrayersPage() {
                   >
                     <td className="px-4 py-3 text-sm font-mono text-gray-500">
                       {prayer.id.slice(0, 8)}...
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <ContentTypeIcon contentType={prayer.content_type} />
                     </td>
                     <td className="px-4 py-3 text-sm">
                       <div className="max-w-xs truncate">
@@ -196,13 +202,35 @@ export function PrayersPage() {
                 <p className="font-mono text-sm">{viewingPrayer.id}</p>
               </div>
               <div>
+                <label className="text-sm font-medium text-gray-500">Content Type</label>
+                <p className="flex items-center gap-2">
+                  <ContentTypeIcon contentType={viewingPrayer.content_type} />
+                  <span className="capitalize">{viewingPrayer.content_type}</span>
+                </p>
+              </div>
+              <div>
                 <label className="text-sm font-medium text-gray-500">Title</label>
                 <p>{viewingPrayer.title || '(No title)'}</p>
               </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">Content</label>
-                <p className="whitespace-pre-wrap">{viewingPrayer.content}</p>
-              </div>
+              {/* Show media player for audio/video prayers */}
+              {(viewingPrayer.content_type === 'audio' || viewingPrayer.content_type === 'video') && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500 mb-2 block">
+                    {viewingPrayer.content_type === 'audio' ? 'Audio Recording' : 'Video Recording'}
+                  </label>
+                  <MediaPlayer
+                    src={viewingPrayer.media_url}
+                    contentType={viewingPrayer.content_type}
+                  />
+                </div>
+              )}
+              {/* Show text content for text prayers */}
+              {viewingPrayer.content_type === 'text' && (
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Content</label>
+                  <p className="whitespace-pre-wrap">{viewingPrayer.content}</p>
+                </div>
+              )}
               <div>
                 <label className="text-sm font-medium text-gray-500">User</label>
                 <p>
@@ -221,12 +249,6 @@ export function PrayersPage() {
                 <label className="text-sm font-medium text-gray-500">Created</label>
                 <p>{new Date(viewingPrayer.created_at).toLocaleString()}</p>
               </div>
-              {viewingPrayer.media_url && (
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Media URL</label>
-                  <p className="break-all text-sm">{viewingPrayer.media_url}</p>
-                </div>
-              )}
             </div>
           )}
         </DialogContent>
@@ -381,4 +403,30 @@ function EditPrayerDialog({ prayer, onClose, onSave, isLoading }: EditPrayerDial
       </form>
     </Dialog>
   )
+}
+
+// Helper component to display content type icon
+function ContentTypeIcon({ contentType }: { contentType: string }) {
+  const iconClasses = 'w-4 h-4'
+
+  switch (contentType) {
+    case 'audio':
+      return (
+        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-purple-100" title="Audio Prayer">
+          <Mic className={`${iconClasses} text-purple-600`} />
+        </span>
+      )
+    case 'video':
+      return (
+        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-blue-100" title="Video Prayer">
+          <Video className={`${iconClasses} text-blue-600`} />
+        </span>
+      )
+    default:
+      return (
+        <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-gray-100" title="Text Prayer">
+          <FileText className={`${iconClasses} text-gray-600`} />
+        </span>
+      )
+  }
 }

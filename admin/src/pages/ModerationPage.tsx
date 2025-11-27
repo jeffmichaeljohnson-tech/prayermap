@@ -14,8 +14,9 @@ import {
 } from '../hooks/useModeration'
 import { Button } from '../components/ui/button'
 import { Dialog, DialogHeader, DialogTitle, DialogContent, DialogFooter } from '../components/ui/dialog'
-import { ConfirmDialog } from '../components/ui/confirm-dialog'
 import { Textarea } from '../components/ui/textarea'
+import { MediaPlayer } from '../components/ui/media-player'
+import { Mic, Video, FileText } from 'lucide-react'
 
 type FilterType = 'all' | 'flagged' | 'pending'
 
@@ -257,6 +258,7 @@ export function ModerationPage() {
                     <div className="flex items-start gap-3 mb-2">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
+                          <ContentTypeIcon contentType={prayer.content_type} />
                           {prayer.title && (
                             <h3 className="font-medium text-gray-900 truncate">{prayer.title}</h3>
                           )}
@@ -269,7 +271,13 @@ export function ModerationPage() {
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-600 line-clamp-2">{prayer.content}</p>
+                        {prayer.content_type === 'text' ? (
+                          <p className="text-sm text-gray-600 line-clamp-2">{prayer.content}</p>
+                        ) : (
+                          <p className="text-sm text-gray-500 italic">
+                            {prayer.content_type === 'audio' ? 'Audio prayer - click View Details to listen' : 'Video prayer - click View Details to watch'}
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -524,13 +532,35 @@ function PrayerDetailsDialog({ prayer, onClose }: PrayerDetailsDialogProps) {
             </p>
           </div>
           <div>
-            <label className="text-sm font-medium text-gray-500">Content</label>
-            <p className="mt-1 whitespace-pre-wrap">{prayer.content}</p>
+            <label className="text-sm font-medium text-gray-500">Content Type</label>
+            <p className="mt-1 flex items-center gap-2">
+              <ContentTypeIcon contentType={prayer.content_type} />
+              <span className="capitalize">{prayer.content_type}</span>
+            </p>
           </div>
           {prayer.title && (
             <div>
               <label className="text-sm font-medium text-gray-500">Title</label>
               <p className="mt-1">{prayer.title}</p>
+            </div>
+          )}
+          {/* Show media player for audio/video prayers */}
+          {(prayer.content_type === 'audio' || prayer.content_type === 'video') && (
+            <div>
+              <label className="text-sm font-medium text-gray-500 mb-2 block">
+                {prayer.content_type === 'audio' ? 'Audio Recording' : 'Video Recording'}
+              </label>
+              <MediaPlayer
+                src={prayer.media_url}
+                contentType={prayer.content_type}
+              />
+            </div>
+          )}
+          {/* Show text content for text prayers */}
+          {prayer.content_type === 'text' && (
+            <div>
+              <label className="text-sm font-medium text-gray-500">Content</label>
+              <p className="mt-1 whitespace-pre-wrap">{prayer.content}</p>
             </div>
           )}
           <div>
@@ -728,4 +758,30 @@ function BanUserDialog({ prayer, onClose }: BanUserDialogProps) {
       </DialogFooter>
     </Dialog>
   )
+}
+
+// Helper component to display content type icon
+function ContentTypeIcon({ contentType }: { contentType: string }) {
+  const iconClasses = 'w-4 h-4'
+
+  switch (contentType) {
+    case 'audio':
+      return (
+        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-purple-100" title="Audio Prayer">
+          <Mic className={`${iconClasses} text-purple-600`} />
+        </span>
+      )
+    case 'video':
+      return (
+        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-100" title="Video Prayer">
+          <Video className={`${iconClasses} text-blue-600`} />
+        </span>
+      )
+    default:
+      return (
+        <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100" title="Text Prayer">
+          <FileText className={`${iconClasses} text-gray-600`} />
+        </span>
+      )
+  }
 }
