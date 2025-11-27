@@ -1,0 +1,648 @@
+import { supabase } from '../lib/supabase';
+import type { Prayer, PrayerResponse } from '../types/prayer';
+
+// Database table schemas
+interface PrayerRow {
+  id: string;
+  user_id: string;
+  title?: string;
+  content: string;
+  content_type: 'text' | 'audio' | 'video';
+  content_url?: string;
+  location: { lat: number; lng: number } | string; // PostGIS POINT or JSON
+  user_name?: string;
+  is_anonymous: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+interface PrayerResponseRow {
+  id: string;
+  prayer_id: string;
+  responder_id: string;
+  responder_name?: string;
+  is_anonymous: boolean;
+  message: string;
+  content_type: 'text' | 'audio' | 'video';
+  content_url?: string;
+  created_at: string;
+  read_at?: string | null;
+}
+
+interface PrayerConnectionRow {
+  id: string;
+  prayer_id: string;
+  prayer_response_id: string;
+  from_location: { lat: number; lng: number } | string;
+  to_location: { lat: number; lng: number } | string;
+  requester_name: string;
+  replier_name: string;
+  created_at: string;
+  expires_at: string;
+}
+
+// Type guards and converters
+function isPointString(location: any): location is string {
+  return typeof location === 'string' && location.startsWith('POINT(');
+}
+
+function parsePostGISPoint(point: string): { lat: number; lng: number } {
+  // POINT(lng lat) format
+  const match = point.match(/POINT\(([-\d.]+)\s+([-\d.]+)\)/);
+  if (match) {
+    return { lng: parseFloat(match[1]), lat: parseFloat(match[2]) };
+  }
+  throw new Error('Invalid PostGIS point format');
+}
+
+function convertLocation(location: { lat: number; lng: number } | string | null | undefined): { lat: number; lng: number } {
+  if (!location) {
+    console.warn('Missing location data');
+    return { lat: 0, lng: 0 };
+  }
+
+  if (isPointString(location)) {
+    return parsePostGISPoint(location);
+  }
+
+  // Handle object with lat/lng
+  if (typeof location === 'object') {
+    const lat = Number(location.lat);
+    const lng = Number(location.lng);
+
+    if (isNaN(lat) || isNaN(lng)) {
+      console.warn('Invalid location coordinates:', location);
+      return { lat: 0, lng: 0 };
+    }
+
+    return { lat, lng };
+  }
+
+  console.warn('Unknown location format:', location);
+  return { lat: 0, lng: 0 };
+}
+
+function rowToPrayer(row: PrayerRow): Prayer {
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    title: row.title,
+    content: row.content,
+    content_type: row.content_type,
+    content_url: row.content_url,
+    location: convertLocation(row.location),
+    user_name: row.user_name,
+    is_anonymous: row.is_anonymous,
+    created_at: new Date(row.created_at),
+    updated_at: row.updated_at ? new Date(row.updated_at) : undefined,
+  };
+}
+
+function rowToPrayerResponse(row: PrayerResponseRow): PrayerResponse {
+  return {
+    id: row.id,
+    prayer_id: row.prayer_id,
+    responder_id: row.responder_id,
+    responder_name: row.responder_name,
+    is_anonymous: row.is_anonymous,
+    message: row.message,
+    content_type: row.content_type,
+    content_url: row.content_url,
+    created_at: new Date(row.created_at),
+  };
+}
+
+/**
+ * Fetch prayers within a radius using PostGIS
+ * @param lat - Latitude of center point
+ * @param lng - Longitude of center point
+ * @param radiusKm - Radius in kilometers (default: 50km)
+ */
+export async function fetchNearbyPrayers(
+  lat: number,
+  lng: number,
+  radiusKm: number = 50
+): Promise<Prayer[]> {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return [];
+  }
+
+  try {
+    // Using PostGIS ST_DWithin for efficient radius search
+    // The database function expects lat, lng, and radius_km
+    const { data, error } = await supabase
+      .rpc('get_nearby_prayers', {
+        lat: lat,
+        lng: lng,
+        radius_km: radiusKm,
+      });
+
+    if (error) {
+      console.error('Error fetching nearby prayers:', error);
+      throw error;
+    }
+
+    return (data as PrayerRow[]).map(rowToPrayer);
+  } catch (error) {
+    console.error('Failed to fetch nearby prayers:', error);
+    return [];
+  }
+}
+
+/**
+ * Create a new prayer using direct table insert with PostGIS point
+ */
+export async function createPrayer(
+  prayer: Omit<Prayer, 'id' | 'created_at' | 'updated_at'>
+): Promise<Prayer | null> {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return null;
+  }
+
+  try {
+    // Use direct insert with ST_MakePoint for PostGIS compatibility
+    const { data, error } = await supabase
+      .from('prayers')
+      .insert({
+        user_id: prayer.user_id,
+        title: prayer.title || null,
+        content: prayer.content,
+        content_type: prayer.content_type,
+        content_url: prayer.content_url || null,
+        location: `POINT(${prayer.location.lng} ${prayer.location.lat})`,
+        user_name: prayer.user_name || null,
+        is_anonymous: prayer.is_anonymous,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating prayer:', error);
+      throw error;
+    }
+
+    return rowToPrayer(data as PrayerRow);
+  } catch (error) {
+    console.error('Failed to create prayer:', error);
+    return null;
+  }
+}
+
+/**
+ * Update an existing prayer
+ */
+export async function updatePrayer(
+  prayerId: string,
+  userId: string,
+  updates: Partial<Pick<Prayer, 'title' | 'content' | 'content_url'>>
+): Promise<Prayer | null> {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('prayers')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', prayerId)
+      .eq('user_id', userId) // Ensure user owns the prayer
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating prayer:', error);
+      throw error;
+    }
+
+    return rowToPrayer(data as PrayerRow);
+  } catch (error) {
+    console.error('Failed to update prayer:', error);
+    return null;
+  }
+}
+
+/**
+ * Delete a prayer (and all associated responses/connections via CASCADE)
+ */
+export async function deletePrayer(
+  prayerId: string,
+  userId: string
+): Promise<boolean> {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return false;
+  }
+
+  try {
+    const { error } = await supabase
+      .from('prayers')
+      .delete()
+      .eq('id', prayerId)
+      .eq('user_id', userId); // Ensure user owns the prayer
+
+    if (error) {
+      console.error('Error deleting prayer:', error);
+      throw error;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Failed to delete prayer:', error);
+    return false;
+  }
+}
+
+/**
+ * Delete a prayer response
+ */
+export async function deletePrayerResponse(
+  responseId: string,
+  responderId: string
+): Promise<boolean> {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return false;
+  }
+
+  try {
+    const { error } = await supabase
+      .from('prayer_responses')
+      .delete()
+      .eq('id', responseId)
+      .eq('responder_id', responderId); // Ensure user owns the response
+
+    if (error) {
+      console.error('Error deleting prayer response:', error);
+      throw error;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Failed to delete prayer response:', error);
+    return false;
+  }
+}
+
+/**
+ * Respond to a prayer and create a connection
+ */
+export async function respondToPrayer(
+  prayerId: string,
+  responderId: string,
+  responderName: string,
+  message: string,
+  contentType: 'text' | 'audio' | 'video',
+  contentUrl?: string,
+  isAnonymous: boolean = false,
+  responderLocation?: { lat: number; lng: number }
+): Promise<{ response: PrayerResponse; connection: any } | null> {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return null;
+  }
+
+  try {
+    // Create prayer response
+    const { data: responseData, error: responseError } = await supabase
+      .from('prayer_responses')
+      .insert({
+        prayer_id: prayerId,
+        responder_id: responderId,
+        responder_name: isAnonymous ? null : responderName,
+        is_anonymous: isAnonymous,
+        message,
+        content_type: contentType,
+        content_url: contentUrl,
+      })
+      .select()
+      .single();
+
+    if (responseError) {
+      console.error('Error creating prayer response:', responseError);
+      throw responseError;
+    }
+
+    const response = rowToPrayerResponse(responseData as PrayerResponseRow);
+
+    // Create prayer connection with RPC function if we have the responder's location
+    let connectionData = null;
+    if (responderLocation) {
+      const { data, error: connectionError } = await supabase
+        .rpc('create_prayer_connection', {
+          p_prayer_id: prayerId,
+          p_prayer_response_id: response.id,
+          p_responder_lat: responderLocation.lat,
+          p_responder_lng: responderLocation.lng,
+        });
+
+      if (connectionError) {
+        console.error('Error creating prayer connection:', connectionError);
+        // Don't throw - the response was created successfully
+      } else {
+        connectionData = data;
+      }
+    }
+
+    return { response, connection: connectionData };
+  } catch (error) {
+    console.error('Failed to respond to prayer:', error);
+    return null;
+  }
+}
+
+/**
+ * Fetch all responses for a prayer
+ */
+export async function fetchPrayerResponses(prayerId: string): Promise<PrayerResponse[]> {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return [];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('prayer_responses')
+      .select('*')
+      .eq('prayer_id', prayerId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching prayer responses:', error);
+      throw error;
+    }
+
+    return (data as PrayerResponseRow[]).map(rowToPrayerResponse);
+  } catch (error) {
+    console.error('Failed to fetch prayer responses:', error);
+    return [];
+  }
+}
+
+/**
+ * Fetch inbox - prayers where the user has received responses
+ */
+export async function fetchUserInbox(userId: string): Promise<
+  Array<{
+    prayer: Prayer;
+    responses: PrayerResponse[];
+    unreadCount: number;
+  }>
+> {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return [];
+  }
+
+  try {
+    // Get all prayers created by the user that have responses
+    const { data: prayers, error: prayersError } = await supabase
+      .from('prayers')
+      .select(`
+        *,
+        prayer_responses (*)
+      `)
+      .eq('user_id', userId)
+      .not('prayer_responses', 'is', null);
+
+    if (prayersError) {
+      console.error('Error fetching inbox:', prayersError);
+      throw prayersError;
+    }
+
+    // Transform the data
+    return (prayers as any[]).map((row) => {
+      const prayer = rowToPrayer(row as PrayerRow);
+      const responses = (row.prayer_responses as PrayerResponseRow[]).map(rowToPrayerResponse);
+
+      // Calculate unread count based on read_at being NULL
+      const unreadCount = responses.filter((r: any) => !r.read_at).length;
+
+      return {
+        prayer,
+        responses,
+        unreadCount,
+      };
+    });
+  } catch (error) {
+    console.error('Failed to fetch user inbox:', error);
+    return [];
+  }
+}
+
+/**
+ * Subscribe to nearby prayers in real-time
+ */
+export function subscribeToNearbyPrayers(
+  lat: number,
+  lng: number,
+  radiusKm: number,
+  callback: (prayers: Prayer[]) => void
+) {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return () => {};
+  }
+
+  // Subscribe to all prayer inserts/updates
+  const subscription = supabase
+    .channel('prayers_channel')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'prayers',
+      },
+      async () => {
+        // Fetch updated nearby prayers
+        const prayers = await fetchNearbyPrayers(lat, lng, radiusKm);
+        callback(prayers);
+      }
+    )
+    .subscribe();
+
+  // Return unsubscribe function
+  return () => {
+    subscription.unsubscribe();
+  };
+}
+
+/**
+ * Subscribe to prayer responses for a specific prayer
+ */
+export function subscribeToPrayerResponses(
+  prayerId: string,
+  callback: (responses: PrayerResponse[]) => void
+) {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return () => {};
+  }
+
+  const subscription = supabase
+    .channel(`prayer_responses_${prayerId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'prayer_responses',
+        filter: `prayer_id=eq.${prayerId}`,
+      },
+      async () => {
+        const responses = await fetchPrayerResponses(prayerId);
+        callback(responses);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    subscription.unsubscribe();
+  };
+}
+
+/**
+ * Subscribe to user's inbox updates
+ */
+export function subscribeToUserInbox(userId: string, callback: (inbox: any[]) => void) {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return () => {};
+  }
+
+  const subscription = supabase
+    .channel(`user_inbox_${userId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'prayer_responses',
+      },
+      async () => {
+        const inbox = await fetchUserInbox(userId);
+        callback(inbox);
+      }
+    )
+    .subscribe();
+
+  return () => {
+    subscription.unsubscribe();
+  };
+}
+
+/**
+ * Mark a single prayer response as read
+ */
+export async function markResponseAsRead(responseId: string): Promise<boolean> {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return false;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .rpc('mark_response_as_read', {
+        response_id: responseId,
+      });
+
+    if (error) {
+      console.error('Error marking response as read:', error);
+      throw error;
+    }
+
+    return data === true;
+  } catch (error) {
+    console.error('Failed to mark response as read:', error);
+    return false;
+  }
+}
+
+/**
+ * Mark all responses for a prayer as read
+ */
+export async function markAllResponsesRead(prayerId: string): Promise<number> {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return 0;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .rpc('mark_all_responses_read', {
+        prayer_id_param: prayerId,
+      });
+
+    if (error) {
+      console.error('Error marking all responses as read:', error);
+      throw error;
+    }
+
+    return data || 0;
+  } catch (error) {
+    console.error('Failed to mark all responses as read:', error);
+    return 0;
+  }
+}
+
+/**
+ * Get total unread response count for the current user
+ */
+export async function getUnreadCount(userId: string): Promise<number> {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return 0;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .rpc('get_unread_count', {
+        user_id_param: userId,
+      });
+
+    if (error) {
+      console.error('Error getting unread count:', error);
+      throw error;
+    }
+
+    return data || 0;
+  } catch (error) {
+    console.error('Failed to get unread count:', error);
+    return 0;
+  }
+}
+
+/**
+ * Get unread counts per prayer for the current user
+ */
+export async function getUnreadCountsByPrayer(userId: string): Promise<
+  Array<{ prayer_id: string; unread_count: number }>
+> {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return [];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .rpc('get_unread_counts_by_prayer', {
+        user_id_param: userId,
+      });
+
+    if (error) {
+      console.error('Error getting unread counts by prayer:', error);
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Failed to get unread counts by prayer:', error);
+    return [];
+  }
+}
