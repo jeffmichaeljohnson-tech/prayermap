@@ -98,6 +98,7 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
   });
 
   const [connections, setConnections] = useState<PrayerConnection[]>([]);
+  const [mapLoaded, setMapLoaded] = useState(false);
   const [selectedPrayer, setSelectedPrayer] = useState<Prayer | null>(null);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [showInbox, setShowInbox] = useState(false);
@@ -116,6 +117,9 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
 
   // Group prayers by location to handle overlapping markers
   const prayerGroups = useMemo(() => groupPrayersByLocation(prayers), [prayers]);
+
+  // Debug: log connections state
+  console.log('PrayerMap render - connections:', connections.length, 'mapLoaded:', mapLoaded);
 
   // Initialize map with ethereal style
   useEffect(() => {
@@ -139,7 +143,10 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
     map.current.on('load', () => {
       console.log('Map loaded successfully');
       if (!map.current) return;
-      
+
+      // Mark map as loaded for connection rendering
+      setMapLoaded(true);
+
       // Customize map colors for ethereal theme
       try {
         if (map.current.getLayer('water')) {
@@ -171,8 +178,15 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
   const handleAnimationComplete = useCallback(() => {
     // Add the pending connection if API call succeeded
     if (pendingConnectionRef.current) {
-      setConnections(prev => [...prev, pendingConnectionRef.current!]);
+      console.log('Adding connection after animation:', pendingConnectionRef.current);
+      const newConnection = pendingConnectionRef.current;
+      setConnections(prev => {
+        console.log('Previous connections:', prev.length, 'Adding new:', newConnection.id);
+        return [...prev, newConnection];
+      });
       pendingConnectionRef.current = null;
+    } else {
+      console.log('No pending connection to add');
     }
     // Clear animation state - do NOT reopen the modal
     setAnimatingPrayer(null);
@@ -192,6 +206,7 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
     setAnimatingPrayer({ prayer, userLocation });
 
     // Submit the prayer response to Supabase
+    console.log('Submitting prayer response for:', prayer.id, 'with location:', userLocation);
     const success = await respondToPrayer(
       prayer.id,
       user.id,
@@ -202,9 +217,11 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
       false,
       userLocation // Pass user's location to create prayer connection line
     );
+    console.log('Prayer response result:', success);
 
     // If successful, prepare the connection data for when animation completes
     if (success) {
+      console.log('API succeeded, preparing connection data');
       const createdDate = new Date();
       const expiresDate = new Date(createdDate);
       expiresDate.setFullYear(expiresDate.getFullYear() + 1);
@@ -297,8 +314,8 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
           </linearGradient>
         </defs>
         
-        {map.current && connections.map(conn => {
-          console.log('Rendering connection in map:', conn.id);
+        {mapLoaded && map.current && connections.map(conn => {
+          console.log('Rendering connection in map:', conn.id, 'mapLoaded:', mapLoaded);
           return (
             <PrayerConnectionComponent
               key={conn.id}
