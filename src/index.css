@@ -1,49 +1,109 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-/* Base styles for full-screen app */
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
+/* Custom CSS variables for theming */
+@theme {
+  /* Heavenly Palette - Dawn blues, soft golds, gentle purples */
+  --color-ethereal-sky: hsl(210 100% 95%);
+  --color-ethereal-dawn: hsl(200 80% 85%);
+  --color-ethereal-gold: hsl(45 100% 85%);
+  --color-ethereal-purple: hsl(270 60% 90%);
+
+  /* Glass colors */
+  --color-glass-bg: hsl(210 100% 98%);
+  --color-glass-border: hsl(210 50% 90%);
 }
 
-#root {
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
+/* Base styles */
+* {
+  border-color: hsl(214.3 31.8% 91.4%);
 }
 
-/* Glassmorphic effect utility */
-.glass-card {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
+body {
+  /* Ethereal gradient background */
+  background: linear-gradient(
+    135deg,
+    hsl(210 100% 95%) 0%,
+    hsl(200 80% 85%) 50%,
+    hsl(270 60% 90%) 100%
+  );
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: hsl(222.2 84% 4.9%);
+  min-height: 100vh;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+}
+
+/* Glassmorphic utility classes */
+.glass {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
-  border-radius: 16px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
 }
 
-.glass-overlay {
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
+.glass-strong {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
 }
 
-/* Modal animation */
-@keyframes scale-in {
-  from {
+.glass-subtle {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.1);
+}
+
+/* Animation utilities */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes spotlight {
+  0% {
+    transform: translateY(0) scaleY(0);
     opacity: 0;
-    transform: scale(0.95) translateY(-10px);
   }
-  to {
+  50% {
     opacity: 1;
-    transform: scale(1) translateY(0);
+  }
+  100% {
+    transform: translateY(-200px) scaleY(1);
+    opacity: 0;
   }
 }
 
-.animate-scale-in {
-  animation: scale-in 0.3s ease-out;
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-spotlight {
+  animation: spotlight 2s ease-out forwards;
+}
+
+/* Mapbox overrides */
+.mapboxgl-map {
+  font-family: inherit;
+}
+
+.mapboxgl-ctrl-logo,
+.mapboxgl-ctrl-attrib {
+  display: none !important;
 }
