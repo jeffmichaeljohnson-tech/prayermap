@@ -75,8 +75,6 @@ describe('Switch', () => {
 
     render(<Switch onCheckedChange={handleChange} />);
 
-    const switchElement = screen.getByRole('switch');
-
     // Tab to focus the switch
     await user.tab();
 

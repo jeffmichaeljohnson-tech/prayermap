@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { VideoRecorder } from '../VideoRecorder';
 import * as useVideoRecorderModule from '../../hooks/useVideoRecorder';
@@ -10,7 +10,6 @@ vi.mock('../../hooks/useVideoRecorder');
 describe('VideoRecorder', () => {
   const mockOnRecordingComplete = vi.fn();
   const mockOnCancel = vi.fn();
-  const defaultMaxDuration = 90;
 
   let mockUseVideoRecorder: ReturnType<typeof useVideoRecorderModule.useVideoRecorder>;
 

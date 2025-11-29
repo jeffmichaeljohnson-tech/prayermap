@@ -85,7 +85,7 @@ describe('AudioPlayer', () => {
       try {
         const { unmount } = render(<AudioPlayer src={mockSrc} />);
         unmount();
-      } catch (error) {
+      } catch {
         // Ignore framer-motion initialization errors on first render
       }
     });

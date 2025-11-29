@@ -1,4 +1,4 @@
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { useAudioRecorder, formatDuration } from '../useAudioRecorder';
 
@@ -240,7 +240,8 @@ describe('useAudioRecorder', () => {
         await Promise.resolve(); // Let MediaRecorder callbacks complete
       });
 
-      const stream = await getUserMediaSpy.mock.results[0].value;
+      // Wait for stream to be created
+      await getUserMediaSpy.mock.results[0].value;
 
       await act(async () => {
         result.current.stopRecording();

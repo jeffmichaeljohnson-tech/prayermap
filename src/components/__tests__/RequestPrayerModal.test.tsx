@@ -9,7 +9,7 @@ import * as storageService from '../../services/storageService';
 vi.mock('../../hooks/useAuth');
 vi.mock('../../services/storageService');
 vi.mock('../AudioRecorder', () => ({
-  AudioRecorder: ({ onRecordingComplete }: any) => (
+  AudioRecorder: ({ onRecordingComplete }: { onRecordingComplete: (blob: Blob, duration: number) => void }) => (
     <div data-testid="audio-recorder">
       <button onClick={() => onRecordingComplete(new Blob(['audio'], { type: 'audio/webm' }), 45)}>
         Complete Audio Recording
@@ -18,7 +18,7 @@ vi.mock('../AudioRecorder', () => ({
   ),
 }));
 vi.mock('../VideoRecorder', () => ({
-  VideoRecorder: ({ onRecordingComplete }: any) => (
+  VideoRecorder: ({ onRecordingComplete }: { onRecordingComplete: (blob: Blob, duration: number) => void }) => (
     <div data-testid="video-recorder">
       <button onClick={() => onRecordingComplete(new Blob(['video'], { type: 'video/webm' }), 30)}>
         Complete Video Recording
@@ -55,7 +55,7 @@ describe('RequestPrayerModal', () => {
       signUp: vi.fn(),
       signOut: vi.fn(),
       isLoading: false,
-    } as any);
+    } as ReturnType<typeof useAuthModule.useAuth>);
 
     vi.mocked(storageService.uploadAudio).mockResolvedValue('https://example.com/audio.mp3');
     vi.mocked(storageService.uploadVideo).mockResolvedValue('https://example.com/video.mp4');

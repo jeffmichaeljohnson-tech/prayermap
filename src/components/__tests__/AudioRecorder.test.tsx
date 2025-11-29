@@ -7,13 +7,13 @@ import * as useAudioRecorderModule from '../../hooks/useAudioRecorder';
 // Mock framer-motion to avoid animation issues in tests
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, className, ...props }: any) => (
+    div: ({ children, className, ...props }: { children: React.ReactNode; className?: string; [key: string]: unknown }) => (
       <div className={className} {...props}>
         {children}
       </div>
     ),
   },
-  AnimatePresence: ({ children }: any) => <>{children}</>,
+  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 // Mock the useAudioRecorder hook
