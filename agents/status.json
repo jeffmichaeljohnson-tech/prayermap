@@ -1,0 +1,30 @@
+{
+  "agents": [
+    {
+      "agent_id": "3fe658a3",
+      "agent_name": "api-flow-tracer",
+      "status": "deployed",
+      "updated_at": "2025-11-29T20:29:22.3NZ"
+    },
+    {
+      "agent_id": "\u001b[0;32m[2025-11-29 15:29:22]\u001b[0m \u001b[0;34mDeploying Agent: api-flow-tracer\u001b[0m\n\u001b[0;32m[2025-11-29 15:29:22]\u001b[0m \u001b[0;32mAgent api-flow-tracer deployed with ID: 3fe658a3\u001b[0m\n3fe658a3",
+      "agent_name": "api-flow-tracer",
+      "status": "executing",
+      "updated_at": "2025-11-29T20:29:22.3NZ"
+    },
+    {
+      "agent_id": "\u001b[0;32m[2025-11-29 15:29:22]\u001b[0m \u001b[0;34mDeploying Agent: database-detective\u001b[0m\n\u001b[0;32m[2025-11-29 15:29:22]\u001b[0m \u001b[0;32mAgent database-detective deployed with ID: 81d29f1b\u001b[0m\n81d29f1b",
+      "agent_name": "database-detective",
+      "status": "completed",
+      "updated_at": "2025-11-29T20:29:22.3NZ"
+    },
+    {
+      "agent_id": "\u001b[0;32m[2025-11-29 15:29:22]\u001b[0m \u001b[0;34mDeploying Agent: e2e-testing-agent\u001b[0m\n\u001b[0;32m[2025-11-29 15:29:22]\u001b[0m \u001b[0;32mAgent e2e-testing-agent deployed with ID: b40ec7d3\u001b[0m\nb40ec7d3",
+      "agent_name": "e2e-testing-agent",
+      "status": "completed",
+      "updated_at": "2025-11-29T20:29:22.3NZ"
+    }
+  ],
+  "status": "initializing",
+  "started_at": "2025-11-29T20:29:22.3NZ"
+}

@@ -1,0 +1,1 @@
+Create comprehensive end-to-end test scenarios. Design reproducible test cases, automated validation, and failure point identification.

@@ -1,11 +1,12 @@
 import { motion } from 'framer-motion';
-import { X, Heart, Loader2 } from 'lucide-react';
+import { X, Heart, Loader2, MessageCircle } from 'lucide-react';
 import { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { ConversationThread } from './ConversationThread';
 import { useInbox } from '../hooks/useInbox';
 import type { InboxItem } from '../hooks/useInbox';
 import { useAuth } from '../hooks/useAuth';
+import { formatRelativeTime, formatInboxMessage, isRecentMessage } from '../lib/utils';
 
 interface InboxModalProps {
   onClose: () => void;
@@ -31,34 +32,55 @@ export function InboxModal({ onClose }: InboxModalProps) {
     enableRealtime: true,
   });
   const [selectedConversation, setSelectedConversation] = useState<SelectedConversation | null>(null);
+  const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set());
 
   // Transform inbox items to display format
   const getDisplayItems = () => {
     return inbox.flatMap((item: InboxItem) =>
-      item.responses.map((response) => ({
-        id: response.id,
-        prayerId: item.prayer.id,
-        senderName: response.is_anonymous ? 'Anonymous' : (response.responder_name || 'Someone'),
-        message: response.message,
-        date: response.created_at,
-        prayerTitle: item.prayer.title || item.prayer.content.substring(0, 30) + '...',
-        originalPrayerContent: item.prayer.content,
-        contentType: response.content_type,
-        unread: item.unreadCount > 0, // Simplified - could track per-response
-      }))
+      item.responses.map((response) => {
+        const prayerTitle = item.prayer.title || item.prayer.content.substring(0, 50);
+        const formattedMessage = formatInboxMessage(
+          response.responder_name,
+          response.is_anonymous,
+          prayerTitle,
+          response.message
+        );
+        
+        return {
+          id: response.id,
+          prayerId: item.prayer.id,
+          senderName: formattedMessage.senderDisplay,
+          message: response.message,
+          messagePreview: formattedMessage.messagePreview,
+          fullMessage: formattedMessage.fullMessage,
+          isTruncated: formattedMessage.isTruncated,
+          date: response.created_at,
+          prayerTitle: prayerTitle,
+          prayerContext: formattedMessage.prayerContext,
+          originalPrayerContent: item.prayer.content,
+          contentType: response.content_type,
+          unread: !response.read_at, // Check if response has been read
+          isRecent: isRecentMessage(response.created_at),
+          isAnonymous: response.is_anonymous,
+        };
+      })
     ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
   const displayItems = getDisplayItems();
 
-  const getTimeAgo = (date: Date) => {
-    const timestamp = date instanceof Date ? date.getTime() : new Date(date).getTime();
-    // eslint-disable-next-line react-hooks/purity
-    const hours = Math.floor((Date.now() - timestamp) / (1000 * 60 * 60));
-    if (hours < 1) return 'Just now';
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
+  // Handle message expansion
+  const toggleMessageExpansion = (messageId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent conversation selection
+    setExpandedMessages(prev => {
+      const next = new Set(prev);
+      if (next.has(messageId)) {
+        next.delete(messageId);
+      } else {
+        next.add(messageId);
+      }
+      return next;
+    });
   };
 
   const handleSelectConversation = (item: typeof displayItems[0]) => {
@@ -176,41 +198,86 @@ export function InboxModal({ onClose }: InboxModalProps) {
                   key={item.id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className={`bg-white/50 backdrop-blur-sm rounded-2xl p-4 hover:bg-white/70 transition-all cursor-pointer active:scale-[0.98] relative shadow-sm ${
-                    item.unread ? 'ring-1 ring-blue-300/40' : ''
+                  className={`bg-white/50 backdrop-blur-sm rounded-2xl p-4 hover:bg-white/70 transition-all cursor-pointer active:scale-[0.98] relative shadow-sm border ${
+                    item.unread 
+                      ? 'ring-2 ring-blue-400/30 border-blue-200/50 bg-blue-50/30' 
+                      : 'border-white/30'
                   }`}
                   onClick={() => handleSelectConversation(item)}
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  {/* Unread indicator */}
-                  {item.unread && (
-                    <div className="absolute top-4 right-4">
+                  {/* Unread indicator and timestamp */}
+                  <div className="absolute top-4 right-4 flex items-center gap-2">
+                    {item.isRecent && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-full font-medium"
+                      >
+                        New
+                      </motion.div>
+                    )}
+                    {item.unread && (
                       <motion.div
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         className="w-3 h-3 bg-blue-500 rounded-full shadow-lg shadow-blue-500/50"
                       />
-                    </div>
-                  )}
+                    )}
+                  </div>
 
-                  <div className="flex items-start justify-between mb-2 mt-0 mr-[50px] ml-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl">🙏</span>
-                      <div>
-                        <p className={`text-gray-800 ${item.unread ? 'font-semibold' : ''}`}>
-                          {item.senderName}
-                        </p>
-                        <p className="text-xs text-gray-500">{getTimeAgo(item.date)}</p>
+                  {/* Main content */}
+                  <div className="pr-16">
+                    {/* Header with sender and type indicator */}
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="flex items-center gap-2">
+                        <MessageCircle className="w-4 h-4 text-purple-500" />
+                        <div className="flex items-center gap-1">
+                          <p className={`text-gray-800 text-sm ${item.unread ? 'font-semibold' : 'font-medium'}`}>
+                            {item.senderName}
+                          </p>
+                          {item.isAnonymous && (
+                            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                              anonymous
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Prayer context */}
+                    <p className="text-xs text-purple-600/80 mb-2 font-medium">
+                      {item.prayerContext}
+                    </p>
+
+                    {/* Message preview */}
+                    <div className={`text-sm text-gray-700 leading-relaxed mb-2 ${
+                      item.unread ? 'font-medium' : ''
+                    }`}>
+                      <p>
+                        "{expandedMessages.has(item.id) ? item.fullMessage : item.messagePreview}"
+                      </p>
+                      {item.isTruncated && (
+                        <button
+                          onClick={(e) => toggleMessageExpansion(item.id, e)}
+                          className="text-xs text-purple-600 hover:text-purple-700 mt-1 font-medium transition-colors"
+                        >
+                          {expandedMessages.has(item.id) ? 'Show less' : 'Show more'}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Timestamp and actions */}
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-gray-500">
+                        {formatRelativeTime(item.date)}
+                      </p>
+                      <div className="flex items-center gap-1 text-xs text-purple-600">
+                        <span>Tap to reply</span>
                       </div>
                     </div>
                   </div>
-                  <p className="text-xs text-purple-600 mb-1">Re: {item.prayerTitle}</p>
-                  <p className={`text-sm text-gray-700 leading-relaxed ${
-                    item.unread ? 'font-medium' : ''
-                  }`}>
-                    {item.message}
-                  </p>
                 </motion.div>
               ))}
             </motion.div>

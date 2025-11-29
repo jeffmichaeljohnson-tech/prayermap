@@ -8,6 +8,7 @@ import {
   subscribeToNearbyPrayers,
   subscribeToAllPrayers,
 } from '../services/prayerService';
+import { realtimeMonitor } from '../services/realtimeMonitor';
 
 interface UsePrayersOptions {
   location: { lat: number; lng: number };
@@ -32,7 +33,7 @@ interface UsePrayersReturn {
     contentUrl?: string,
     isAnonymous?: boolean,
     responderLocation?: { lat: number; lng: number }
-  ) => Promise<boolean>;
+  ) => Promise<{ response: any; connection: any } | null>;
 }
 
 /**
@@ -80,7 +81,7 @@ export function usePrayers({
     }
   }, [autoFetch, fetchPrayers]);
 
-  // Set up real-time subscription
+  // Set up real-time subscription with enhanced monitoring
   useEffect(() => {
     if (!enableRealtime) return;
 
@@ -89,19 +90,34 @@ export function usePrayers({
       unsubscribeRef.current();
     }
 
-    // GLOBAL LIVING MAP: Subscribe to all prayers globally or nearby prayers based on mode
-    const unsubscribe = globalMode
-      ? subscribeToAllPrayers((updatedPrayers) => {
+    let unsubscribe: (() => void) | null = null;
+
+    if (globalMode) {
+      // GLOBAL LIVING MAP: Use enhanced real-time monitor for better reliability
+      console.log('🔄 Setting up enhanced global prayer monitoring...');
+      
+      // Ensure monitor is running
+      if (!realtimeMonitor.getStatus().isActive) {
+        realtimeMonitor.start();
+      }
+
+      // Subscribe to enhanced monitoring
+      unsubscribe = realtimeMonitor.subscribeToPrayers((updatedPrayers) => {
+        console.log('📥 Enhanced real-time update received:', updatedPrayers.length, 'prayers');
+        setPrayers(updatedPrayers);
+      });
+    } else {
+      // Fallback to original subscription for nearby prayers
+      unsubscribe = subscribeToNearbyPrayers(
+        location.lat,
+        location.lng,
+        radiusKm,
+        (updatedPrayers) => {
+          console.log('📥 Nearby prayers update received:', updatedPrayers.length, 'prayers');
           setPrayers(updatedPrayers);
-        })
-      : subscribeToNearbyPrayers(
-          location.lat,
-          location.lng,
-          radiusKm,
-          (updatedPrayers) => {
-            setPrayers(updatedPrayers);
-          }
-        );
+        }
+      );
+    }
 
     unsubscribeRef.current = unsubscribe;
 
@@ -149,7 +165,7 @@ export function usePrayers({
       contentUrl?: string,
       isAnonymous: boolean = false,
       responderLocation?: { lat: number; lng: number }
-    ): Promise<boolean> => {
+    ): Promise<{ response: any; connection: any } | null> => {
       setError(null);
 
       try {
@@ -173,15 +189,15 @@ export function usePrayers({
                 : p
             )
           );
-          return true;
+          return result;
         }
 
-        return false;
+        return null;
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to respond to prayer';
         setError(errorMessage);
         console.error('Error responding to prayer:', err);
-        return false;
+        return null;
       }
     },
     []

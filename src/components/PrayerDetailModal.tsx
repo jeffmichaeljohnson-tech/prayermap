@@ -21,7 +21,7 @@ interface PrayerDetailModalProps {
   prayer: Prayer;
   userLocation: { lat: number; lng: number };
   onClose: () => void;
-  onPray: (prayer: Prayer, replyData?: PrayerReplyData) => void;
+  onPray: (prayer: Prayer, replyData?: PrayerReplyData) => Promise<boolean>;
   onOpenVideoFeed?: (prayer: Prayer) => void;
 }
 
@@ -64,11 +64,11 @@ export function PrayerDetailModal({ prayer, userLocation, onClose, onPray, onOpe
     setShowReplyForm(true);
   };
 
-  const handlePray = () => {
+  const handlePray = async () => {
     setIsPraying(true);
     setShowSpotlight(true);
 
-    setTimeout(() => {
+    try {
       // Pass reply data along with the prayer
       const replyData: PrayerReplyData = {
         message: replyContent || 'Praying for you!',
@@ -77,24 +77,59 @@ export function PrayerDetailModal({ prayer, userLocation, onClose, onPray, onOpe
         videoBlob: replyVideoBlob || undefined,
         isAnonymous,
       };
-      onPray(prayer, replyData);
-    }, 2500);
+      
+      // Wait for animation to complete before submitting
+      setTimeout(async () => {
+        const success = await onPray(prayer, replyData);
+        if (success) {
+          // Close modal on success after a brief delay
+          setTimeout(() => {
+            onClose();
+          }, 1500);
+        } else {
+          // Reset state on failure so user can try again
+          setIsPraying(false);
+          setShowSpotlight(false);
+        }
+      }, 2500);
+    } catch (error) {
+      console.error('Prayer submission failed:', error);
+      setIsPraying(false);
+      setShowSpotlight(false);
+    }
   };
 
-  const handleQuickPray = useCallback(() => {
+  const handleQuickPray = useCallback(async () => {
     // Quick one-touch prayer response (no custom message)
     setIsPraying(true);
     setShowSpotlight(true);
 
-    setTimeout(() => {
+    try {
       // Quick pray uses default message, not anonymous
-      onPray(prayer, {
-        message: 'Praying for you!',
-        contentType: 'text',
-        isAnonymous: false,
-      });
-    }, 2500);
-  }, [prayer, onPray]);
+      setTimeout(async () => {
+        const success = await onPray(prayer, {
+          message: 'Praying for you!',
+          contentType: 'text',
+          isAnonymous: false,
+        });
+        
+        if (success) {
+          // Close modal on success after a brief delay
+          setTimeout(() => {
+            onClose();
+          }, 1500);
+        } else {
+          // Reset state on failure so user can try again
+          setIsPraying(false);
+          setShowSpotlight(false);
+        }
+      }, 2500);
+    } catch (error) {
+      console.error('Quick prayer submission failed:', error);
+      setIsPraying(false);
+      setShowSpotlight(false);
+    }
+  }, [prayer, onPray, onClose]);
 
   const handleAudioEnded = useCallback(() => {
     setAudioFinished(true);

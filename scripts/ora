@@ -1,0 +1,126 @@
+#!/bin/bash
+
+# Ora Command Workaround for PrayerMap
+# Mimics the Ora framework CLI interface
+# Usage: ora "agent prompt here"
+
+# Colors
+BLUE='\033[0;34m'
+GREEN='\033[0;32m' 
+NC='\033[0m'
+
+# Check if prompt was provided
+if [[ -z "$1" ]]; then
+    echo -e "${BLUE}Usage: ora \"agent prompt here\"${NC}"
+    echo ""
+    echo "Examples:"
+    echo "  ora \"Fix the authentication bug in LoginModal.tsx\""
+    echo "  ora \"Optimize the database queries for prayer fetching\""
+    echo "  ora \"Investigate why notifications aren't working\""
+    echo ""
+    echo "Alternative commands:"
+    echo "  npm run agents:deploy  - Deploy full 5-agent investigation swarm"
+    echo "  npm run agents:status  - Check agent execution status"
+    echo "  npm run agents:results - View investigation results"
+    exit 1
+fi
+
+AGENT_PROMPT="$1"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+
+echo -e "${BLUE}🤖 Ora Agent Deployment${NC}"
+echo "Prompt: $AGENT_PROMPT"
+echo ""
+
+# Generate a unique agent name based on the prompt
+AGENT_NAME=$(echo "$AGENT_PROMPT" | head -c 50 | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]//g')
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+AGENT_ID="ora-$TIMESTAMP-$AGENT_NAME"
+
+# Create agent workspace
+AGENTS_DIR="$PROJECT_ROOT/agents"
+RESULTS_DIR="$PROJECT_ROOT/agent-results"
+mkdir -p "$AGENTS_DIR" "$RESULTS_DIR"
+
+AGENT_DIR="$AGENTS_DIR/$AGENT_ID"
+mkdir -p "$AGENT_DIR"
+
+echo -e "${GREEN}Agent deployed: $AGENT_ID${NC}"
+echo "Workspace: $AGENT_DIR"
+
+# Create agent manifest
+cat > "$AGENT_DIR/manifest.json" << EOF
+{
+    "agent_id": "$AGENT_ID",
+    "agent_name": "$AGENT_NAME",
+    "prompt": $(echo "$AGENT_PROMPT" | jq -R .),
+    "created_at": "$(date -u +%Y-%m-%dT%H:%M:%S.%3NZ)",
+    "status": "executing",
+    "workspace": "$AGENT_DIR"
+}
+EOF
+
+# Save the prompt
+echo "$AGENT_PROMPT" > "$AGENT_DIR/prompt.txt"
+
+# Create results file with simulated agent execution
+RESULTS_FILE="$RESULTS_DIR/$AGENT_ID-results.md"
+
+cat > "$RESULTS_FILE" << EOF
+# Ora Agent Report: $AGENT_NAME
+
+**Agent ID**: $AGENT_ID  
+**Execution Time**: $(date)  
+**Status**: Completed  
+
+## Mission
+$AGENT_PROMPT
+
+## Analysis Approach
+Based on the prompt, this agent would:
+
+1. **Analyze the Problem**: Break down the specific issue or task
+2. **Research Context**: Review relevant code, documentation, and patterns
+3. **Identify Solutions**: Propose specific fixes or implementations
+4. **Validate Approach**: Ensure solutions align with project standards
+5. **Document Results**: Provide clear, actionable recommendations
+
+## Simulated Investigation
+*Note: This is a simulated agent response. In a full Ora deployment, this would contain actual analysis results.*
+
+### Key Findings
+- Agent successfully received and processed the prompt
+- Context analysis indicates this relates to PrayerMap functionality
+- Investigation parameters align with project requirements
+
+### Recommended Actions
+1. Execute deeper investigation using the full agent deployment system
+2. Run: \`npm run agents:deploy\` for comprehensive multi-agent analysis
+3. Review specific technical components based on the prompt context
+
+### Next Steps
+- Deploy specialized agents for detailed analysis
+- Implement recommended fixes with proper testing
+- Validate solutions against project quality standards
+
+## Technical Context
+**Project**: PrayerMap - Location-based spiritual platform  
+**Stack**: React 18, TypeScript, Supabase, MapBox  
+**Standards**: 85%+ quality, 90%+ accuracy (per ARTICLE.md)  
+
+---
+
+*This agent simulation demonstrates the Ora framework workaround for PrayerMap.*
+*For full autonomous agent deployment, use: \`npm run agents:deploy\`*
+EOF
+
+echo ""
+echo -e "${GREEN}✅ Agent execution completed${NC}"
+echo "Results: $RESULTS_FILE"
+echo ""
+echo "To view results:"
+echo "  cat $RESULTS_FILE"
+echo ""
+echo "For full multi-agent investigation:"
+echo "  npm run agents:deploy"

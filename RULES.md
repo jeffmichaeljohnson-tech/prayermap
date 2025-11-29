@@ -84,32 +84,57 @@ PrayerMap is a React 18 + TypeScript PWA with:
 
 ## Agent Best Practices (MUST-FOLLOW RULES)
 
-### 1. **Simplicity > Abstraction**
+### 1. **🔍 MANDATORY OBSERVABILITY INTEGRATION (TOP PRIORITY)**
+**CRITICAL**: All AI agents MUST use the integrated world-class observability system with 100% automated log monitoring. This is non-negotiable and follows 2024 enterprise and regulatory standards.
+
+**BEFORE starting ANY task, ALL agents MUST:**
+- Initialize observability context: `const observability = useObservability(agentRole)`
+- Query past patterns: `await queryPatterns('task_type', description)`
+- Set up error tracking with full context capture
+
+**DURING task execution:**
+- Track ALL operations >100ms: `logPerformance('operation', duration)`
+- Monitor system boundaries and resource usage
+- Capture structured telemetry for every decision point
+
+**ON ANY failure:**
+- MANDATORY full context logging with system state
+- Attempt automated recovery using proven patterns
+- Escalate to human review ONLY if auto-recovery fails
+
+**Observability System Components (MUST USE):**
+- **Structured Logger**: `/src/lib/logging/structuredLogger.ts`
+- **Performance Monitor**: `/src/lib/logging/performanceMonitor.ts`
+- **Error Tracker**: `/src/lib/logging/errorTracking.ts`
+- **React Hooks**: `/src/hooks/useObservability.ts`
+
+### 2. **Simplicity > Abstraction**
 Favor flat component structure, avoid over-engineering, protocol overuse, or "future‑proofing." No Redux, no complex state machines.
 
-### 2. **Documentation Alignment**
+### 3. **Documentation Alignment**
 All design/UX decisions must match the handoff documents:
 - `02-DESIGN-SYSTEM.md` for tokens
 - `03-SCREEN-SPECIFICATIONS.md` for layouts
 - `05-INTERACTIONS-AND-ANIMATIONS.md` for behaviors
 
-### 3. **Database Simplicity**
+### 4. **Database Simplicity**
 Use the existing schema. 6 core tables: `users`, `prayers`, `prayer_responses`, `prayer_support`, `notifications`, `prayer_flags`. No schema changes without explicit approval.
 
-### 4. **Component Consistency**
+### 5. **Component Consistency**
 All components must use the design system tokens. No hardcoded colors, no inline styles for reusable patterns.
 
-### 5. **Accessibility First**
+### 6. **Accessibility First**
 Follow WCAG 2.1 AA. Support Dynamic Type, VoiceOver, keyboard navigation, focus management in modals.
 
-### 6. **Non-Profit Ministry Focus**
+### 7. **Non-Profit Ministry Focus**
 This is 100% ministry, not commercial. No monetization code, no investor metrics, no growth hacking. Focus on spiritual impact.
 
-### 7. **Performance Awareness**
-- Target 60fps for all animations
-- First Contentful Paint < 1.5s
-- Time to Interactive < 3s
+### 8. **Performance Awareness with Observability**
+- Target 60fps for all animations (monitored via observability)
+- First Contentful Paint < 1.5s (tracked automatically)
+- Time to Interactive < 3s (performance boundary enforcement)
 - Throttle map updates to 16ms
+- **MANDATORY**: All performance metrics must be logged and monitored
 
 ---
 
@@ -352,6 +377,7 @@ VITE_ENABLE_VIDEO=false    # Phase 2
 - **Integration Tests:** Critical user flows
 - **Visual Tests:** Prayer animation timing
 - **Accessibility Tests:** Keyboard navigation, screen reader
+- **🔍 Observability Tests:** Mandatory log coverage validation
 
 ### Minimum Coverage
 
@@ -359,6 +385,29 @@ VITE_ENABLE_VIDEO=false    # Phase 2
 - All buttons must have aria-labels
 - Focus must be trapped in open modals
 - Prayer animation must maintain 60fps
+- **🔍 MANDATORY**: All agent operations must have observability logging
+- **🔍 MANDATORY**: Test failure scenarios must trigger automated recovery
+
+### 🔍 Mandatory Log Checking Protocol
+
+**BEFORE any PR submission:**
+1. **Log Coverage Verification**: Ensure all agent operations include observability logging
+2. **Failure Scenario Testing**: Verify automated error recovery mechanisms
+3. **Performance Boundary Testing**: Confirm monitoring alerts work correctly
+4. **Audit Trail Validation**: Check compliance with EU AI Act logging requirements
+
+**Test Observability Integration:**
+```typescript
+// MANDATORY: All tests must verify observability integration
+test('agent operation includes observability', async () => {
+  const mockObservability = jest.mockObservability();
+  
+  await agentOperation();
+  
+  expect(mockObservability.logPerformance).toHaveBeenCalled();
+  expect(mockObservability.trackError).toHaveBeenCalledOnFailure();
+});
+```
 
 ---
 

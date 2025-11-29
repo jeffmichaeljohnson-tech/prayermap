@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Prayer, PrayerResponse } from '../types/prayer';
-import { fetchUserInbox, subscribeToUserInbox, markAllResponsesRead } from '../services/prayerService';
+import { fetchUserInbox, markAllResponsesRead } from '../services/prayerService';
+import { inboxSyncService } from '../services/inboxSyncService';
 
 export interface InboxItem {
   prayer: Prayer;
@@ -21,6 +22,8 @@ interface UseInboxReturn {
   totalUnread: number;
   refetch: () => Promise<void>;
   markAsRead: (prayerId: string) => void;
+  connectionHealth: any; // Connection state for debugging
+  forceRefresh: () => Promise<void>;
 }
 
 /**
@@ -35,15 +38,12 @@ export function useInbox({
   const [inbox, setInbox] = useState<InboxItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [readPrayers, setReadPrayers] = useState<Set<string>>(new Set());
   const unsubscribeRef = useRef<(() => void) | null>(null);
 
-  // Calculate total unread messages
+  // Calculate total unread messages directly from database state
+  // This ensures persistence across browser sessions and refreshes
   const totalUnread = inbox.reduce((sum, item) => {
-    if (!readPrayers.has(item.prayer.id)) {
-      return sum + item.unreadCount;
-    }
-    return sum;
+    return sum + item.unreadCount;
   }, 0);
 
   // Fetch inbox from the database
@@ -72,24 +72,41 @@ export function useInbox({
     }
   }, [autoFetch, userId, fetchInbox]);
 
-  // Set up real-time subscription
+  // Set up enhanced real-time subscription with multi-device support
   useEffect(() => {
-    if (!enableRealtime || !userId) return;
+    if (!enableRealtime || !userId) {
+      console.log('Real-time disabled or no userId, skipping subscription');
+      return;
+    }
+
+    console.log('Setting up enhanced inbox subscription for user:', userId);
 
     // Clean up existing subscription
     if (unsubscribeRef.current) {
+      console.log('Cleaning up existing subscription');
       unsubscribeRef.current();
+      unsubscribeRef.current = null;
     }
 
-    // Subscribe to inbox updates
-    const unsubscribe = subscribeToUserInbox(userId, (updatedInbox) => {
-      setInbox(updatedInbox);
-    });
+    // Subscribe using enhanced inbox sync service
+    const unsubscribe = inboxSyncService.subscribeToInbox(
+      userId,
+      (updatedInbox) => {
+        console.log('Received enhanced real-time inbox update:', updatedInbox.length, 'items');
+        setInbox(updatedInbox);
+        setError(null); // Clear any previous errors
+      },
+      (error) => {
+        console.error('Enhanced inbox subscription error:', error);
+        setError(`Real-time sync error: ${error.message}`);
+      }
+    );
 
     unsubscribeRef.current = unsubscribe;
 
-    // Cleanup on unmount
+    // Cleanup on unmount or dependency change
     return () => {
+      console.log('Cleaning up enhanced inbox subscription hook');
       if (unsubscribeRef.current) {
         unsubscribeRef.current();
         unsubscribeRef.current = null;
@@ -97,29 +114,65 @@ export function useInbox({
     };
   }, [userId, enableRealtime]);
 
-  // Mark a prayer as read - persists to database and updates local state
+  // Mark a prayer as read - persists to database and triggers cross-device sync
   const markAsRead = useCallback(async (prayerId: string) => {
-    // Optimistically update local state first
-    setReadPrayers((prev) => {
-      const next = new Set(prev);
-      next.add(prayerId);
-      return next;
-    });
-
-    // Persist to database
     try {
       const count = await markAllResponsesRead(prayerId);
       console.log(`Marked ${count} responses as read for prayer ${prayerId}`);
+      
+      // Optimistically update local state for immediate UI feedback
+      setInbox((prevInbox) => 
+        prevInbox.map((item) => {
+          if (item.prayer.id === prayerId) {
+            return {
+              ...item,
+              unreadCount: 0, // Mark all responses as read
+              responses: item.responses.map(response => ({
+                ...response,
+                read_at: response.read_at || new Date().toISOString() // Mark as read if not already
+              }))
+            };
+          }
+          return item;
+        })
+      );
+      
+      // Trigger force refresh to sync across all devices
+      if (userId) {
+        await inboxSyncService.forceRefresh(userId, (refreshedInbox) => {
+          setInbox(refreshedInbox);
+        });
+      }
     } catch (error) {
       console.error('Failed to mark responses as read:', error);
-      // Revert optimistic update on failure
-      setReadPrayers((prev) => {
-        const next = new Set(prev);
-        next.delete(prayerId);
-        return next;
-      });
+      setError('Failed to mark messages as read. Please try again.');
+      
+      // Refetch to ensure consistency
+      fetchInbox();
     }
-  }, []);
+  }, [fetchInbox, userId]);
+
+  // Force refresh function that bypasses debouncing
+  const forceRefresh = useCallback(async () => {
+    if (!userId) return;
+    
+    setLoading(true);
+    try {
+      await inboxSyncService.forceRefresh(userId, (refreshedInbox) => {
+        setInbox(refreshedInbox);
+        setError(null);
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to force refresh inbox';
+      setError(errorMessage);
+      console.error('Force refresh error:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [userId]);
+
+  // Get connection health for debugging
+  const connectionHealth = userId ? inboxSyncService.getConnectionHealth(userId) : null;
 
   return {
     inbox,
@@ -128,5 +181,7 @@ export function useInbox({
     totalUnread,
     refetch: fetchInbox,
     markAsRead,
+    connectionHealth,
+    forceRefresh,
   };
 }

@@ -385,6 +385,115 @@ if (Capacitor.isNativePlatform()) {
 
 ---
 
+## 🔍 MANDATORY: World-Class Observability Integration
+
+**CRITICAL**: All AI agents MUST use the integrated observability system for 100% automated log monitoring and failure detection. This is non-negotiable and follows 2024 industry standards for AI agent reliability.
+
+### Observability-First Workflow
+
+**BEFORE starting ANY task, ALL agents MUST:**
+
+1. **Query the observability system** for similar past failures or patterns
+2. **Initialize logging context** with structured telemetry
+3. **Track performance metrics** throughout execution
+4. **Report failures immediately** with full context for automated diagnostics
+
+### Mandatory Failure Detection Protocol
+
+**When ANY agent experiences failure:**
+
+```typescript
+// MANDATORY: Every agent failure MUST be logged with full context
+import { structuredLogger } from '@/lib/logging/structuredLogger';
+import { errorTracker } from '@/lib/logging/errorTracking';
+import { useObservability } from '@/hooks/useObservability';
+
+// At start of ANY agent task
+const { logPerformance, trackError, analyzePattern } = useObservability(agentRole);
+
+// During execution - track all operations
+logPerformance('database_query', duration);
+logPerformance('api_call', responseTime);
+
+// On ANY failure - MANDATORY logging
+try {
+  // Agent operation
+} catch (error) {
+  // REQUIRED: Full failure context logging
+  const failureContext = {
+    agent_role: agentRole,
+    task_description: taskDescription,
+    error_type: error.name,
+    error_message: error.message,
+    stack_trace: error.stack,
+    execution_context: {
+      user_action: currentUserAction,
+      component: currentComponent,
+      route: currentRoute,
+      timestamp: new Date().toISOString()
+    },
+    system_state: {
+      memory_usage: process.memoryUsage(),
+      active_connections: connectionCount,
+      recent_errors: recentErrorPattern
+    }
+  };
+  
+  // MANDATORY: Log to structured logging system
+  structuredLogger.error('Agent task failure', failureContext);
+  
+  // MANDATORY: Track for automated analysis
+  const autoRecovered = await trackError(error, failureContext);
+  
+  if (!autoRecovered) {
+    // MANDATORY: Escalate for manual review
+    await escalateForHumanReview(failureContext);
+  }
+}
+```
+
+### Agent Observability Requirements
+
+**Every agent MUST implement:**
+
+1. **OpenTelemetry-compliant structured logging** - All operations logged with traces
+2. **Google SRE Golden Signals monitoring** - Latency, traffic, errors, saturation tracked
+3. **Automated pattern recognition** - AI-powered failure analysis for instant diagnosis
+4. **Self-healing procedures** - Attempt automated recovery before escalation
+5. **Performance boundary enforcement** - Fail fast on timeout/resource limits
+
+### Observability Integration Points
+
+**Required imports for ALL agents:**
+
+```typescript
+// MANDATORY: All agents must import observability hooks
+import { useObservability } from '@/hooks/useObservability';
+import { structuredLogger } from '@/lib/logging/structuredLogger';
+import { monitoringOrchestrator } from '@/lib/logging/monitoringOrchestrator';
+
+// Agent role-specific logging
+const observability = useObservability('frontend'); // or 'backend', 'mobile', etc.
+```
+
+**Performance Monitoring Standards:**
+
+- **Response Time Tracking**: Every operation >100ms must be logged
+- **Error Rate Monitoring**: Track success/failure ratios for pattern detection
+- **Resource Usage**: Monitor memory, CPU, network for each agent operation
+- **User Journey Tracking**: Trace complete flows from user action to completion
+
+### Compliance Standards (2024)
+
+Following EU AI Act, NIST AI Risk Management Framework, and enterprise observability standards:
+
+- **Comprehensive Audit Logging**: All agent decisions, prompts, and outputs logged
+- **Traceability Requirements**: Complete decision trees and reasoning chains captured
+- **Real-Time Anomaly Detection**: Immediate alerts on unusual patterns or failures
+- **Automated Incident Response**: Self-healing attempts before human escalation
+
+---
+
 ## Multi-Agent Orchestration
 
 When working with multiple AI agents, follow these patterns:
@@ -400,6 +509,24 @@ When working with multiple AI agents, follow these patterns:
 - Identify potential blockers early
 - Coordinate between multiple agents
 - Estimate effort and complexity
+
+**MANDATORY Observability Requirements:**
+```typescript
+const { logPerformance, trackError, queryPatterns } = useObservability('planner');
+
+// BEFORE planning - query for similar past plans
+const pastPatterns = await queryPatterns('planning', taskDescription);
+logPerformance('pattern_analysis', patternQueryTime);
+
+// DURING planning - track decision points
+structuredLogger.info('Planning decision', {
+  agent_role: 'planner',
+  decision_point: 'architecture_choice',
+  options_considered: ['option1', 'option2'],
+  selected_option: 'option1',
+  rationale: 'Performance and maintainability benefits'
+});
+```
 
 **Triggers:**
 - New feature request
@@ -420,10 +547,37 @@ When working with multiple AI agents, follow these patterns:
 - Client-side state management
 - Accessibility compliance
 
+**MANDATORY Observability Requirements:**
+```typescript
+const { logPerformance, trackError, analyzePattern } = useObservability('frontend');
+
+// Component render performance tracking
+useEffect(() => {
+  const renderStart = performance.now();
+  return () => {
+    logPerformance('component_render', performance.now() - renderStart);
+  };
+}, []);
+
+// Animation performance monitoring
+const onAnimationComplete = (duration: number) => {
+  logPerformance('animation_duration', duration);
+  if (duration > 16) { // >60fps threshold
+    structuredLogger.warn('Animation performance issue', {
+      agent_role: 'frontend',
+      animation_duration: duration,
+      component: componentName,
+      suggested_fix: 'Consider GPU acceleration or simplify animation'
+    });
+  }
+};
+```
+
 **Key Focus:**
 - Follow Core Principle #3 (Living, Breathing App)
 - Every component should be animated appropriately
 - Responsive design (mobile-first)
+- **MANDATORY**: 60fps performance monitoring for all animations
 
 ---
 
@@ -437,10 +591,49 @@ When working with multiple AI agents, follow these patterns:
 - Data validation and transformations
 - API service layer
 
+**MANDATORY Observability Requirements:**
+```typescript
+const { logPerformance, trackError, queryPatterns } = useObservability('backend');
+
+// Database query performance tracking
+const executeQuery = async (query: string, params: any[]) => {
+  const queryStart = performance.now();
+  try {
+    const result = await supabase.rpc(query, params);
+    const duration = performance.now() - queryStart;
+    
+    // MANDATORY: Track all database operations
+    logPerformance('database_query', duration);
+    structuredLogger.info('Database operation', {
+      agent_role: 'backend',
+      operation: query,
+      duration_ms: duration,
+      row_count: result.data?.length || 0,
+      success: !result.error
+    });
+    
+    if (duration > 1000) { // >1s threshold
+      structuredLogger.warn('Slow database query', {
+        agent_role: 'backend',
+        query_name: query,
+        duration_ms: duration,
+        suggested_fix: 'Add index or optimize query'
+      });
+    }
+    
+    return result;
+  } catch (error) {
+    trackError(error, { agent_role: 'backend', query, params });
+    throw error;
+  }
+};
+```
+
 **Key Focus:**
 - Performance optimization (query efficiency)
 - Security first (RLS, input validation)
 - Mobile compatibility (efficient payloads)
+- **MANDATORY**: Database performance monitoring with <1s query targets
 
 ---
 
@@ -454,10 +647,45 @@ When working with multiple AI agents, follow these patterns:
 - Mobile build and sync processes
 - Platform testing
 
+**MANDATORY Observability Requirements:**
+```typescript
+const { logPerformance, trackError, analyzePattern } = useObservability('mobile');
+
+// Platform-specific error tracking
+const executeNativeOperation = async (operation: string, params: any) => {
+  try {
+    const result = await nativeOperation(params);
+    
+    structuredLogger.info('Native operation success', {
+      agent_role: 'mobile',
+      operation,
+      platform: Capacitor.getPlatform(),
+      app_version: await App.getInfo(),
+      device_info: await Device.getInfo()
+    });
+    
+    return result;
+  } catch (error) {
+    // MANDATORY: Capture mobile-specific context
+    const mobileContext = {
+      agent_role: 'mobile',
+      platform: Capacitor.getPlatform(),
+      is_native: Capacitor.isNativePlatform(),
+      operation,
+      permissions: await getAllPermissionStatus()
+    };
+    
+    trackError(error, mobileContext);
+    throw error;
+  }
+};
+```
+
 **Key Focus:**
 - Follow Core Principle #2 (iOS & Android Deployment)
 - Test on real devices or simulators
 - Handle platform differences gracefully
+- **MANDATORY**: Cross-platform error tracking with device context
 
 ---
 
@@ -471,11 +699,42 @@ When working with multiple AI agents, follow these patterns:
 - Quality assurance
 - Performance testing
 
+**MANDATORY Observability Requirements:**
+```typescript
+const { logPerformance, trackError, analyzePattern } = useObservability('testing');
+
+// Test execution monitoring
+test.beforeEach(async ({ page }) => {
+  // MANDATORY: Track test performance
+  const testStart = performance.now();
+  
+  test.afterEach(async () => {
+    const duration = performance.now() - testStart;
+    logPerformance('test_execution', duration);
+    
+    // Capture test context for failures
+    if (test.info().status === 'failed') {
+      const testContext = {
+        agent_role: 'testing',
+        test_file: test.info().file,
+        test_title: test.info().title,
+        error_screenshot: await page.screenshot(),
+        browser_console: await page.evaluate(() => console.log),
+        performance_metrics: await page.metrics()
+      };
+      
+      structuredLogger.error('Test failure', testContext);
+    }
+  });
+});
+```
+
 **Triggers:**
 - New feature completed
 - Bug fix implemented
 - Before PR creation
 - Regression concerns
+- **MANDATORY**: Automated test failure analysis with full context capture
 
 ---
 
@@ -489,10 +748,50 @@ When working with multiple AI agents, follow these patterns:
 - Architecture validation
 - Documentation review
 
+**MANDATORY Observability Requirements:**
+```typescript
+const { logPerformance, trackError, analyzePattern } = useObservability('reviewer');
+
+// Review quality tracking
+const conductReview = async (codeChanges: CodeChange[]) => {
+  const reviewStart = performance.now();
+  
+  try {
+    const reviewResults = await analyzeCode(codeChanges);
+    
+    // MANDATORY: Track review metrics
+    structuredLogger.info('Code review completed', {
+      agent_role: 'reviewer',
+      files_reviewed: codeChanges.length,
+      issues_found: reviewResults.issues.length,
+      security_issues: reviewResults.securityIssues.length,
+      performance_issues: reviewResults.performanceIssues.length,
+      review_duration_ms: performance.now() - reviewStart,
+      observability_compliance: reviewResults.hasObservabilityLogging
+    });
+    
+    // MANDATORY: Flag missing observability
+    if (!reviewResults.hasObservabilityLogging) {
+      structuredLogger.error('Observability violation', {
+        agent_role: 'reviewer',
+        violation: 'Missing mandatory observability logging',
+        files: codeChanges.map(c => c.filepath)
+      });
+    }
+    
+    return reviewResults;
+  } catch (error) {
+    trackError(error, { agent_role: 'reviewer', codeChanges });
+    throw error;
+  }
+};
+```
+
 **Triggers:**
 - Before PR submission
 - After major implementation
 - Security-sensitive changes
+- **MANDATORY**: Verify observability compliance in all code reviews
 
 ---
 
@@ -507,6 +806,42 @@ When working with multiple AI agents, follow these patterns:
 - Stay current with latest official documentation
 - Investigate errors and blockers thoroughly
 
+**MANDATORY Observability Requirements:**
+```typescript
+const { logPerformance, trackError, queryPatterns } = useObservability('researcher');
+
+// Research tracking and validation
+const conductResearch = async (query: string) => {
+  const researchStart = performance.now();
+  
+  try {
+    // MANDATORY: Query past research patterns first
+    const pastResearch = await queryPatterns('research', query);
+    
+    const results = await searchOfficialSources(query);
+    const duration = performance.now() - researchStart;
+    
+    // MANDATORY: Track research quality and sources
+    structuredLogger.info('Research completed', {
+      agent_role: 'researcher',
+      query,
+      sources_found: results.length,
+      tier1_sources: results.filter(r => r.tier === 1).length,
+      tier2_sources: results.filter(r => r.tier === 2).length,
+      tier3_sources: results.filter(r => r.tier === 3).length,
+      rejected_sources: results.filter(r => r.rejected).length,
+      research_duration_ms: duration,
+      confidence_level: calculateConfidence(results)
+    });
+    
+    return results;
+  } catch (error) {
+    trackError(error, { agent_role: 'researcher', query });
+    throw error;
+  }
+};
+```
+
 **Triggers:**
 - Unknown technology or library encountered
 - Blocker detected that needs investigation
@@ -514,6 +849,7 @@ When working with multiple AI agents, follow these patterns:
 - Unfamiliar error or warning
 - Explicit research request from user or another agent
 - Outdated information suspected
+- **MANDATORY**: Research quality verification with source tier validation
 
 **Output Format:**
 ```markdown
@@ -588,12 +924,51 @@ When working with multiple AI agents, follow these patterns:
 - Create pattern documentation
 - Maintain decision graph (what was decided and why)
 
+**MANDATORY Observability Requirements:**
+```typescript
+const { logPerformance, trackError, analyzePattern } = useObservability('archivist');
+
+// Memory curation tracking
+const curateMemorisystem = async () => {
+  const curationStart = performance.now();
+  
+  try {
+    const memoryStats = await analyzeMemorySystemHealth();
+    
+    // MANDATORY: Track curation quality
+    structuredLogger.info('Memory curation completed', {
+      agent_role: 'archivist',
+      total_entries: memoryStats.totalEntries,
+      outdated_entries: memoryStats.outdatedEntries,
+      untagged_entries: memoryStats.untaggedEntries,
+      new_patterns: memoryStats.patternsDetected,
+      curation_duration_ms: performance.now() - curationStart,
+      memory_health_score: calculateMemoryHealth(memoryStats)
+    });
+    
+    // MANDATORY: Flag memory system issues
+    if (memoryStats.healthScore < 0.8) {
+      structuredLogger.warn('Memory system degradation', {
+        agent_role: 'archivist',
+        issues: memoryStats.issues,
+        suggested_actions: memoryStats.suggestedActions
+      });
+    }
+    
+  } catch (error) {
+    trackError(error, { agent_role: 'archivist' });
+    throw error;
+  }
+};
+```
+
 **Triggers:**
 - End of work session
 - Memory system threshold reached (>50 entries)
 - Weekly summary needed
 - Pattern detection in repeated work
 - Explicit archival request
+- **MANDATORY**: Memory system health monitoring and automated curation
 
 **Outputs:**
 

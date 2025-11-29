@@ -1,0 +1,1 @@
+Investigate React state management and inbox functionality. Examine InboxModal, real-time subscriptions, React Query cache, and notification UI updates.

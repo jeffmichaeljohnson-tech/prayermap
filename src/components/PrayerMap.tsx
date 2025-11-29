@@ -39,6 +39,7 @@ import { usePrayers } from '../hooks/usePrayers';
 import { useAuth } from '../contexts/AuthContext';
 import { useInbox } from '../hooks/useInbox';
 import { fetchAllConnections, subscribeToAllConnections } from '../services/prayerService';
+import { realtimeMonitor } from '../services/realtimeMonitor';
 
 // Helper to group prayers by approximate location
 interface PrayerGroup {
@@ -106,7 +107,8 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
   const {
     prayers,
     createPrayer,
-    respondToPrayer
+    respondToPrayer,
+    refetch: refetchPrayers
   } = usePrayers({
     location: userLocation,
     radiusKm: 50, // Not used in global mode, but kept for compatibility
@@ -148,6 +150,21 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
   // Debug: log connections state
   console.log('PrayerMap render - connections:', connections.length, 'mapLoaded:', mapLoaded);
 
+  // Track prayers state changes for debugging animation issues
+  useEffect(() => {
+    console.log('🔄 PRAYERS STATE CHANGED:', {
+      count: prayers.length,
+      animationActive: !!creatingPrayerAnimation,
+      latestPrayerIds: prayers.slice(0, 3).map(p => p.id),
+      timestamp: new Date().toISOString()
+    });
+
+    // If we have prayers and animation just finished, log success
+    if (prayers.length > 0 && !creatingPrayerAnimation) {
+      console.log('✅ Prayer creation flow appears successful - prayers loaded and no animation active');
+    }
+  }, [prayers, creatingPrayerAnimation]);
+
   // GLOBAL LIVING MAP: Fetch and subscribe to ALL prayer connections worldwide
   // This displays the beautiful web of prayer connections spanning the entire globe
   useEffect(() => {
@@ -157,9 +174,17 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
       setConnections(globalConnections);
     });
 
-    // Subscribe to real-time updates for all connections worldwide
-    const unsubscribe = subscribeToAllConnections((updatedConnections) => {
-      console.log('Real-time connection update:', updatedConnections.length);
+    // Use enhanced real-time monitor for connections
+    console.log('🔗 Setting up enhanced connection monitoring...');
+    
+    // Ensure monitor is running
+    if (!realtimeMonitor.getStatus().isActive) {
+      realtimeMonitor.start();
+    }
+
+    // Subscribe to enhanced monitoring for connections
+    const unsubscribe = realtimeMonitor.subscribeToConnections((updatedConnections) => {
+      console.log('📥 Enhanced connection update received:', updatedConnections.length);
       setConnections(updatedConnections);
     });
 
@@ -254,11 +279,9 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
     console.log('Animation layer complete callback (no-op)');
   }, []);
 
-  const handlePrayerSubmit = async (prayer: Prayer, replyData?: PrayerReplyData) => {
-    if (!user) return;
+  const handlePrayerSubmit = async (prayer: Prayer, replyData?: PrayerReplyData): Promise<boolean> => {
+    if (!user) return false;
 
-    // Close modal and trigger the beautiful animation
-    setSelectedPrayer(null);
     const userName = user.user_metadata?.name || user.email?.split('@')[0] || 'Anonymous';
 
     // Start the animation
@@ -279,50 +302,53 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
         console.log('Audio uploaded:', audioUrl);
       } else {
         console.error('Failed to upload audio');
+        return false;
       }
     }
 
-    // Submit the prayer response to Supabase
-    console.log('Submitting prayer response for:', prayer.id, 'with location:', userLocation, 'contentType:', contentType);
-    respondToPrayer(
-      prayer.id,
-      user.id,
-      userName,
-      message,
-      contentType,
-      contentUrl,
-      isAnonymous,
-      userLocation // Pass user's location to create prayer connection line
-    ).then(success => {
-      console.log('Prayer response result:', success);
-    });
-
-    // Create connection data and add it after animation completes (6 seconds)
-    // Following the original Figma design pattern with setTimeout
-    const createdDate = new Date();
-    const expiresDate = new Date(createdDate);
-    expiresDate.setFullYear(expiresDate.getFullYear() + 1);
-
-    const newConnection: PrayerConnection = {
-      id: `conn-${Date.now()}`,
-      prayerId: prayer.id,
-      fromLocation: prayer.location,
-      toLocation: userLocation,
-      requesterName: prayer.is_anonymous ? 'Anonymous' : (prayer.user_name || 'Anonymous'),
-      replierName: isAnonymous ? 'Anonymous' : userName,
-      createdAt: createdDate,
-      expiresAt: expiresDate
-    };
-
-    // Add connection after animation completes (matching animation duration)
-    setTimeout(() => {
-      console.log('Animation complete - adding connection:', newConnection.id);
-      setConnections(prev => {
-        console.log('Previous connections:', prev.length, 'Adding new connection');
-        return [...prev, newConnection];
-      });
+    // Submit the prayer response to Supabase and create memorial line in database
+    console.log('Submitting prayer response for prayer:', prayer.id, 'user:', user.id, 'message:', message, 'contentType:', contentType);
+    console.log('User details:', { id: user.id, email: user.email, metadata: user.user_metadata });
+    
+    try {
+      const result = await respondToPrayer(
+        prayer.id,
+        user.id,
+        userName,
+        message,
+        contentType,
+        contentUrl,
+        isAnonymous,
+        userLocation // Pass user's location to create prayer connection line
+      );
+      
+      console.log('Prayer response result:', result);
+      
+      if (result?.response) {
+        console.log('Prayer response created successfully:', result.response);
+        if (result?.connection) {
+          console.log('Memorial line created successfully in database:', result.connection);
+        } else {
+          console.warn('Memorial line was not created - connection data missing');
+        }
+        
+        // Clear animation after animation duration
+        setTimeout(() => {
+          console.log('Animation complete - clearing animation state');
+          setAnimatingPrayer(null);
+        }, 6000);
+        
+        return true;
+      } else {
+        console.error('Prayer response was not created');
+        setAnimatingPrayer(null);
+        return false;
+      }
+    } catch (error) {
+      console.error('Prayer response failed:', error);
       setAnimatingPrayer(null);
-    }, 6000);
+      return false;
+    }
   };
 
   const handleRequestPrayer = async (newPrayer: Omit<Prayer, 'id' | 'created_at' | 'updated_at'>) => {
@@ -338,18 +364,41 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
 
     // Create the prayer in the database
     try {
-      await createPrayer({
+      const createdPrayer = await createPrayer({
         ...newPrayer,
         user_id: user.id,
       });
+      
+      if (createdPrayer) {
+        console.log('Prayer created successfully during animation:', createdPrayer.id);
+        // Prayer creation successful - animation will complete normally and trigger marker refresh via subscription
+      } else {
+        console.error('Failed to create prayer - no prayer returned');
+        // If prayer creation fails, clear animation immediately
+        setCreatingPrayerAnimation(null);
+      }
     } catch (error) {
       console.error('Failed to create prayer:', error);
+      // If prayer creation fails, clear animation immediately
+      setCreatingPrayerAnimation(null);
     }
   };
 
-  const handleCreationAnimationComplete = useCallback(() => {
+  const handleCreationAnimationComplete = useCallback(async () => {
+    console.log('Prayer creation animation completed - clearing animation state');
+    
+    // Force refresh prayers to ensure new prayer marker appears
+    // This handles cases where optimistic updates or real-time subscriptions might have issues
+    console.log('Force refreshing prayers after animation completion...');
+    try {
+      await refetchPrayers();
+      console.log('Successfully refreshed prayers after animation - new marker should now be visible');
+    } catch (error) {
+      console.error('Failed to refresh prayers after animation:', error);
+    }
+    
     setCreatingPrayerAnimation(null);
-  }, []);
+  }, [refetchPrayers]);
 
   return (
     <div className="relative w-full h-full">

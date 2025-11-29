@@ -1,0 +1,1 @@
+Investigate database layer for prayer response and notification system failures. Check prayer_responses, notifications tables, triggers, RLS policies, and data integrity.
