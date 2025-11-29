@@ -1,0 +1,244 @@
+---
+description: Service layer patterns for PrayerMap API interactions
+globs:
+  - "src/services/**/*.ts"
+alwaysApply: false
+---
+
+# Service Layer Patterns
+
+## Service Architecture
+Services are the data access layer between React components and Supabase.
+
+```
+Component → Hook → Service → Supabase
+                      ↓
+              Type Conversion
+              (DB → Frontend)
+```
+
+## Service File Structure
+```typescript
+// src/services/exampleService.ts
+
+import { supabase } from '@/lib/supabase';
+import type { Example } from '@/types/example';
+
+// ============================================
+// TYPE CONVERTERS
+// ============================================
+
+function rowToExample(row: any): Example {
+  return {
+    id: row.id,
+    // Convert snake_case → camelCase
+    createdAt: new Date(row.created_at),
+    // Convert PostGIS → { lat, lng }
+    location: row.location ? {
+      lat: row.location.coordinates[1],
+      lng: row.location.coordinates[0],
+    } : null,
+  };
+}
+
+// ============================================
+// QUERY FUNCTIONS
+// ============================================
+
+export async function fetchAllExamples(): Promise<Example[]> {
+  if (!supabase) {
+    console.error('Supabase client not initialized');
+    return [];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('examples')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return (data || []).map(rowToExample);
+  } catch (error) {
+    console.error('Failed to fetch examples:', error);
+    return [];
+  }
+}
+
+// ============================================
+// MUTATION FUNCTIONS
+// ============================================
+
+export async function createExample(
+  example: Omit<Example, 'id' | 'createdAt'>
+): Promise<Example | null> {
+  if (!supabase) {
+    console.error('Supabase client not initialized');
+    return null;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('examples')
+      .insert({
+        // Convert camelCase → snake_case
+        user_id: example.userId,
+        content: example.content,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return rowToExample(data);
+  } catch (error) {
+    console.error('Failed to create example:', error);
+    return null;
+  }
+}
+
+// ============================================
+// SUBSCRIPTION FUNCTIONS
+// ============================================
+
+export function subscribeToExamples(
+  callback: (examples: Example[]) => void
+): () => void {
+  if (!supabase) {
+    console.error('Supabase client not initialized');
+    return () => {};
+  }
+
+  const channel = supabase
+    .channel('examples_channel')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'examples' },
+      async () => {
+        const examples = await fetchAllExamples();
+        callback(examples);
+      }
+    )
+    .subscribe();
+
+  // Return unsubscribe function
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+```
+
+## RPC Functions for Complex Operations
+Use RPC when you need PostGIS operations or complex transactions:
+
+```typescript
+export async function createPrayer(prayer: CreatePrayerInput): Promise<Prayer | null> {
+  if (!supabase) return null;
+
+  try {
+    const { data, error } = await supabase.rpc('create_prayer', {
+      p_user_id: prayer.userId,
+      p_title: prayer.title,
+      p_content: prayer.content,
+      p_content_type: prayer.contentType,
+      p_media_url: prayer.mediaUrl,
+      p_latitude: prayer.location.lat,
+      p_longitude: prayer.location.lng,
+      p_is_anonymous: prayer.isAnonymous,
+    });
+
+    if (error) throw error;
+    return rowToPrayer(data);
+  } catch (error) {
+    console.error('Failed to create prayer:', error);
+    return null;
+  }
+}
+```
+
+## Type Conversion Patterns
+
+### Database → Frontend
+```typescript
+// PostGIS POINT → { lat, lng }
+function parseLocation(point: any): { lat: number; lng: number } | null {
+  if (!point) return null;
+  // PostGIS returns { type: 'Point', coordinates: [lng, lat] }
+  if (point.coordinates) {
+    return {
+      lat: point.coordinates[1],
+      lng: point.coordinates[0],
+    };
+  }
+  // Or as WKT string "POINT(lng lat)"
+  const match = point.match(/POINT\(([^ ]+) ([^)]+)\)/);
+  if (match) {
+    return {
+      lat: parseFloat(match[2]),
+      lng: parseFloat(match[1]),
+    };
+  }
+  return null;
+}
+
+// ISO string → Date
+createdAt: new Date(row.created_at)
+
+// Nullable fields
+userName: row.user_name ?? undefined
+```
+
+### Frontend → Database
+```typescript
+// { lat, lng } → PostGIS (via RPC parameters)
+p_latitude: location.lat,
+p_longitude: location.lng,
+
+// camelCase → snake_case
+user_id: userId,
+content_type: contentType,
+is_anonymous: isAnonymous,
+```
+
+## Error Handling
+```typescript
+try {
+  const { data, error } = await supabase.from('table').select();
+
+  if (error) {
+    // Supabase error
+    throw error;
+  }
+
+  return data;
+} catch (error) {
+  // Log with context
+  console.error('Service operation failed:', {
+    operation: 'fetchData',
+    error: error instanceof Error ? error.message : error,
+  });
+
+  // Return safe default
+  return [];
+}
+```
+
+## Existing Services Reference
+
+### prayerService.ts
+- `fetchAllPrayers()` - Get all prayers globally
+- `fetchNearbyPrayers(lat, lng, radius)` - Geospatial query
+- `fetchPrayerResponses(prayerId)` - Get responses
+- `createPrayer(prayer)` - Create via RPC
+- `respondToPrayer(...)` - Create response + connection
+- `subscribeToPrayers(callback)` - Real-time updates
+- `subscribeToUserInbox(userId, callback)` - Inbox updates
+
+### userService.ts
+- `getUserProfile(userId)` - Fetch profile
+- `updateUserProfile(userId, updates)` - Update profile
+- `changePassword(newPassword)` - Password change
+
+### storageService.ts
+- `uploadAudio(blob, userId)` - Upload to Supabase Storage
+- `uploadVideo(blob, userId)` - Upload video
+- `deleteFile(filePath)` - Delete media

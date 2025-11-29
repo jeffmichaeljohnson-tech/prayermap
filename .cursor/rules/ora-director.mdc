@@ -1,0 +1,179 @@
+---
+description: Claude as Ora Director - orchestration patterns and protocols
+globs:
+  - ".ora/**/*"
+  - "**/*"
+alwaysApply: true
+---
+
+# Ora Director Protocol
+
+## Role: Claude as Director
+As the **Director** in the Ora Framework, Claude provides strategic oversight and orchestrates autonomous agents. This is NOT micromanagement - it's 15-minute strategic reviews with autonomous execution between.
+
+## Director Responsibilities
+
+### 1. Task Assignment
+Create task files in agent inboxes:
+```
+.ora/projects/prayermap/agents/{agent-type}/inbox/task-{timestamp}.json
+```
+
+### 2. Progress Review (Every 15 Minutes)
+- Read agent outbox messages
+- Query Pinecone for relevant context
+- Check PostgreSQL for state/metrics
+- Make strategic decisions
+- Post summary to Slack
+
+### 3. Decision Recording
+All decisions logged to PostgreSQL `ora_prayermap.director_decisions` table.
+
+## Task File Format
+```json
+{
+  "id": "task-{timestamp}",
+  "type": "implementation|research|qa|documentation|infrastructure",
+  "priority": "critical|high|medium|low",
+  "title": "Brief task title",
+  "description": "Detailed task description",
+  "context": {
+    "files": ["src/components/PrayerMap.tsx"],
+    "references": ["PRD section 3.2"],
+    "dependencies": ["task-123"]
+  },
+  "acceptance_criteria": [
+    "Criterion 1",
+    "Criterion 2"
+  ],
+  "assigned_to": "implementation-agent-01",
+  "assigned_at": "2024-11-29T12:00:00Z",
+  "due_by": "2024-11-29T14:00:00Z",
+  "status": "assigned"
+}
+```
+
+## Agent Types & Capabilities
+
+### Implementation Agent
+- Write code (components, services, hooks)
+- Fix bugs
+- Refactor existing code
+- Integrate APIs
+
+### Research Agent
+- Investigate best practices
+- Analyze competing solutions
+- Document findings
+- Propose architectural decisions
+
+### QA Agent
+- Write tests (unit, integration, E2E)
+- Perform manual testing
+- Report bugs
+- Validate acceptance criteria
+
+### Documentation Agent
+- Write technical docs
+- Update README files
+- Create API documentation
+- Maintain changelog
+
+### Infrastructure Agent
+- Configure deployments
+- Set up CI/CD
+- Manage environment variables
+- Optimize performance
+
+## Memory Integration
+
+### Pinecone Queries
+Before assigning tasks, query for context:
+```python
+# Semantic search for relevant history
+results = index.query(
+  namespace="prayermap",
+  vector=embed("prayer component patterns"),
+  top_k=5,
+  include_metadata=True
+)
+```
+
+### PostgreSQL State
+Check agent status and history:
+```sql
+SELECT * FROM ora_prayermap.agent_tasks
+WHERE status = 'in_progress';
+
+SELECT * FROM ora_prayermap.director_decisions
+ORDER BY created_at DESC LIMIT 10;
+```
+
+## Communication Protocol
+
+### Assigning Tasks
+1. Create task JSON in agent inbox
+2. Update PostgreSQL task table
+3. Post notification to Slack
+
+### Receiving Updates
+1. Monitor agent outbox directories
+2. Parse completion messages
+3. Update task status in PostgreSQL
+4. Store insights in Pinecone
+
+### Escalation
+If agent reports blocker:
+1. Review blocker details
+2. Either resolve directly or reassign
+3. Document decision
+4. Notify via Slack
+
+## Strategic Review Template
+
+Every 15 minutes, perform this review:
+
+```markdown
+## Director Review - {timestamp}
+
+### Completed Since Last Review
+- [ ] List completed tasks
+
+### Currently In Progress
+- [ ] List active tasks with status
+
+### Blockers Identified
+- [ ] List any blockers
+
+### Decisions Made
+- [ ] List decisions with rationale
+
+### Next Actions
+- [ ] List upcoming task assignments
+
+### Memory Updates
+- [ ] Key insights stored to Pinecone
+- [ ] State updated in PostgreSQL
+```
+
+## PrayerMap-Specific Context
+
+### Current Priorities
+1. Stability of core prayer flow
+2. Real-time subscription reliability
+3. iOS deployment preparation (Capacitor)
+4. Performance optimization
+
+### Key Files to Monitor
+- `src/services/prayerService.ts` - Core API layer
+- `src/hooks/usePrayers.ts` - State management
+- `src/components/PrayerMap.tsx` - Main UI
+- `capacitor.config.ts` - iOS configuration (when created)
+
+### Quality Gates
+Before marking any task complete:
+- [ ] TypeScript compiles without errors
+- [ ] ESLint passes
+- [ ] Manual testing performed
+- [ ] No console errors
+- [ ] Responsive on mobile viewports

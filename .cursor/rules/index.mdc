@@ -1,0 +1,90 @@
+---
+description: Core PrayerMap project context and conventions - always loaded
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+# PrayerMap Project Context
+
+## Overview
+PrayerMap is a **global living map** where users share prayer requests and respond to prayers in real-time. The app visualizes prayer connections between people worldwide.
+
+## Tech Stack
+| Layer | Technology | Version |
+|-------|-----------|---------|
+| Frontend | React | ^19.2.0 |
+| Language | TypeScript | ~5.9.3 |
+| Build | Vite | ^7.2.2 |
+| Styling | TailwindCSS | ^4.1.17 |
+| Animation | Framer Motion | ^12.23.24 |
+| Maps | Mapbox GL | ^3.16.0 |
+| Backend | Supabase | ^2.83.0 |
+| State | Zustand | ^4.5.7 (available) |
+| Data Fetching | TanStack Query | ^5.90.10 (available) |
+
+## Project Structure
+```
+src/
+├── components/          # React components
+│   ├── ui/              # Base UI primitives (button, input, etc.)
+│   └── figma/           # Figma design exports
+├── services/            # API/data layer
+│   ├── prayerService.ts # Prayer CRUD + real-time
+│   ├── userService.ts   # User management
+│   └── storageService.ts# Media uploads
+├── hooks/               # Custom React hooks
+│   ├── usePrayers.ts    # Prayer state + subscriptions
+│   ├── useInbox.ts      # Inbox management
+│   └── useAuth.ts       # Auth state
+├── contexts/            # React Context
+│   └── AuthContext.tsx  # Auth provider
+├── lib/                 # Utilities
+│   ├── supabase.ts      # Supabase client
+│   └── prayerAdapters.ts# Type conversions
+├── types/               # TypeScript types
+│   ├── prayer.ts        # Core interfaces
+│   └── database.ts      # Supabase types
+└── styles/              # Global styles
+    └── globals.css      # Glassmorphic utilities
+
+admin/                   # Separate admin dashboard
+.ora/                    # Ora framework (agent orchestration)
+docs/                    # Technical documentation
+supabase/                # Database migrations
+```
+
+## Key Conventions
+
+### Naming
+- Components: PascalCase (`PrayerCard.tsx`)
+- Hooks: camelCase with `use` prefix (`usePrayers.ts`)
+- Services: camelCase with descriptive suffix (`prayerService.ts`)
+- Types: PascalCase interfaces (`Prayer`, `PrayerResponse`)
+
+### File Organization
+- One component per file
+- Co-locate tests with source (when added)
+- Keep services thin - business logic in hooks
+
+### Code Style
+- Functional components only (no class components)
+- Prefer `const` arrow functions for components
+- Use TypeScript strict mode
+- Explicit return types on exported functions
+
+## Environment Variables
+```
+VITE_SUPABASE_URL=        # Supabase project URL
+VITE_SUPABASE_ANON_KEY=   # Supabase anonymous key
+VITE_MAPBOX_TOKEN=        # Mapbox access token
+```
+
+## Ora Integration
+This project uses the **Ora Framework** for autonomous agent orchestration.
+- Claude acts as **Director** (strategic oversight)
+- Agents handle specific tasks (implementation, QA, docs)
+- Shared memory via Pinecone + PostgreSQL
+- Communication via file-based JSON tasks
+
+See `.ora/` directory for agent templates and infrastructure.
