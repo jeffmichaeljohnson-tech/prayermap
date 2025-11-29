@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "ora": {
+      "command": "node",
+      "args": ["ora-config/mcp-server/index.js"],
+      "cwd": "${workspaceFolder}"
+    }
+  }
+}
