@@ -7,9 +7,11 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Switch } from './ui/switch';
 import { AudioRecorder } from './AudioRecorder';
-import { uploadAudio } from '../services/storageService';
+import { VideoRecorder } from './VideoRecorder';
+import { uploadAudio, uploadVideo } from '../services/storageService';
 import { useAuth } from '../hooks/useAuth';
 import { formatDuration } from '../hooks/useAudioRecorder';
+import { formatVideoDuration } from '../hooks/useVideoRecorder';
 
 interface RequestPrayerModalProps {
   userLocation: { lat: number; lng: number };
@@ -25,6 +27,8 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioDuration, setAudioDuration] = useState(0);
+  const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
+  const [videoDuration, setVideoDuration] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -32,6 +36,13 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
     setAudioBlob(blob);
     setAudioDuration(duration);
     setContent(`Audio prayer (${formatDuration(duration)})`);
+    setUploadError(null);
+  };
+
+  const handleVideoRecordingComplete = (blob: Blob, duration: number) => {
+    setVideoBlob(blob);
+    setVideoDuration(duration);
+    setContent(`Video prayer (${formatVideoDuration(duration)})`);
     setUploadError(null);
   };
 
@@ -81,9 +92,35 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
       return;
     }
 
-    // For video prayers (placeholder for now)
-    if (contentType === 'video') {
-      // Video recording will be implemented later
+    // For video prayers
+    if (contentType === 'video' && videoBlob) {
+      setIsUploading(true);
+      setUploadError(null);
+
+      try {
+        const userId = user?.id || 'anonymous';
+        const videoUrl = await uploadVideo(videoBlob, userId);
+
+        if (!videoUrl) {
+          setUploadError('Failed to upload video. Please try again.');
+          setIsUploading(false);
+          return;
+        }
+
+        onSubmit({
+          title: title.trim() || undefined,
+          content: `Video prayer (${formatVideoDuration(videoDuration)})`,
+          content_type: 'video',
+          content_url: videoUrl,
+          location: userLocation,
+          is_anonymous: isAnonymous
+        });
+      } catch (error) {
+        console.error('Error uploading video:', error);
+        setUploadError('Failed to upload video. Please try again.');
+      } finally {
+        setIsUploading(false);
+      }
       return;
     }
   };
@@ -92,15 +129,20 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
     if (isUploading) return false;
     if (contentType === 'text') return content.trim().length > 0;
     if (contentType === 'audio') return audioBlob !== null;
+    if (contentType === 'video') return videoBlob !== null;
     return false;
   };
 
-  // Reset audio when switching content types
+  // Reset media when switching content types
   const handleContentTypeChange = (type: 'text' | 'audio' | 'video') => {
     setContentType(type);
     if (type !== 'audio') {
       setAudioBlob(null);
       setAudioDuration(0);
+    }
+    if (type !== 'video') {
+      setVideoBlob(null);
+      setVideoDuration(0);
     }
     if (type !== 'text') {
       setContent('');
@@ -291,10 +333,20 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
           )}
 
           {contentType === 'video' && (
-            <div className="glass rounded-xl p-6 text-center">
-              <Video className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-              <p className="text-lg text-gray-700 mb-2">Coming Soon</p>
-              <p className="text-sm text-gray-500">Video prayers will be available in a future update. For now, please use text or audio.</p>
+            <div className="glass rounded-xl p-4">
+              <p className="text-sm text-gray-700 mb-4 text-center">Record your video prayer</p>
+              <VideoRecorder
+                onRecordingComplete={handleVideoRecordingComplete}
+                maxDuration={90}
+              />
+              {uploadError && (
+                <p className="text-sm text-red-500 mt-3 text-center">{uploadError}</p>
+              )}
+              {videoBlob && (
+                <p className="text-sm text-green-600 mt-3 text-center">
+                  Recording ready ({formatVideoDuration(videoDuration)})
+                </p>
+              )}
             </div>
           )}
 

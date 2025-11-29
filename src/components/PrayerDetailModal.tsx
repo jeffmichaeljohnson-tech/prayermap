@@ -7,11 +7,13 @@ import { Textarea } from './ui/textarea';
 import { Switch } from './ui/switch';
 import { AudioPlayer } from './AudioPlayer';
 import { AudioRecorder } from './AudioRecorder';
+import { VideoRecorder } from './VideoRecorder';
 
 export interface PrayerReplyData {
   message: string;
   contentType: 'text' | 'audio' | 'video';
   audioBlob?: Blob;
+  videoBlob?: Blob;
   isAnonymous: boolean;
 }
 
@@ -52,6 +54,7 @@ export function PrayerDetailModal({ prayer, userLocation, onClose, onPray }: Pra
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [audioFinished, setAudioFinished] = useState(false);
   const [replyAudioBlob, setReplyAudioBlob] = useState<Blob | null>(null);
+  const [replyVideoBlob, setReplyVideoBlob] = useState<Blob | null>(null);
 
   const isAudioPrayer = prayer.content_type === 'audio' && prayer.content_url;
 
@@ -70,6 +73,7 @@ export function PrayerDetailModal({ prayer, userLocation, onClose, onPray }: Pra
         message: replyContent || 'Praying for you!',
         contentType: replyType,
         audioBlob: replyAudioBlob || undefined,
+        videoBlob: replyVideoBlob || undefined,
         isAnonymous,
       };
       onPray(prayer, replyData);
@@ -98,6 +102,11 @@ export function PrayerDetailModal({ prayer, userLocation, onClose, onPray }: Pra
   const handleReplyAudioComplete = useCallback((blob: Blob, _duration: number) => {
     setReplyAudioBlob(blob);
     setReplyContent('Audio response recorded');
+  }, []);
+
+  const handleReplyVideoComplete = useCallback((blob: Blob, _duration: number) => {
+    setReplyVideoBlob(blob);
+    setReplyContent('Video response recorded');
   }, []);
 
   return (
@@ -385,16 +394,18 @@ export function PrayerDetailModal({ prayer, userLocation, onClose, onPray }: Pra
                           />
                         )}
 
-                        {/* Video Reply (placeholder) */}
+                        {/* Video Reply */}
                         {replyType === 'video' && (
-                          <div className="glass rounded-xl p-6 text-center">
-                            <div className="flex flex-col items-center gap-3">
-                              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-yellow-300 to-purple-300 flex items-center justify-center">
-                                <Video className="w-8 h-8 text-white" />
-                              </div>
-                              <p className="text-gray-700">Tap to record video prayer</p>
-                              <p className="text-xs text-gray-500">Max 1 minute</p>
-                            </div>
+                          <div className="glass rounded-xl p-4">
+                            <VideoRecorder
+                              onRecordingComplete={handleReplyVideoComplete}
+                              maxDuration={90}
+                            />
+                            {replyVideoBlob && (
+                              <p className="text-sm text-green-600 mt-3 text-center">
+                                Video response recorded
+                              </p>
+                            )}
                           </div>
                         )}
 
