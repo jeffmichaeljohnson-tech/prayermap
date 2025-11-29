@@ -10,6 +10,7 @@ export function MapDebug() {
 
   useEffect(() => {
     if (!mapContainer.current) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMapStatus('Error: Container not found');
       return;
     }

@@ -1,0 +1,1652 @@
+<testsuites id="" name="" tests="395" failures="0" skipped="395" errors="0" time="0.12149999999999977">
+<testsuite name="auth.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="chromium" tests="13" failures="0" skipped="13" time="0" errors="0">
+<testcase name="Authentication › Sign Up › should show sign up form" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Up › should validate email format" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Up › should validate password requirements" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Up › should successfully create account" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Up › should show error for existing email" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign In › should show sign in form" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign In › should sign in with valid credentials" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign In › should show error for invalid credentials" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign In › should remember session" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Out › should sign out user" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Out › should clear session data" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › OAuth › should show Apple sign in option" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › OAuth › should initiate Apple sign in flow" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="inbox.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="chromium" tests="5" failures="0" skipped="5" time="0" errors="0">
+<testcase name="Inbox › should show unread count badge" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Inbox › should list prayer responses" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Inbox › should mark as read when opened" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Inbox › should navigate to prayer from inbox" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Inbox › should show empty state when no messages" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="map.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="chromium" tests="7" failures="0" skipped="7" time="0" errors="0">
+<testcase name="Map › should load Mapbox map" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should center on user location" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should pan and zoom" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should show prayer connections" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should update in real-time" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should handle map errors gracefully" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should show map controls" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="performance.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="chromium" tests="10" failures="0" skipped="10" time="0" errors="0">
+<testcase name="Performance › should load within 3 seconds" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should load map tiles efficiently" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should handle large number of markers efficiently" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should not have memory leaks on navigation" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should optimize image loading" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should cache static assets" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should minimize bundle size" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should have good Core Web Vitals" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should handle poor network conditions" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should render frames smoothly" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="prayer-creation.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="chromium" tests="19" failures="0" skipped="19" time="0" errors="0">
+<testcase name="Prayer Creation › Text Prayer › should open prayer request modal" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Text Prayer › should select text content type" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Text Prayer › should require minimum content length" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Text Prayer › should submit text prayer successfully" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Text Prayer › should create anonymous prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should switch to audio mode" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should request microphone permission" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should record audio prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should show recording duration" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should allow playback before submit" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should submit audio prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should switch to video mode" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should show camera preview" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should switch between front/back camera" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should record video prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should show progress ring during recording" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should auto-stop at max duration" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should allow preview before submit" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should submit video prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="prayer-interaction.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="chromium" tests="12" failures="0" skipped="12" time="0" errors="0">
+<testcase name="Prayer Interaction › Viewing Prayers › should display prayers on map" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Viewing Prayers › should cluster nearby prayers" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Viewing Prayers › should show prayer details on click" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Viewing Prayers › should play audio prayers" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Viewing Prayers › should play video prayers" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should show response options" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should send text response" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should send audio response" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should send video response" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should create prayer connection" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should show spotlight animation" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Quick Pray › should send quick prayer response" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="responsive.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="chromium" tests="13" failures="0" skipped="13" time="0" errors="0">
+<testcase name="Responsive Design › Mobile › should show bottom sheet modals" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Mobile › should handle touch gestures" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Mobile › should stack UI elements vertically" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Mobile › should have touch-friendly button sizes" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Mobile › should hide desktop-only features" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Tablet › should adapt layout for tablet" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Tablet › should show appropriate modal sizes" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Tablet › should support both touch and mouse input" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Desktop › should show centered modals" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Desktop › should show full desktop layout" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Desktop › should support keyboard navigation" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Desktop › should show hover states" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Orientation Changes › should handle portrait to landscape switch" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="auth.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="firefox" tests="13" failures="0" skipped="13" time="0" errors="0">
+<testcase name="Authentication › Sign Up › should show sign up form" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Up › should validate email format" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Up › should validate password requirements" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Up › should successfully create account" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Up › should show error for existing email" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign In › should show sign in form" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign In › should sign in with valid credentials" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign In › should show error for invalid credentials" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign In › should remember session" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Out › should sign out user" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Out › should clear session data" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › OAuth › should show Apple sign in option" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › OAuth › should initiate Apple sign in flow" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="inbox.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="firefox" tests="5" failures="0" skipped="5" time="0" errors="0">
+<testcase name="Inbox › should show unread count badge" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Inbox › should list prayer responses" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Inbox › should mark as read when opened" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Inbox › should navigate to prayer from inbox" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Inbox › should show empty state when no messages" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="map.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="firefox" tests="7" failures="0" skipped="7" time="0" errors="0">
+<testcase name="Map › should load Mapbox map" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should center on user location" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should pan and zoom" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should show prayer connections" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should update in real-time" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should handle map errors gracefully" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should show map controls" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="performance.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="firefox" tests="10" failures="0" skipped="10" time="0" errors="0">
+<testcase name="Performance › should load within 3 seconds" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should load map tiles efficiently" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should handle large number of markers efficiently" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should not have memory leaks on navigation" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should optimize image loading" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should cache static assets" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should minimize bundle size" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should have good Core Web Vitals" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should handle poor network conditions" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should render frames smoothly" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="prayer-creation.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="firefox" tests="19" failures="0" skipped="19" time="0" errors="0">
+<testcase name="Prayer Creation › Text Prayer › should open prayer request modal" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Text Prayer › should select text content type" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Text Prayer › should require minimum content length" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Text Prayer › should submit text prayer successfully" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Text Prayer › should create anonymous prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should switch to audio mode" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should request microphone permission" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should record audio prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should show recording duration" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should allow playback before submit" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should submit audio prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should switch to video mode" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should show camera preview" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should switch between front/back camera" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should record video prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should show progress ring during recording" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should auto-stop at max duration" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should allow preview before submit" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should submit video prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="prayer-interaction.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="firefox" tests="12" failures="0" skipped="12" time="0" errors="0">
+<testcase name="Prayer Interaction › Viewing Prayers › should display prayers on map" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Viewing Prayers › should cluster nearby prayers" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Viewing Prayers › should show prayer details on click" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Viewing Prayers › should play audio prayers" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Viewing Prayers › should play video prayers" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should show response options" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should send text response" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should send audio response" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should send video response" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should create prayer connection" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should show spotlight animation" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Quick Pray › should send quick prayer response" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="responsive.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="firefox" tests="13" failures="0" skipped="13" time="0" errors="0">
+<testcase name="Responsive Design › Mobile › should show bottom sheet modals" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Mobile › should handle touch gestures" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Mobile › should stack UI elements vertically" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Mobile › should have touch-friendly button sizes" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Mobile › should hide desktop-only features" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Tablet › should adapt layout for tablet" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Tablet › should show appropriate modal sizes" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Tablet › should support both touch and mouse input" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Desktop › should show centered modals" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Desktop › should show full desktop layout" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Desktop › should support keyboard navigation" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Desktop › should show hover states" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Orientation Changes › should handle portrait to landscape switch" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="auth.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="webkit" tests="13" failures="0" skipped="13" time="0" errors="0">
+<testcase name="Authentication › Sign Up › should show sign up form" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Up › should validate email format" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Up › should validate password requirements" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Up › should successfully create account" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Up › should show error for existing email" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign In › should show sign in form" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign In › should sign in with valid credentials" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign In › should show error for invalid credentials" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign In › should remember session" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Out › should sign out user" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Out › should clear session data" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › OAuth › should show Apple sign in option" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › OAuth › should initiate Apple sign in flow" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="inbox.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="webkit" tests="5" failures="0" skipped="5" time="0" errors="0">
+<testcase name="Inbox › should show unread count badge" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Inbox › should list prayer responses" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Inbox › should mark as read when opened" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Inbox › should navigate to prayer from inbox" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Inbox › should show empty state when no messages" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="map.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="webkit" tests="7" failures="0" skipped="7" time="0" errors="0">
+<testcase name="Map › should load Mapbox map" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should center on user location" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should pan and zoom" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should show prayer connections" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should update in real-time" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should handle map errors gracefully" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should show map controls" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="performance.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="webkit" tests="10" failures="0" skipped="10" time="0" errors="0">
+<testcase name="Performance › should load within 3 seconds" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should load map tiles efficiently" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should handle large number of markers efficiently" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should not have memory leaks on navigation" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should optimize image loading" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should cache static assets" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should minimize bundle size" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should have good Core Web Vitals" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should handle poor network conditions" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should render frames smoothly" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="prayer-creation.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="webkit" tests="19" failures="0" skipped="19" time="0" errors="0">
+<testcase name="Prayer Creation › Text Prayer › should open prayer request modal" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Text Prayer › should select text content type" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Text Prayer › should require minimum content length" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Text Prayer › should submit text prayer successfully" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Text Prayer › should create anonymous prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should switch to audio mode" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should request microphone permission" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should record audio prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should show recording duration" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should allow playback before submit" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should submit audio prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should switch to video mode" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should show camera preview" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should switch between front/back camera" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should record video prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should show progress ring during recording" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should auto-stop at max duration" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should allow preview before submit" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should submit video prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="prayer-interaction.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="webkit" tests="12" failures="0" skipped="12" time="0" errors="0">
+<testcase name="Prayer Interaction › Viewing Prayers › should display prayers on map" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Viewing Prayers › should cluster nearby prayers" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Viewing Prayers › should show prayer details on click" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Viewing Prayers › should play audio prayers" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Viewing Prayers › should play video prayers" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should show response options" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should send text response" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should send audio response" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should send video response" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should create prayer connection" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should show spotlight animation" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Quick Pray › should send quick prayer response" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="responsive.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="webkit" tests="13" failures="0" skipped="13" time="0" errors="0">
+<testcase name="Responsive Design › Mobile › should show bottom sheet modals" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Mobile › should handle touch gestures" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Mobile › should stack UI elements vertically" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Mobile › should have touch-friendly button sizes" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Mobile › should hide desktop-only features" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Tablet › should adapt layout for tablet" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Tablet › should show appropriate modal sizes" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Tablet › should support both touch and mouse input" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Desktop › should show centered modals" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Desktop › should show full desktop layout" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Desktop › should support keyboard navigation" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Desktop › should show hover states" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Orientation Changes › should handle portrait to landscape switch" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="auth.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="mobile-chrome" tests="13" failures="0" skipped="13" time="0" errors="0">
+<testcase name="Authentication › Sign Up › should show sign up form" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Up › should validate email format" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Up › should validate password requirements" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Up › should successfully create account" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Up › should show error for existing email" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign In › should show sign in form" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign In › should sign in with valid credentials" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign In › should show error for invalid credentials" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign In › should remember session" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Out › should sign out user" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Out › should clear session data" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › OAuth › should show Apple sign in option" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › OAuth › should initiate Apple sign in flow" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="inbox.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="mobile-chrome" tests="5" failures="0" skipped="5" time="0" errors="0">
+<testcase name="Inbox › should show unread count badge" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Inbox › should list prayer responses" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Inbox › should mark as read when opened" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Inbox › should navigate to prayer from inbox" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Inbox › should show empty state when no messages" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="map.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="mobile-chrome" tests="7" failures="0" skipped="7" time="0" errors="0">
+<testcase name="Map › should load Mapbox map" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should center on user location" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should pan and zoom" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should show prayer connections" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should update in real-time" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should handle map errors gracefully" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should show map controls" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="performance.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="mobile-chrome" tests="10" failures="0" skipped="10" time="0" errors="0">
+<testcase name="Performance › should load within 3 seconds" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should load map tiles efficiently" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should handle large number of markers efficiently" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should not have memory leaks on navigation" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should optimize image loading" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should cache static assets" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should minimize bundle size" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should have good Core Web Vitals" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should handle poor network conditions" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should render frames smoothly" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="prayer-creation.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="mobile-chrome" tests="19" failures="0" skipped="19" time="0" errors="0">
+<testcase name="Prayer Creation › Text Prayer › should open prayer request modal" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Text Prayer › should select text content type" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Text Prayer › should require minimum content length" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Text Prayer › should submit text prayer successfully" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Text Prayer › should create anonymous prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should switch to audio mode" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should request microphone permission" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should record audio prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should show recording duration" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should allow playback before submit" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should submit audio prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should switch to video mode" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should show camera preview" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should switch between front/back camera" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should record video prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should show progress ring during recording" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should auto-stop at max duration" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should allow preview before submit" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should submit video prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="prayer-interaction.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="mobile-chrome" tests="12" failures="0" skipped="12" time="0" errors="0">
+<testcase name="Prayer Interaction › Viewing Prayers › should display prayers on map" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Viewing Prayers › should cluster nearby prayers" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Viewing Prayers › should show prayer details on click" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Viewing Prayers › should play audio prayers" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Viewing Prayers › should play video prayers" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should show response options" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should send text response" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should send audio response" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should send video response" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should create prayer connection" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should show spotlight animation" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Quick Pray › should send quick prayer response" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="responsive.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="mobile-chrome" tests="13" failures="0" skipped="13" time="0" errors="0">
+<testcase name="Responsive Design › Mobile › should show bottom sheet modals" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Mobile › should handle touch gestures" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Mobile › should stack UI elements vertically" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Mobile › should have touch-friendly button sizes" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Mobile › should hide desktop-only features" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Tablet › should adapt layout for tablet" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Tablet › should show appropriate modal sizes" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Tablet › should support both touch and mouse input" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Desktop › should show centered modals" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Desktop › should show full desktop layout" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Desktop › should support keyboard navigation" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Desktop › should show hover states" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Orientation Changes › should handle portrait to landscape switch" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="auth.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="mobile-safari" tests="13" failures="0" skipped="13" time="0" errors="0">
+<testcase name="Authentication › Sign Up › should show sign up form" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Up › should validate email format" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Up › should validate password requirements" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Up › should successfully create account" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Up › should show error for existing email" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign In › should show sign in form" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign In › should sign in with valid credentials" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign In › should show error for invalid credentials" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign In › should remember session" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Out › should sign out user" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › Sign Out › should clear session data" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › OAuth › should show Apple sign in option" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Authentication › OAuth › should initiate Apple sign in flow" classname="auth.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="inbox.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="mobile-safari" tests="5" failures="0" skipped="5" time="0" errors="0">
+<testcase name="Inbox › should show unread count badge" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Inbox › should list prayer responses" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Inbox › should mark as read when opened" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Inbox › should navigate to prayer from inbox" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Inbox › should show empty state when no messages" classname="inbox.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="map.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="mobile-safari" tests="7" failures="0" skipped="7" time="0" errors="0">
+<testcase name="Map › should load Mapbox map" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should center on user location" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should pan and zoom" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should show prayer connections" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should update in real-time" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should handle map errors gracefully" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Map › should show map controls" classname="map.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="performance.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="mobile-safari" tests="10" failures="0" skipped="10" time="0" errors="0">
+<testcase name="Performance › should load within 3 seconds" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should load map tiles efficiently" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should handle large number of markers efficiently" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should not have memory leaks on navigation" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should optimize image loading" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should cache static assets" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should minimize bundle size" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should have good Core Web Vitals" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should handle poor network conditions" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Performance › should render frames smoothly" classname="performance.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="prayer-creation.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="mobile-safari" tests="19" failures="0" skipped="19" time="0" errors="0">
+<testcase name="Prayer Creation › Text Prayer › should open prayer request modal" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Text Prayer › should select text content type" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Text Prayer › should require minimum content length" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Text Prayer › should submit text prayer successfully" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Text Prayer › should create anonymous prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should switch to audio mode" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should request microphone permission" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should record audio prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should show recording duration" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should allow playback before submit" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Audio Prayer › should submit audio prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should switch to video mode" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should show camera preview" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should switch between front/back camera" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should record video prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should show progress ring during recording" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should auto-stop at max duration" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should allow preview before submit" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Creation › Video Prayer › should submit video prayer" classname="prayer-creation.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="prayer-interaction.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="mobile-safari" tests="12" failures="0" skipped="12" time="0" errors="0">
+<testcase name="Prayer Interaction › Viewing Prayers › should display prayers on map" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Viewing Prayers › should cluster nearby prayers" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Viewing Prayers › should show prayer details on click" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Viewing Prayers › should play audio prayers" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Viewing Prayers › should play video prayers" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should show response options" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should send text response" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should send audio response" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should send video response" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should create prayer connection" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Responding to Prayers › should show spotlight animation" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Prayer Interaction › Quick Pray › should send quick prayer response" classname="prayer-interaction.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+<testsuite name="responsive.spec.ts" timestamp="2025-11-29T10:04:14.931Z" hostname="mobile-safari" tests="13" failures="0" skipped="13" time="0" errors="0">
+<testcase name="Responsive Design › Mobile › should show bottom sheet modals" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Mobile › should handle touch gestures" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Mobile › should stack UI elements vertically" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Mobile › should have touch-friendly button sizes" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Mobile › should hide desktop-only features" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Tablet › should adapt layout for tablet" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Tablet › should show appropriate modal sizes" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Tablet › should support both touch and mouse input" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Desktop › should show centered modals" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Desktop › should show full desktop layout" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Desktop › should support keyboard navigation" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Desktop › should show hover states" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+<testcase name="Responsive Design › Orientation Changes › should handle portrait to landscape switch" classname="responsive.spec.ts" time="0">
+<skipped>
+</skipped>
+</testcase>
+</testsuite>
+</testsuites>

@@ -16,7 +16,7 @@ import {
 import { Button } from './ui/button';
 
 export interface DataTableProps<TData> {
-  columns: ColumnDef<TData, any>[];
+  columns: ColumnDef<TData, unknown>[];
   data: TData[];
   isLoading?: boolean;
   emptyMessage?: string;
@@ -53,6 +53,7 @@ export function DataTable<TData>({
   const finalPagination = controlledPagination || pagination;
   const finalPaginationChange = onPaginationChange || setPagination;
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,

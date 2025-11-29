@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Send, Mic, Video, StopCircle, Play, Pause, Loader2 } from 'lucide-react';
-import { respondToPrayer, fetchPrayerResponses } from '../services/prayerService';
+import { respondToPrayer } from '../services/prayerService';
 import { uploadAudio } from '../services/storageService';
 import { useAuth } from '../contexts/AuthContext';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';

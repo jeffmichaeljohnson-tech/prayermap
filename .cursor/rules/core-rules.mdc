@@ -1,0 +1,172 @@
+---
+description: Core PrayerMap project rules - always loaded for every file
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+# PrayerMap Core Development Rules
+
+## Project Identity
+
+PrayerMap is a sacred digital sanctuary for prayer. Every line of code serves the mission of connecting people through prayer. Treat the codebase with reverence and intentionality.
+
+**Live Site**: https://prayermap.net
+**Core Value**: "See where prayer is needed. Send prayer where you are."
+
+## Core Project Principles
+
+**THESE PRINCIPLES MUST GUIDE EVERY DECISION:**
+
+### 1. Research-Driven Decisions
+- ALWAYS check the most recent official documentation before deciding on implementation approaches
+- ONLY use credible sources: official documentation, industry leaders, world-class experts
+- Verify information is current and applicable to our stack (React 19, Vite 7, TailwindCSS 4, etc.)
+- Never implement based on outdated or unverified patterns
+
+### 2. iOS/Android Deployment Goal
+- Every decision MUST support mobile deployment via Capacitor
+- Web-only solutions that break mobile functionality are REJECTED
+- Test on mobile viewports and consider native behavior patterns
+- Use platform detection when needed: `Capacitor.isNativePlatform()`
+- This is not optional - mobile is a primary target, not an afterthought
+
+### 3. Living, Breathing App
+- Must be FAST + HIGHLY ANIMATED + INTERACTIVE
+- Tasteful motion throughout the entire experience
+- This differentiates us from ALL other prayer apps
+- Use Framer Motion for page transitions, list animations, modal states
+- Performance budget: animations must run at 60fps
+- Every interaction should feel responsive and alive
+
+### 4. Minimal Steps UX
+- REDUCE user steps at every opportunity
+- Fewer taps/clicks = better user experience
+- Friction is the enemy of engagement
+- Question every form field, every confirmation, every extra screen
+- Default to smart defaults and progressive disclosure
+- Example: Don't ask for prayer title if user just wants to type a quick prayer
+
+## Technology Stack
+
+- **Frontend**: React 19 + TypeScript 5.9 + Vite 7
+- **Styling**: TailwindCSS 4 + Radix UI + Framer Motion
+- **State**: Zustand (global) + React Query (server)
+- **Backend**: Supabase (PostgreSQL 15 + PostGIS + Auth + Storage + Realtime)
+- **Maps**: MapBox GL JS v3
+- **Mobile**: Capacitor for iOS/Android
+- **Deployment**: Vercel (frontend) + Supabase (backend)
+
+## Code Quality Standards
+
+### TypeScript
+- Strict mode is enabled - honor all type checks
+- Use `interface` for object shapes, `type` for unions/primitives
+- Never use `any` - use `unknown` and narrow types
+- Export types alongside their related functions
+
+### React Patterns
+- Functional components only
+- Hooks for all side effects
+- Props interfaces named `[Component]Props`
+- Avoid prop drilling - use context or Zustand
+
+### File Organization
+```
+Component.tsx structure:
+1. Imports (React, external, internal, relative)
+2. Types/Interfaces
+3. Component function
+4. Sub-components (if small)
+5. Helper functions
+6. Export
+```
+
+## Design System: "Ethereal Glass"
+
+### Colors (use Tailwind classes)
+- `bg-heavenly-blue` - #E8F4F8 (soft sky background)
+- `text-dawn-gold` - #F7E7CE (warm accents)
+- `bg-prayer-purple` - #D4C5F9 (spiritual accent)
+- `text-primary` - #2C3E50 (dark slate blue)
+- `text-secondary` - #7F8C8D (muted gray)
+
+### Glassmorphic Effects
+- `.glass` - Standard glass card
+- `.glass-strong` - More opacity
+- `.glass-subtle` - Less opacity
+- Always include backdrop-filter blur
+
+### Typography
+- Display: Cinzel (serif) for headings
+- Body: Inter (sans-serif) for content
+- Use Tailwind size classes consistently
+
+## Critical Rules
+
+### NEVER Do
+- Commit `.env` files or secrets
+- Bypass Row Level Security (RLS)
+- Use `any` type in TypeScript
+- Create inline styles (use Tailwind)
+- Push directly to main branch
+- Modify production database directly
+- Skip error handling
+
+### ALWAYS Do
+- Validate user input with Zod
+- Handle loading and error states
+- Use React Query for data fetching
+- Write meaningful commit messages
+- Test on mobile viewport sizes
+- Consider accessibility (a11y)
+
+## File Naming Conventions
+
+- **Components**: `PascalCase.tsx` (e.g., `PrayerCard.tsx`)
+- **Hooks**: `camelCase.ts` with `use` prefix (e.g., `usePrayers.ts`)
+- **Services**: `camelCase.ts` with `Service` suffix (e.g., `prayerService.ts`)
+- **Types**: `camelCase.ts` (e.g., `prayer.ts`)
+- **Tests**: `*.spec.ts` or `*.test.ts`
+
+## Import Aliases
+
+```typescript
+// Use @ alias for src directory
+import { supabase } from '@/lib/supabase';
+import { Prayer } from '@/types/prayer';
+import { PrayerCard } from '@/components/PrayerCard';
+```
+
+## Error Handling Pattern
+
+```typescript
+// Early returns for errors
+if (!user) {
+  toast.error('Please sign in to continue');
+  return;
+}
+
+// Try-catch with specific handling
+try {
+  const result = await operation();
+  toast.success('Prayer sent!');
+} catch (error) {
+  console.error('Operation failed:', error);
+  toast.error('Something went wrong. Please try again.');
+}
+```
+
+## Performance Expectations
+
+- First Contentful Paint: < 1.5s
+- Time to Interactive: < 2s
+- Map load time: < 1s
+- API response time (p95): < 300ms
+
+## When in Doubt
+
+1. Check `AGENTS.md` for detailed guidelines
+2. Reference `PrayerMap_PRD_v2.md` for product context
+3. Look at existing similar code in the codebase
+4. Ask for clarification rather than guessing

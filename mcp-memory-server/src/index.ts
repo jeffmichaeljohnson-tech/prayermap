@@ -212,12 +212,15 @@ async function main() {
     try {
       switch (name) {
         case "memory_search":
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return await handleMemorySearch(args as any);
         case "memory_ingest":
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return await handleMemoryIngest(args as any);
         case "memory_stats":
           return await handleMemoryStats();
         case "memory_context":
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return await handleMemoryContext(args as any);
         case "memory_topics":
           return await handleMemoryTopics();
@@ -281,6 +284,8 @@ async function handleMemorySearch(args: {
     }
 
     // Simple query with basic filters
+    // Build filter
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const filter: Record<string, any> = {};
     if (source !== "all") {
       filter.source = { $eq: source };

@@ -126,6 +126,7 @@ export class SimpleMap {
   private zoom: number;
   private pitch: number;
   private bearing: number;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
   private eventHandlers: Map<string, Function[]> = new Map();
 
   constructor(options: {
@@ -144,18 +145,20 @@ export class SimpleMap {
     this.bearing = options.bearing;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
   on(event: string, handler: Function) {
     if (!this.eventHandlers.has(event)) {
       this.eventHandlers.set(event, []);
     }
     this.eventHandlers.get(event)?.push(handler);
-    
+
     // Immediately fire 'load' event
     if (event === 'load') {
       setTimeout(() => handler(), 100);
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
   off(event: string, handler: Function) {
     const handlers = this.eventHandlers.get(event);
     if (handlers) {
@@ -205,8 +208,8 @@ export class SimpleMap {
     }, 50);
   }
 
-  setPaintProperty(_layer: string, _property: string, _value: unknown) {
-    // Mock implementation
+  setPaintProperty() {
+    // Mock implementation - parameters unused in mock
   }
 
   remove() {

@@ -1,0 +1,243 @@
+---
+description: React component patterns for PrayerMap
+globs:
+  - "src/components/**/*.tsx"
+  - "src/App.tsx"
+alwaysApply: false
+---
+
+# React Component Patterns
+
+## Component Structure Template
+```tsx
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { Prayer } from '@/types/prayer';
+
+interface ComponentNameProps {
+  prayer: Prayer;
+  onAction?: (id: string) => void;
+  className?: string;
+}
+
+export function ComponentName({ prayer, onAction, className }: ComponentNameProps) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Event handlers with useCallback for stability
+  const handleAction = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await someAsyncOperation();
+      onAction?.(prayer.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setLoading(false);
+    }
+  }, [prayer.id, onAction]);
+
+  // Loading state
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  // Error state
+  if (error) {
+    return <ErrorMessage message={error} onRetry={handleAction} />;
+  }
+
+  return (
+    <motion.div
+      className={cn("glass rounded-2xl p-6", className)}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+    >
+      {/* Component content */}
+    </motion.div>
+  );
+}
+```
+
+## Glassmorphic Design System
+
+### Utility Classes
+```tsx
+// Light glass (25% opacity, 12px blur)
+className="glass rounded-2xl p-6"
+
+// Strong glass (85% opacity, 20px blur)
+className="glass-strong rounded-xl p-4"
+
+// Custom glass
+className="bg-white/30 backdrop-blur-lg border border-white/20 rounded-2xl"
+
+// Gradient backgrounds
+className="bg-gradient-to-br from-heavenly-blue via-white to-dawn-gold"
+```
+
+### Color Palette
+```tsx
+// Primary colors (use via Tailwind)
+'heavenly-blue': '#E8F4F8'    // Sky/calm
+'dawn-gold': '#F7E7CE'        // Warmth
+'prayer-purple': '#D4C5F9'    // Spiritual
+'prayer-sent': '#D4EDDA'      // Success/sent
+'prayer-active': '#4A90E2'    // Active state
+
+// Text colors
+'text-primary': '#2C3E50'     // Main text
+'text-secondary': '#7F8C8D'   // Secondary
+'text-muted': '#95A5A6'       // Muted
+```
+
+## Animation Patterns
+
+### Framer Motion Defaults
+```tsx
+// Fade in with slide
+initial={{ opacity: 0, y: 20 }}
+animate={{ opacity: 1, y: 0 }}
+exit={{ opacity: 0, y: -20 }}
+transition={{ duration: 0.3, ease: "easeOut" }}
+
+// Scale on hover
+whileHover={{ scale: 1.02 }}
+whileTap={{ scale: 0.98 }}
+
+// Stagger children
+<motion.div variants={containerVariants}>
+  {items.map((item, i) => (
+    <motion.div
+      key={item.id}
+      variants={itemVariants}
+      custom={i}
+    />
+  ))}
+</motion.div>
+```
+
+### AnimatePresence for Modals
+```tsx
+<AnimatePresence mode="wait">
+  {showModal && (
+    <motion.div
+      key="modal"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <ModalContent onClose={() => setShowModal(false)} />
+    </motion.div>
+  )}
+</AnimatePresence>
+```
+
+## Modal-Based Navigation
+PrayerMap uses modal state instead of React Router:
+```tsx
+// In parent component
+const [showSettings, setShowSettings] = useState(false);
+const [showInbox, setShowInbox] = useState(false);
+const [selectedPrayer, setSelectedPrayer] = useState<Prayer | null>(null);
+
+// Render modals conditionally
+{showSettings && (
+  <SettingsScreen onBack={() => setShowSettings(false)} />
+)}
+
+{selectedPrayer && (
+  <PrayerDetailModal
+    prayer={selectedPrayer}
+    onClose={() => setSelectedPrayer(null)}
+  />
+)}
+```
+
+## Form Patterns
+```tsx
+// Controlled inputs with react-hook-form pattern
+const [formData, setFormData] = useState({
+  content: '',
+  isAnonymous: false,
+});
+
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!formData.content.trim()) return;
+
+  await onSubmit(formData);
+  setFormData({ content: '', isAnonymous: false });
+};
+
+<form onSubmit={handleSubmit}>
+  <Textarea
+    value={formData.content}
+    onChange={(e) => setFormData(prev => ({ ...prev, content: e.target.value }))}
+    placeholder="Share your prayer..."
+    required
+  />
+  <Switch
+    checked={formData.isAnonymous}
+    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isAnonymous: checked }))}
+  />
+  <Button type="submit" disabled={loading}>
+    {loading ? 'Sending...' : 'Send Prayer'}
+  </Button>
+</form>
+```
+
+## Loading States
+```tsx
+// Skeleton loading
+<div className="animate-pulse">
+  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
+  <div className="h-4 bg-gray-200 rounded w-1/2" />
+</div>
+
+// Spinner
+<div className="flex items-center justify-center">
+  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-prayer-active" />
+</div>
+
+// Full screen loading
+<LoadingScreen message="Loading prayers..." />
+```
+
+## Accessibility
+```tsx
+// Always include aria labels
+<button aria-label="Close modal" onClick={onClose}>
+  <X className="h-6 w-6" />
+</button>
+
+// Use semantic HTML
+<main>
+  <header>...</header>
+  <section aria-labelledby="prayers-heading">
+    <h2 id="prayers-heading">Recent Prayers</h2>
+  </section>
+</main>
+
+// Keyboard navigation
+onKeyDown={(e) => {
+  if (e.key === 'Escape') onClose();
+  if (e.key === 'Enter' && !e.shiftKey) handleSubmit(e);
+}}
+```
+
+## Component Categories
+
+### Page Components
+Full-screen views: `PrayerMap`, `SettingsScreen`, `AuthModal`
+
+### Feature Components
+Complex features: `RequestPrayerModal`, `PrayerDetailModal`, `InboxModal`
+
+### UI Primitives
+Reusable basics in `src/components/ui/`: `Button`, `Input`, `Textarea`, `Switch`
+
+### Visual Components
+Decorative/animation: `PrayerAnimationLayer`, `SunMoonIndicator`, `EtherealMap`

@@ -1,0 +1,250 @@
+---
+description: Ora agent archetypes and capabilities for PrayerMap
+globs:
+  - ".ora/**/*"
+alwaysApply: false
+---
+
+# Ora Agent Archetypes
+
+## Agent Overview
+
+| Agent Type | Primary Role | Tools Access |
+|------------|--------------|--------------|
+| Implementation | Write/modify code | Full codebase, terminal |
+| Research | Investigate solutions | Web, docs, codebase (read) |
+| QA | Test and validate | Full codebase, terminal |
+| Documentation | Write docs | Full codebase (read), docs (write) |
+| Infrastructure | DevOps tasks | Full access + cloud configs |
+
+## Implementation Agent
+
+### Capabilities
+- Write new components, services, hooks
+- Modify existing code
+- Fix bugs
+- Refactor code
+- Integrate APIs and libraries
+
+### Constraints
+- Must follow TypeScript strict mode
+- Must pass ESLint checks
+- Cannot modify production configs without approval
+- Cannot add new dependencies without approval
+
+### Task Examples
+```json
+{
+  "type": "implementation",
+  "examples": [
+    "Add loading skeleton to PrayerCard component",
+    "Implement audio recording for prayer responses",
+    "Fix real-time subscription memory leak",
+    "Refactor usePrayers hook for better performance",
+    "Integrate Capacitor for iOS deployment"
+  ]
+}
+```
+
+### Output Expectations
+- Working code that compiles
+- Follows project conventions
+- Includes inline comments for complex logic
+- Updates related files (imports, exports)
+
+## Research Agent
+
+### Capabilities
+- Investigate best practices
+- Compare solutions/libraries
+- Analyze competitor implementations
+- Document findings with recommendations
+
+### Constraints
+- Read-only access to codebase
+- Cannot modify files
+- Must cite sources
+- Must provide actionable recommendations
+
+### Task Examples
+```json
+{
+  "type": "research",
+  "examples": [
+    "Research Capacitor vs React Native for iOS deployment",
+    "Investigate Supabase real-time best practices",
+    "Analyze map clustering algorithms for prayer markers",
+    "Compare audio compression libraries for React",
+    "Research offline-first patterns for mobile"
+  ]
+}
+```
+
+### Output Expectations
+- Structured research report
+- Pros/cons analysis
+- Recommendation with rationale
+- Links to sources
+- Code examples where relevant
+
+## QA Agent
+
+### Capabilities
+- Write unit tests (Vitest)
+- Write E2E tests (Playwright)
+- Perform manual testing
+- Report bugs with reproduction steps
+- Validate acceptance criteria
+
+### Constraints
+- Cannot modify production code
+- Must document all findings
+- Must provide reproduction steps for bugs
+
+### Task Examples
+```json
+{
+  "type": "qa",
+  "examples": [
+    "Write unit tests for prayerService.ts",
+    "Create E2E test for prayer creation flow",
+    "Test PrayerMap component on mobile viewports",
+    "Validate real-time subscription reliability",
+    "Perform accessibility audit on modals"
+  ]
+}
+```
+
+### Output Expectations
+- Test files following project patterns
+- Bug reports with reproduction steps
+- Coverage reports
+- Accessibility findings
+- Performance metrics
+
+## Documentation Agent
+
+### Capabilities
+- Write technical documentation
+- Update README files
+- Create API documentation
+- Maintain changelog
+- Write user guides
+
+### Constraints
+- Read-only on source code
+- Write access to docs/ directory only
+- Must follow existing doc structure
+- Must include code examples
+
+### Task Examples
+```json
+{
+  "type": "documentation",
+  "examples": [
+    "Document prayerService API functions",
+    "Create setup guide for new developers",
+    "Update README with iOS deployment steps",
+    "Write Supabase schema documentation",
+    "Create component storybook documentation"
+  ]
+}
+```
+
+### Output Expectations
+- Clear, concise documentation
+- Code examples that work
+- Proper markdown formatting
+- Cross-references to related docs
+- Updated table of contents
+
+## Infrastructure Agent
+
+### Capabilities
+- Configure CI/CD pipelines
+- Set up deployment environments
+- Manage environment variables
+- Optimize build configurations
+- Configure monitoring/logging
+
+### Constraints
+- Cannot deploy to production without approval
+- Must document all infrastructure changes
+- Must follow security best practices
+- Cannot expose secrets
+
+### Task Examples
+```json
+{
+  "type": "infrastructure",
+  "examples": [
+    "Set up Capacitor iOS build pipeline",
+    "Configure Vercel preview deployments",
+    "Set up Sentry error monitoring",
+    "Optimize Vite build for production",
+    "Configure Supabase staging environment"
+  ]
+}
+```
+
+### Output Expectations
+- Configuration files
+- Environment setup documentation
+- Security review notes
+- Rollback procedures
+- Monitoring dashboards
+
+## Agent Communication
+
+### Inter-Agent Collaboration
+Agents can request help from other agents via Director:
+
+```json
+{
+  "type": "collaboration_request",
+  "from": "implementation-agent-01",
+  "to": "research-agent-01",
+  "request": "Need best practices for Capacitor plugin integration",
+  "context": "Working on audio recording feature for iOS",
+  "urgency": "high"
+}
+```
+
+### Handoff Protocol
+When task requires multiple agents:
+
+1. **Implementation** creates initial code
+2. **QA** tests and reports issues
+3. **Implementation** fixes issues
+4. **Documentation** updates docs
+5. **Director** approves completion
+
+## PrayerMap-Specific Agent Context
+
+### Implementation Agent Focus Areas
+- React components with glassmorphic design
+- Supabase real-time subscriptions
+- Mapbox integration
+- Audio/video recording
+- Capacitor iOS plugins
+
+### QA Agent Test Priorities
+1. Prayer creation flow (critical path)
+2. Real-time updates reliability
+3. Authentication flows
+4. Media upload/playback
+5. Mobile responsive behavior
+
+### Documentation Agent Priorities
+1. API documentation for services
+2. Component usage guides
+3. Supabase schema docs
+4. iOS deployment guide
+5. Design system documentation
+
+### Infrastructure Agent Priorities
+1. Capacitor iOS build setup
+2. App Store submission prep
+3. CI/CD for mobile builds
+4. Performance monitoring
+5. Error tracking setup

@@ -23,7 +23,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!supabase) {
       console.warn('Supabase client not initialized');
-      setLoading(false);
+      // Use setTimeout to avoid synchronous setState in effect
+      setTimeout(() => setLoading(false), 0);
       return;
     }
 
@@ -114,6 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

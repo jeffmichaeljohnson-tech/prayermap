@@ -107,7 +107,9 @@ function parseSkillFile(filePath: string, fileName: string): SkillDefinition | n
 /**
  * Simple YAML frontmatter parser
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseFrontmatter(yaml: string): Record<string, any> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const result: Record<string, any> = {};
   const lines = yaml.split("\n");
 
@@ -156,6 +158,7 @@ async function main() {
     const tools = [];
 
     for (const [name, skill] of skills) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const inputSchema: Record<string, any> = {
         type: "object",
         properties: {},

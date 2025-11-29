@@ -18,7 +18,11 @@ export function PrayerAnimationLayer({ prayer, userLocation, map, onComplete }: 
 
   // Use ref to store onComplete so we don't re-run effect when it changes
   const onCompleteRef = useRef(onComplete);
-  onCompleteRef.current = onComplete;
+
+  // Update ref when onComplete changes
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   // Track if we've already completed to prevent double-calls
   const hasCompletedRef = useRef(false);

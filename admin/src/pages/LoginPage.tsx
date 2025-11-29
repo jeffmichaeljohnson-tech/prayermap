@@ -27,6 +27,12 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>
 
+interface LocationState {
+  from?: {
+    pathname: string
+  }
+}
+
 /**
  * Admin login page component
  */
@@ -48,7 +54,7 @@ export function LoginPage() {
   // Redirect if already logged in
   useEffect(() => {
     if (user) {
-      const from = (location.state as any)?.from?.pathname || '/dashboard'
+      const from = (location.state as LocationState)?.from?.pathname || '/dashboard'
       navigate(from, { replace: true })
     }
   }, [user, navigate, location])
@@ -65,7 +71,7 @@ export function LoginPage() {
 
       if (result.success) {
         // Redirect to dashboard or original destination
-        const from = (location.state as any)?.from?.pathname || '/dashboard'
+        const from = (location.state as LocationState)?.from?.pathname || '/dashboard'
         navigate(from, { replace: true })
       } else {
         setLoginError(result.error || 'Login failed')

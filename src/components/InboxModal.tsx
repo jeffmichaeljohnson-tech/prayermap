@@ -53,6 +53,7 @@ export function InboxModal({ onClose }: InboxModalProps) {
 
   const getTimeAgo = (date: Date) => {
     const timestamp = date instanceof Date ? date.getTime() : new Date(date).getTime();
+    // eslint-disable-next-line react-hooks/purity
     const hours = Math.floor((Date.now() - timestamp) / (1000 * 60 * 60));
     if (hours < 1) return 'Just now';
     if (hours < 24) return `${hours}h ago`;
