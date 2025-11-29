@@ -1,10 +1,12 @@
 # rules
 
+**📖 REQUIRED READING FIRST:** You MUST read `ARTICLE.md` - The Autonomous Excellence Manifesto before working on this project. It defines the operational philosophy, research standards, and execution methodology that governs every aspect of PrayerMap development.
+
 PrayerMap is a location-based spiritual platform that connects people needing prayer with those willing to pray through an interactive map interface, featuring glassmorphic design and cinematic animations.
 
 ## Overview
 
-This project's scope, features, and architecture must **strictly align with the included documentation (source of truth for all UX, design, and technical decisions).**
+This project's scope, features, and architecture must **strictly align with the included documentation (source of truth for all UX, design, and technical decisions).** The methodology and quality standards are defined in `ARTICLE.md` and must be followed absolutely.
 
 ### Your Role & Engineering Ethos
 
@@ -156,6 +158,11 @@ Users should experience spiritual delight without clutter or confusion.
 
 ## References
 
+**Foundational Documents (READ FIRST):**
+- `ARTICLE.md` — **MANDATORY**: The Autonomous Excellence Manifesto - defines how we think, build, and execute
+- `CLAUDE.md` — **MANDATORY**: Project instructions and critical principles that override defaults
+
+**Technical Documentation:**
 - `00-MASTER-HANDOFF-DOCUMENT.md` — Project overview
 - `01-SCREEN-INVENTORY.md` — Screen list and flows
 - `02-DESIGN-SYSTEM.md` — Complete design tokens
@@ -166,6 +173,8 @@ Users should experience spiritual delight without clutter or confusion.
 - `PrayerMap_PRD_v2.md` — Full product requirements
 - `prayermap_schema_v2.sql` — Database schema
 - `prayermap_api_spec_v2.md` — API documentation
+
+**External References:**
 - MapBox GL JS Documentation
 - Supabase Documentation
 - Framer Motion Documentation

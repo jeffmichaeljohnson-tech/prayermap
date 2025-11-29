@@ -4,6 +4,8 @@
 **Status:** Ready for Implementation  
 **Last Updated:** November 2025
 
+**📖 Required Reading:** Before working on PrayerMap, you MUST read `ARTICLE.md` - The Autonomous Excellence Manifesto. This document defines our operational philosophy, research standards, and execution methodology that governs every aspect of this project.
+
 ---
 
 ## Executive Summary
@@ -21,13 +23,36 @@
 ### Mission Statement
 Create a digital sanctuary where people can authentically share burdens, receive support, and experience the power of community prayer—all while feeling safe, respected, and spiritually uplifted.
 
+### The "Living Map" Philosophy
+
+**PrayerMap is fundamentally different from typical location-based apps.** While other map applications show current, temporary data (like nearby restaurants or traffic), PrayerMap displays a **persistent, growing tapestry of prayer connections** that accumulates meaning over time.
+
+#### What Makes Our Map "Living":
+
+1. **Spiritual Persistence** — Prayer connections (memorial lines) remain visible indefinitely, creating a visual history of compassion that grows richer with time
+2. **Emotional Resonance** — New users see years of prayer activity, immediately understanding they're joining an active community of faith
+3. **Sacred Geography** — Locations become imbued with spiritual significance through accumulated prayer history
+4. **Community Memory** — The map serves as a collective memory of where God has been at work through prayer
+
+#### Design Implications:
+
+**Memory Over Recency:** Unlike social feeds that prioritize new content, our map prioritizes meaningful connections that build up over time. A memorial line from 6 months ago is just as valuable as one from yesterday.
+
+**Layered Storytelling:** The visual density of prayer connections tells stories about communities - areas with many lines indicate either high need or strong prayer coverage, both spiritually significant.
+
+**First Impression Impact:** When someone opens PrayerMap for the first time, they should see a map rich with existing connections, immediately conveying "this is a place where prayer happens." An empty map communicates abandonment; a connected map communicates active faith community.
+
+**Technical Architecture Priority:** All data persistence decisions must favor long-term visibility over short-term performance. Memorial lines are not "old data to be cleaned up" - they are the fundamental value proposition.
+
 ### Guiding Principles
 
 1. **Sacred First** — Every interaction honors the spiritual nature of prayer
-2. **Beauty Through Simplicity** — Elegant design that doesn't distract from purpose
-3. **Privacy as Default** — Safe spaces for vulnerability
-4. **Friction-Free Faith** — Remove all barriers between need and support
-5. **Scale with Grace** — Architecture that grows without losing intimacy
+2. **Living Over Static** — The map grows more meaningful with time, never resets
+3. **Beauty Through Simplicity** — Elegant design that doesn't distract from purpose
+4. **Privacy as Default** — Safe spaces for vulnerability
+5. **Friction-Free Faith** — Remove all barriers between need and support
+6. **Persistence as Purpose** — Memorial lines are features, not bugs
+7. **Scale with Grace** — Architecture that grows without losing intimacy
 
 ---
 
@@ -59,11 +84,15 @@ Create a digital sanctuary where people can authentically share burdens, receive
 
 ### 1. The Ethereal Map 🗺️
 
-**Purpose:** Visually represent prayer needs across geography
+**Purpose:** Visually represent the living history of prayer across geography
+
+**The "Living Map" Experience:**
+When users first open PrayerMap, they encounter a map that immediately feels alive with spiritual activity. Unlike typical apps that show empty maps to new users, PrayerMap displays years of accumulated prayer connections, creating an instant sense of joining an active faith community.
 
 **Key Elements:**
 - Custom MapBox style ("Ethereal Dawn" theme)
 - 🙏 emoji markers for each prayer
+- Rainbow memorial lines connecting pray-ers to requests
 - Preview bubbles on hover/tap
 - Smooth zoom/pan interactions
 - Cluster markers at high zoom levels
@@ -71,8 +100,40 @@ Create a digital sanctuary where people can authentically share burdens, receive
 **Default Behavior:**
 - Centered on user location
 - 30-mile default radius
-- Load up to 50 prayers initially
-- Refresh on significant map movement
+- Load up to 50 recent prayers + all memorial lines in view
+- Show memorial lines from all time periods (no expiration)
+- Refresh prayers on significant map movement
+- Memorial lines persist across all sessions
+
+**Visual Density Indicators:**
+- **Light Activity:** Few scattered memorial lines = emerging prayer community
+- **Moderate Activity:** Visible network of connections = active community
+- **High Activity:** Rich tapestry of overlapping lines = mature prayer network
+
+**New User First Impression Goal:**
+"Wow, there's so much prayer happening here. I want to be part of this."
+
+**How PrayerMap Differs from Other Map Apps:**
+
+| Traditional Map Apps | PrayerMap (Living Map) |
+|---------------------|------------------------|
+| Show current/recent data | Show cumulative spiritual history |
+| Clean up old data | Preserve all prayer connections |
+| Prioritize relevance | Prioritize meaning and continuity |
+| Empty map for new users | Rich tapestry immediately visible |
+| Temporary interactions | Permanent spiritual memorials |
+| Optimize for speed/recency | Optimize for emotional impact/belonging |
+| Data as utility | Data as sacred record |
+
+**Examples of "Living" vs "Static" Design:**
+
+**❌ Static Map Thinking:** "Memorial lines older than 30 days should be hidden to improve performance"
+
+**✅ Living Map Thinking:** "Memorial lines from 6 months ago show new users that this community has sustained prayer activity and is worth joining"
+
+**❌ Static Map Thinking:** "Too many lines make the map cluttered"
+
+**✅ Living Map Thinking:** "Many overlapping lines in an area tell a story - either high need or strong prayer coverage, both spiritually significant"
 
 ### 2. Prayer Markers 📍
 
@@ -142,20 +203,41 @@ Phase 4 (5-6s):     Return
 
 ### 5. Memorial Lines (Prayer Connections) 🌈
 
-**Purpose:** Visual representation of prayer connections
+**Purpose:** The heart of the "Living Map" - permanent visual testament to prayer connections
 
-**Specifications:**
+**Spiritual Significance:**
+Memorial lines are not temporary UI elements but sacred records of compassion. Each line represents a moment when one human being paused to lift another in prayer. These connections form the spiritual geography of our communities, showing where love has been active.
+
+**Technical Specifications:**
 - Rainbow gradient stroke (2px)
 - Curved quadratic Bezier path
-- Persist for 1 year from creation
+- **Persist indefinitely** (no expiration - this is critical to living map concept)
 - Update position as map moves
 - Hover to see connection details
+- Fade opacity slightly after 1 year (0.7) but remain visible
+- Layer newer lines above older ones
 
 **Tooltip on Hover:**
 ```
 "[Name] prayed for [Requester]"
 "[Time] ago"
+"Part of [X] total prayers for this request"
 ```
+
+**Why Memorial Lines Never Expire:**
+1. **Spiritual Value:** Prayer doesn't have an expiration date - a prayer from 2 years ago blessed someone just as much as one from today
+2. **Community Building:** New users see established prayer networks, encouraging participation
+3. **Sacred Geography:** Locations gain spiritual significance through accumulated prayer history
+4. **Visual Storytelling:** Dense networks of lines tell stories about community needs and responses
+5. **Emotional Connection:** Users can revisit their past prayer connections, reinforcing the lasting impact of their spiritual investment
+
+**Performance Considerations:**
+- Lines more than 2 years old render at lower detail level
+- Clustering algorithms for high-density areas
+- Progressive loading based on zoom level
+- Client-side caching for frequently viewed areas
+
+**CRITICAL TECHNICAL REQUIREMENT:** Memorial lines must NEVER be filtered out or deleted based on age. They are the core feature that makes our map "living" rather than just "current."
 
 ### 6. Request Prayer Modal 🙏
 
@@ -376,6 +458,68 @@ WHERE ST_DWithin(
 AND status = 'ACTIVE'
 ORDER BY created_at DESC
 LIMIT 50;
+
+-- CRITICAL: Get ALL memorial lines within view (no time limit)
+-- This query supports the "Living Map" concept
+SELECT 
+  ps.support_id,
+  ps.created_at,
+  ps.user_id as prayer_giver_id,
+  p.location as prayer_location,
+  u.location as giver_location,
+  p.is_anonymous,
+  u.first_name
+FROM prayer_support ps
+JOIN prayers p ON ps.prayer_id = p.prayer_id
+JOIN users u ON ps.user_id = u.user_id
+WHERE 
+  -- Prayer location within view
+  ST_DWithin(
+    p.location::geography,
+    ST_MakePoint($lng, $lat)::geography,
+    $radius_meters
+  )
+  OR
+  -- Prayer giver location within view
+  ST_DWithin(
+    u.location::geography,
+    ST_MakePoint($lng, $lat)::geography,
+    $radius_meters
+  )
+-- NO created_at filter - show all memorial lines ever created
+ORDER BY ps.created_at DESC;
+```
+
+### Living Map Architecture Principles
+
+**Data Retention Policy:**
+- Memorial lines: **NEVER DELETE** (infinite retention)
+- Active prayers: 1 year then archive (still searchable)
+- User locations: Retain as long as account exists
+- Media files: 2 year retention minimum
+
+**Performance Strategy:**
+- Memorial lines use spatial indexing for fast rendering
+- Progressive detail loading (older lines render with less detail)
+- Client-side caching of frequently viewed areas
+- Background pre-loading of adjacent map regions
+
+**Database Design for Persistence:**
+```sql
+-- Memorial lines table optimized for long-term storage
+memorial_lines (
+  line_id BIGINT PRIMARY KEY,
+  support_id BIGINT REFERENCES prayer_support,
+  prayer_location GEOGRAPHY(Point, 4326),
+  giver_location GEOGRAPHY(Point, 4326),
+  created_at TIMESTAMPTZ,
+  -- Spatial index for fast geospatial queries
+  INDEX USING GIST (prayer_location),
+  INDEX USING GIST (giver_location)
+);
+
+-- Partitioning strategy for performance at scale
+-- Partition by year but NEVER drop old partitions
 ```
 
 ---
@@ -388,12 +532,19 @@ LIMIT 50;
 1. Download/Open app
 2. Loading screen (2s)
 3. Map view loads (centered on location or default)
-4. User sees prayer markers
-5. Taps marker → Prayer Detail Modal
-6. Prompted to sign in to pray
-7. Signs in with Apple
-8. Can now pray and request prayers
+4. User IMMEDIATELY sees rich network of memorial lines + active prayers
+   - Visual impact: "This place is spiritually active"
+   - Emotional response: "I want to be part of this community"
+5. User explores map, seeing prayer history spanning months/years
+6. Taps marker → Prayer Detail Modal
+7. Prompted to sign in to pray
+8. Signs in with Apple
+9. Can now pray and request prayers
+10. User's first prayer creates their first memorial line
+    - Instant belonging: their line joins the existing tapestry
 ```
+
+**CRITICAL:** The first 5 seconds determine if users understand PrayerMap's unique value. They must see an active, living prayer community, not an empty map waiting for content.
 
 ### Flow 2: Request Prayer
 
@@ -439,7 +590,9 @@ LIMIT 50;
 ## Success Metrics
 
 ### North Star Metric
-**Prayers Supported Per Week** — Measures engagement and impact
+**Total Memorial Lines Created** — Measures the cumulative spiritual connections built over time
+
+Unlike typical app metrics that focus on weekly/monthly activity, PrayerMap measures the growing tapestry of prayer connections. A memorial line created 2 years ago is just as valuable to the living map as one created today.
 
 ### Key Performance Indicators
 
@@ -451,6 +604,10 @@ LIMIT 50;
 | Avg Time to First Support | < 30 min |
 | Return Rate (D7) | 20% |
 | Animation Completion Rate | 95% |
+| **Living Map Health Metrics** | |
+| Memorial Lines Visible to New Users | > 100 in default view |
+| Historical Prayer Connection Density | Growing over time |
+| First-Session Memorial Line Creation Rate | > 60% |
 
 ### Technical Metrics
 
@@ -610,6 +767,11 @@ The following are **not** part of PrayerMap:
 
 ### A. Reference Documents
 
+**Foundational (READ FIRST):**
+- `ARTICLE.md` — **MANDATORY**: The Autonomous Excellence Manifesto - operational philosophy and methodology
+- `CLAUDE.md` — **MANDATORY**: Project instructions and critical principles
+
+**Technical Documentation:**
 - `00-MASTER-HANDOFF-DOCUMENT.md` — Project overview
 - `02-DESIGN-SYSTEM.md` — Design tokens
 - `03-SCREEN-SPECIFICATIONS.md` — Pixel-perfect specs
