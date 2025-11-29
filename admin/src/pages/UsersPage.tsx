@@ -393,6 +393,7 @@ function EditUserDialog({ user, onClose, onSave, isLoading }: EditUserDialogProp
       setDisplayName('')
       setAvatarUrl('')
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 
   const handleSubmit = async (e: React.FormEvent) => {
