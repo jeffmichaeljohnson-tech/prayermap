@@ -1,0 +1,420 @@
+---
+description: React and TypeScript patterns for PrayerMap components
+globs:
+  - "**/*.tsx"
+  - "**/*.ts"
+  - "src/**/*"
+  - "admin/**/*"
+alwaysApply: false
+---
+
+# React & TypeScript Development Rules
+
+## Core Principles for React Development
+
+**THESE PRINCIPLES MUST GUIDE ALL REACT/TYPESCRIPT WORK:**
+
+### Animation-First Component Design
+- Every component should consider animation from the start, not as an afterthought
+- Use Framer Motion for all transitions, page changes, and interactive states
+- Default to animating components when they mount/unmount
+- Stagger list items for delightful loading experiences
+- Ensure animations work smoothly on mobile devices (60fps target)
+- Example patterns: fade-in on mount, slide-up modals, staggered lists, gesture-based interactions
+
+### Mobile-Responsive from the Start
+- Build for mobile viewports FIRST (mobile-first design)
+- Every component must work beautifully on iOS and Android via Capacitor
+- Use responsive Tailwind classes: `sm:`, `md:`, `lg:`
+- Test touch interactions, not just clicks
+- Consider thumb-friendly tap targets (min 44x44px)
+- Avoid hover-only interactions (mobile has no hover state)
+
+### Performance Optimization for Animations
+- Use `transform` and `opacity` for animations (GPU-accelerated)
+- Avoid animating `width`, `height`, `top`, `left` (causes layout thrashing)
+- Implement `React.memo()` for components with complex animations
+- Use `useCallback()` for animation callbacks
+- Lazy load heavy components with `React.lazy()`
+- Monitor performance with React DevTools Profiler
+
+### Reducing Component Complexity for Fewer User Steps
+- Design components to minimize user interactions
+- Use smart defaults instead of asking for input
+- Implement progressive disclosure (show advanced options only when needed)
+- Combine related fields into single-step inputs
+- Auto-focus appropriate fields to reduce taps
+- Example: Prayer creation should be one textarea and one button, not a multi-step form
+
+## Component Structure
+
+```typescript
+// 1. Imports
+import { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
+
+import { supabase } from '@/lib/supabase';
+import { Prayer } from '@/types/prayer';
+import { Button } from '@/components/ui/button';
+
+// 2. Types
+interface PrayerCardProps {
+  prayer: Prayer;
+  onPrayerSent?: (prayerId: string) => void;
+  isCompact?: boolean;
+}
+
+// 3. Component
+export function PrayerCard({ prayer, onPrayerSent, isCompact = false }: PrayerCardProps) {
+  // State declarations
+  const [isPraying, setIsPraying] = useState(false);
+
+  // Hooks
+  const { user } = useAuth();
+
+  // Derived state
+  const canPray = user && !prayer.hasPrayed;
+
+  // Event handlers
+  const handlePrayerSent = useCallback(async () => {
+    if (!canPray) return;
+    setIsPraying(true);
+    try {
+      await sendPrayer(prayer.id);
+      onPrayerSent?.(prayer.id);
+      toast.success('Prayer sent!');
+    } catch (error) {
+      toast.error('Failed to send prayer');
+    } finally {
+      setIsPraying(false);
+    }
+  }, [prayer.id, canPray, onPrayerSent]);
+
+  // Render
+  return (
+    <motion.div
+      className="glass rounded-2xl p-6"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+    >
+      {/* Component JSX */}
+    </motion.div>
+  );
+}
+```
+
+## TypeScript Patterns
+
+### Interface Definitions
+```typescript
+// Props interfaces
+interface ComponentProps {
+  required: string;
+  optional?: number;
+  callback?: (value: string) => void;
+  children?: React.ReactNode;
+}
+
+// Data interfaces
+interface Prayer {
+  id: string;
+  title: string | null;
+  text_body: string;
+  location: { lat: number; lng: number };
+  created_at: string;
+  user_id: string;
+  is_anonymous: boolean;
+  media_url?: string;
+  media_type?: 'audio' | 'video';
+  support_count: number;
+}
+
+// API response types
+interface ApiResponse<T> {
+  data: T | null;
+  error: Error | null;
+}
+```
+
+### Avoid These Patterns
+```typescript
+// BAD: Using any
+const data: any = response;
+
+// GOOD: Use unknown and narrow
+const data: unknown = response;
+if (isPrayer(data)) {
+  // data is now Prayer type
+}
+
+// BAD: Optional chaining without fallback
+const name = user?.profile?.name;
+
+// GOOD: Provide sensible default
+const name = user?.profile?.name ?? 'Anonymous';
+
+// BAD: Inline object types
+function process(config: { key: string; value: number }) {}
+
+// GOOD: Named interface
+interface ProcessConfig {
+  key: string;
+  value: number;
+}
+function process(config: ProcessConfig) {}
+```
+
+## State Management
+
+### Local State (useState)
+```typescript
+// For component-local UI state
+const [isOpen, setIsOpen] = useState(false);
+const [inputValue, setInputValue] = useState('');
+```
+
+### Server State (React Query)
+```typescript
+// For data from Supabase
+const { data: prayers, isLoading, error, refetch } = useQuery({
+  queryKey: ['prayers', 'nearby', location],
+  queryFn: () => prayerService.getNearbyPrayers(location),
+  staleTime: 1000 * 60, // 1 minute
+  enabled: !!location, // Only fetch when location exists
+});
+
+// Mutations
+const mutation = useMutation({
+  mutationFn: (newPrayer: CreatePrayerInput) =>
+    prayerService.createPrayer(newPrayer),
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['prayers'] });
+    toast.success('Prayer posted!');
+  },
+  onError: (error) => {
+    toast.error('Failed to post prayer');
+    console.error(error);
+  },
+});
+```
+
+### Global State (Zustand)
+```typescript
+// For app-wide state
+import { create } from 'zustand';
+
+interface AppStore {
+  isMapLoaded: boolean;
+  setMapLoaded: (loaded: boolean) => void;
+  selectedPrayerId: string | null;
+  selectPrayer: (id: string | null) => void;
+}
+
+export const useAppStore = create<AppStore>((set) => ({
+  isMapLoaded: false,
+  setMapLoaded: (loaded) => set({ isMapLoaded: loaded }),
+  selectedPrayerId: null,
+  selectPrayer: (id) => set({ selectedPrayerId: id }),
+}));
+```
+
+## Hooks Patterns
+
+### Custom Hook Template
+```typescript
+export function usePrayers(location: { lat: number; lng: number } | null) {
+  const queryClient = useQueryClient();
+
+  const nearbyPrayers = useQuery({
+    queryKey: ['prayers', 'nearby', location?.lat, location?.lng],
+    queryFn: () => prayerService.getNearbyPrayers(location!),
+    enabled: !!location,
+  });
+
+  const createPrayer = useMutation({
+    mutationFn: prayerService.createPrayer,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['prayers'] });
+    },
+  });
+
+  return {
+    prayers: nearbyPrayers.data ?? [],
+    isLoading: nearbyPrayers.isLoading,
+    error: nearbyPrayers.error,
+    createPrayer: createPrayer.mutate,
+    isCreating: createPrayer.isPending,
+  };
+}
+```
+
+### useEffect Guidelines
+```typescript
+// GOOD: Specific dependencies
+useEffect(() => {
+  if (prayerId) {
+    fetchPrayerDetails(prayerId);
+  }
+}, [prayerId]);
+
+// GOOD: Cleanup function
+useEffect(() => {
+  const subscription = supabase
+    .channel('prayers')
+    .on('INSERT', handleNewPrayer)
+    .subscribe();
+
+  return () => {
+    subscription.unsubscribe();
+  };
+}, []);
+
+// BAD: Missing dependencies (eslint will catch this)
+useEffect(() => {
+  doSomethingWith(prayer); // prayer not in deps
+}, []);
+```
+
+## Form Handling
+
+```typescript
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const prayerSchema = z.object({
+  title: z.string().max(100).optional(),
+  text_body: z.string().min(10, 'Prayer must be at least 10 characters'),
+  is_anonymous: z.boolean().default(false),
+});
+
+type PrayerFormData = z.infer<typeof prayerSchema>;
+
+function RequestPrayerForm() {
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<PrayerFormData>({
+    resolver: zodResolver(prayerSchema),
+    defaultValues: {
+      is_anonymous: false,
+    },
+  });
+
+  const onSubmit = async (data: PrayerFormData) => {
+    // Handle submission
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <input {...register('title')} />
+      {errors.title && <span>{errors.title.message}</span>}
+      {/* ... */}
+    </form>
+  );
+}
+```
+
+## Animation Patterns
+
+```typescript
+import { motion, AnimatePresence } from 'framer-motion';
+
+// Page transitions
+const pageVariants = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -20 },
+};
+
+// Modal animation
+<AnimatePresence>
+  {isOpen && (
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.2 }}
+      className="modal glass"
+    >
+      {children}
+    </motion.div>
+  )}
+</AnimatePresence>
+
+// Staggered list
+<motion.ul>
+  {items.map((item, i) => (
+    <motion.li
+      key={item.id}
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ delay: i * 0.1 }}
+    >
+      {item.content}
+    </motion.li>
+  ))}
+</motion.ul>
+```
+
+## Accessibility (a11y)
+
+```typescript
+// Always include
+<button
+  onClick={handleClick}
+  aria-label="Send prayer"
+  aria-pressed={hasPrayed}
+  disabled={isLoading}
+>
+  {isLoading ? <Spinner /> : 'Pray'}
+</button>
+
+// For modals
+<div
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="modal-title"
+>
+  <h2 id="modal-title">Prayer Details</h2>
+</div>
+
+// For loading states
+<div aria-live="polite" aria-busy={isLoading}>
+  {isLoading ? 'Loading...' : content}
+</div>
+```
+
+## Error Boundaries
+
+```typescript
+import { ErrorBoundary } from 'react-error-boundary';
+
+function ErrorFallback({ error, resetErrorBoundary }) {
+  return (
+    <div className="glass p-6 text-center">
+      <h2>Something went wrong</h2>
+      <pre className="text-sm text-red-500">{error.message}</pre>
+      <Button onClick={resetErrorBoundary}>Try again</Button>
+    </div>
+  );
+}
+
+// Usage
+<ErrorBoundary FallbackComponent={ErrorFallback}>
+  <PrayerMap />
+</ErrorBoundary>
+```
+
+## Testing Patterns
+
+```typescript
+// Component test with Playwright
+import { test, expect } from '@playwright/test';
+
+test('can send a prayer', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-testid="prayer-marker"]');
+  await page.click('[data-testid="send-prayer-btn"]');
+  await expect(page.locator('.toast-success')).toBeVisible();
+});
+```
