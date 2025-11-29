@@ -478,14 +478,21 @@ describe('useVideoRecorder', () => {
       await act(async () => {
         await result.current.initializeCamera();
         await result.current.startRecording();
-        result.current.stopRecording();
       });
 
-      await waitFor(() => {
-        expect(result.current.videoUrl).toBeTruthy();
-      });
-
+      // Stop recording - this triggers onstop synchronously in the mock
       await act(async () => {
+        result.current.stopRecording();
+        // Give React time to process state updates
+        await Promise.resolve();
+      });
+
+      // Verify video was created
+      expect(result.current.videoUrl).toBeTruthy();
+      expect(result.current.videoBlob).toBeTruthy();
+
+      // Reset recording
+      act(() => {
         result.current.resetRecording();
       });
 
@@ -535,14 +542,20 @@ describe('useVideoRecorder', () => {
       await act(async () => {
         await result.current.initializeCamera();
         await result.current.startRecording();
-        result.current.stopRecording();
       });
 
-      await waitFor(() => {
-        expect(result.current.videoUrl).toBeTruthy();
-      });
-
+      // Stop recording - onstop fires synchronously in mock
       await act(async () => {
+        result.current.stopRecording();
+        // Give React time to process state updates
+        await Promise.resolve();
+      });
+
+      // Verify video URL was created
+      expect(result.current.videoUrl).toBeTruthy();
+
+      // Reset and check that revokeObjectURL was called
+      act(() => {
         result.current.resetRecording();
       });
 
