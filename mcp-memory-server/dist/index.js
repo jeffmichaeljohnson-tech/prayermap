@@ -161,12 +161,15 @@ async function main() {
         try {
             switch (name) {
                 case "memory_search":
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     return await handleMemorySearch(args);
                 case "memory_ingest":
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     return await handleMemoryIngest(args);
                 case "memory_stats":
                     return await handleMemoryStats();
                 case "memory_context":
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     return await handleMemoryContext(args);
                 default:
                     return {
@@ -201,6 +204,7 @@ async function handleMemorySearch(args) {
         // Generate embedding for the query
         const queryEmbedding = await generateEmbedding(query);
         // Build filter
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const filter = {};
         if (source !== "all") {
             filter.source = { $eq: source };

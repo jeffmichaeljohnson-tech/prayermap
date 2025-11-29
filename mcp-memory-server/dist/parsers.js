@@ -62,7 +62,7 @@ export function parseClaudeCodeSession(filePath) {
                     }
                 }
             }
-            catch (parseError) {
+            catch {
                 // Skip malformed lines
                 continue;
             }
@@ -95,7 +95,7 @@ function extractTextContent(content) {
             if (typeof item === "string") {
                 textParts.push(item);
             }
-            else if (item.type === "text" && item.text) {
+            else if (item && typeof item === "object" && "type" in item && item.type === "text" && "text" in item && typeof item.text === "string") {
                 textParts.push(item.text);
             }
         }
