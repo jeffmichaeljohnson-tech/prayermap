@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 !mcp-skills-server/dist
+!mcp-memory-server/dist
 dist-ssr
 *.local
 
