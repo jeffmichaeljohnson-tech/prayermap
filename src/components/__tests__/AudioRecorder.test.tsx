@@ -4,6 +4,18 @@ import userEvent from '@testing-library/user-event';
 import { AudioRecorder } from '../AudioRecorder';
 import * as useAudioRecorderModule from '../../hooks/useAudioRecorder';
 
+// Mock framer-motion to avoid animation issues in tests
+vi.mock('framer-motion', () => ({
+  motion: {
+    div: ({ children, className, ...props }: any) => (
+      <div className={className} {...props}>
+        {children}
+      </div>
+    ),
+  },
+  AnimatePresence: ({ children }: any) => <>{children}</>,
+}));
+
 // Mock the useAudioRecorder hook
 vi.mock('../../hooks/useAudioRecorder');
 
@@ -68,7 +80,7 @@ describe('AudioRecorder', () => {
       const user = userEvent.setup();
       render(<AudioRecorder onRecordingComplete={mockOnRecordingComplete} />);
 
-      const recordButton = screen.getByRole('button', { name: /mic/i });
+      const recordButton = screen.getByRole('button', { name: /start recording/i });
       await user.click(recordButton);
 
       expect(mockUseAudioRecorder.startRecording).toHaveBeenCalled();
@@ -130,14 +142,14 @@ describe('AudioRecorder', () => {
     it('should show pause/resume buttons during recording', () => {
       render(<AudioRecorder onRecordingComplete={mockOnRecordingComplete} />);
 
-      const pauseButton = screen.getByRole('button', { name: /pause/i });
+      const pauseButton = screen.getByRole('button', { name: /pause recording/i });
       expect(pauseButton).toBeInTheDocument();
     });
 
     it('should show stop button during recording', () => {
       render(<AudioRecorder onRecordingComplete={mockOnRecordingComplete} />);
 
-      const stopButton = screen.getByRole('button', { name: /square/i });
+      const stopButton = screen.getByRole('button', { name: /stop recording/i });
       expect(stopButton).toBeInTheDocument();
     });
 
@@ -145,7 +157,7 @@ describe('AudioRecorder', () => {
       const user = userEvent.setup();
       render(<AudioRecorder onRecordingComplete={mockOnRecordingComplete} />);
 
-      const pauseButton = screen.getByRole('button', { name: /pause/i });
+      const pauseButton = screen.getByRole('button', { name: /pause recording/i });
       await user.click(pauseButton);
 
       expect(mockUseAudioRecorder.pauseRecording).toHaveBeenCalled();
@@ -163,7 +175,7 @@ describe('AudioRecorder', () => {
       mockUseAudioRecorder.isPaused = true;
       render(<AudioRecorder onRecordingComplete={mockOnRecordingComplete} />);
 
-      const playButton = screen.getByRole('button', { name: /play/i });
+      const playButton = screen.getByRole('button', { name: /resume recording/i });
       await user.click(playButton);
 
       expect(mockUseAudioRecorder.resumeRecording).toHaveBeenCalled();
@@ -173,7 +185,7 @@ describe('AudioRecorder', () => {
       const user = userEvent.setup();
       render(<AudioRecorder onRecordingComplete={mockOnRecordingComplete} />);
 
-      const stopButton = screen.getByRole('button', { name: /square/i });
+      const stopButton = screen.getByRole('button', { name: /stop recording/i });
       await user.click(stopButton);
 
       expect(mockUseAudioRecorder.stopRecording).toHaveBeenCalled();
@@ -199,8 +211,8 @@ describe('AudioRecorder', () => {
     it('should show confirm and reset buttons', () => {
       render(<AudioRecorder onRecordingComplete={mockOnRecordingComplete} />);
 
-      const confirmButton = screen.getByRole('button', { name: /check/i });
-      const resetButton = screen.getByRole('button', { name: /rotateccw/i });
+      const confirmButton = screen.getByRole('button', { name: /confirm recording/i });
+      const resetButton = screen.getByRole('button', { name: /reset recording/i });
 
       expect(confirmButton).toBeInTheDocument();
       expect(resetButton).toBeInTheDocument();
@@ -211,7 +223,7 @@ describe('AudioRecorder', () => {
       mockUseAudioRecorder.duration = 45;
       render(<AudioRecorder onRecordingComplete={mockOnRecordingComplete} />);
 
-      const confirmButton = screen.getByRole('button', { name: /check/i });
+      const confirmButton = screen.getByRole('button', { name: /confirm recording/i });
       await user.click(confirmButton);
 
       expect(mockOnRecordingComplete).toHaveBeenCalledWith(mockUseAudioRecorder.audioBlob, 45);
@@ -221,7 +233,7 @@ describe('AudioRecorder', () => {
       const user = userEvent.setup();
       render(<AudioRecorder onRecordingComplete={mockOnRecordingComplete} />);
 
-      const resetButton = screen.getByRole('button', { name: /rotateccw/i });
+      const resetButton = screen.getByRole('button', { name: /reset recording/i });
       await user.click(resetButton);
 
       expect(mockUseAudioRecorder.resetRecording).toHaveBeenCalled();
@@ -294,7 +306,7 @@ describe('AudioRecorder', () => {
     it('should have accessible buttons', () => {
       render(<AudioRecorder onRecordingComplete={mockOnRecordingComplete} />);
 
-      const recordButton = screen.getByRole('button', { name: /mic/i });
+      const recordButton = screen.getByRole('button', { name: /start recording/i });
       expect(recordButton).toBeVisible();
     });
 

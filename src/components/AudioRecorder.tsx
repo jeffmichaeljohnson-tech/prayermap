@@ -123,6 +123,7 @@ export function AudioRecorder({ onRecordingComplete, onCancel, maxDuration = 120
           <Button
             onClick={startRecording}
             className="w-16 h-16 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/30"
+            aria-label="Start recording"
           >
             <Mic className="w-6 h-6" />
           </Button>
@@ -135,6 +136,7 @@ export function AudioRecorder({ onRecordingComplete, onCancel, maxDuration = 120
             <Button
               onClick={isPaused ? resumeRecording : pauseRecording}
               className="w-12 h-12 rounded-full glass-strong"
+              aria-label={isPaused ? 'Resume recording' : 'Pause recording'}
             >
               {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
             </Button>
@@ -143,6 +145,7 @@ export function AudioRecorder({ onRecordingComplete, onCancel, maxDuration = 120
             <Button
               onClick={stopRecording}
               className="w-16 h-16 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/30"
+              aria-label="Stop recording"
             >
               <Square className="w-6 h-6 fill-current" />
             </Button>
@@ -157,6 +160,7 @@ export function AudioRecorder({ onRecordingComplete, onCancel, maxDuration = 120
               onClick={handleReset}
               variant="outline"
               className="w-12 h-12 rounded-full glass-strong"
+              aria-label="Reset recording"
             >
               <RotateCcw className="w-5 h-5" />
             </Button>
@@ -165,6 +169,7 @@ export function AudioRecorder({ onRecordingComplete, onCancel, maxDuration = 120
             <Button
               onClick={handleConfirm}
               className="w-16 h-16 rounded-full bg-green-500 hover:bg-green-600 text-white shadow-lg shadow-green-500/30"
+              aria-label="Confirm recording"
             >
               <Check className="w-6 h-6" />
             </Button>
