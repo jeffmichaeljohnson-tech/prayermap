@@ -4,6 +4,29 @@ import { AuthModal } from './components/AuthModal';
 import { PrayerMap } from './components/PrayerMap';
 import { SettingsScreen } from './components/SettingsScreen';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { logger } from './lib/logger';
+import { errorTracker } from './lib/errorTracking.tsx';
+import { performanceMonitor } from './lib/performanceMonitor';
+import { debugMode, DebugPanel } from './lib/debugMode.tsx';
+import { DiagnosticOverlay } from './components/DiagnosticOverlay';
+import { AppErrorBoundary } from './components/ErrorBoundary';
+import { ConnectionManager } from './lib/selfHealing';
+import { OfflineIndicator } from './components/FallbackUI';
+import { useConnectionStatus } from './lib/selfHealing';
+
+// Initialize observability systems on app start
+errorTracker.init();
+performanceMonitor.init();
+
+// Log app start
+logger.info('PrayerMap application started', {
+  action: 'app_init',
+  metadata: {
+    version: import.meta.env.VITE_APP_VERSION || '1.0.0',
+    environment: import.meta.env.MODE,
+    debugMode: debugMode.isEnabled(),
+  },
+});
 
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
@@ -11,20 +34,51 @@ function AppContent() {
   const [showSettings, setShowSettings] = useState(false);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const { isOnline } = useConnectionStatus();
+
+  // Set user context in error tracker
+  useEffect(() => {
+    if (user) {
+      errorTracker.setUser(user.id);
+      logger.info('User authenticated', {
+        action: 'user_authenticated',
+        userId: user.id,
+      });
+    } else {
+      errorTracker.setUser(null);
+    }
+  }, [user]);
 
   // Get user location
   useEffect(() => {
     if ('geolocation' in navigator) {
+      logger.debug('Requesting user location', { action: 'geolocation_request' });
+
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          console.log('Got user location:', position.coords.latitude, position.coords.longitude);
+          logger.info('User location obtained', {
+            action: 'geolocation_success',
+            metadata: {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+              accuracy: position.coords.accuracy,
+            },
+          });
+
           setUserLocation({
             lat: position.coords.latitude,
             lng: position.coords.longitude
           });
         },
         (error) => {
-          console.error('Geolocation error:', error);
+          logger.error('Geolocation error', error as unknown as Error, {
+            action: 'geolocation_error',
+            metadata: {
+              code: error.code,
+              message: error.message,
+            },
+          });
+
           setLocationError('Please enable location access to use PrayerMap');
         },
         {
@@ -34,6 +88,9 @@ function AppContent() {
         }
       );
     } else {
+      logger.warn('Geolocation not supported', {
+        action: 'geolocation_unsupported',
+      });
       setLocationError('Geolocation is not supported by your browser');
     }
   }, []);
@@ -89,18 +146,23 @@ function AppContent() {
   // Show main app
   return (
     <div className="w-full h-screen overflow-hidden">
+      {!isOnline && <OfflineIndicator />}
       <PrayerMap
         userLocation={userLocation}
         onOpenSettings={() => setShowSettings(true)}
       />
+      <DebugPanel />
+      <DiagnosticOverlay />
     </div>
   );
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <AppErrorBoundary>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </AppErrorBoundary>
   );
 }

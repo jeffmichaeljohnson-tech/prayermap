@@ -11,6 +11,16 @@
 
 import { supabase } from '../lib/supabase';
 import type { Prayer, PrayerResponse } from '../types/prayer';
+import { withRetry, CircuitBreaker, createResilientOperation } from '../lib/resilience';
+import { prayerSchema, prayerResponseSchema } from '../lib/validation';
+import { sanitizeUserContent, validators } from '../lib/security';
+
+// Circuit breaker for Supabase operations
+const supabaseCircuitBreaker = new CircuitBreaker({
+  failureThreshold: 5,
+  resetTimeout: 60000, // 1 minute
+  halfOpenRequests: 3,
+});
 
 // Database table schemas
 interface PrayerRow {
@@ -167,18 +177,38 @@ export async function fetchAllPrayers(): Promise<Prayer[]> {
     return [];
   }
 
-  try {
-    // Call the Supabase RPC function to get all prayers globally
-    const { data, error } = await supabase.rpc('get_all_prayers');
+  // Create resilient operation with retry and circuit breaker
+  const resilientFetch = createResilientOperation({
+    operation: async () => {
+      const { data, error } = await supabase.rpc('get_all_prayers');
 
-    if (error) {
-      console.error('Error fetching all prayers:', error);
-      throw error;
-    }
+      if (error) {
+        console.error('Error fetching all prayers:', error);
+        throw error;
+      }
+
+      return data as PrayerRow[];
+    },
+    retry: {
+      maxAttempts: 3,
+      baseDelay: 1000,
+      retryCondition: (error: Error) => {
+        // Retry on network errors and transient failures
+        const message = error.message.toLowerCase();
+        return message.includes('network') || message.includes('timeout') || message.includes('fetch');
+      },
+    },
+    timeout: 10000, // 10 second timeout
+    circuitBreaker: supabaseCircuitBreaker,
+    fallback: [],
+  });
+
+  try {
+    const data = await resilientFetch();
 
     // Filter out moderated prayers (hidden or removed)
     // Only include prayers with no status, pending, approved, or active status
-    const filteredData = (data as PrayerRow[]).filter(row => {
+    const filteredData = data.filter(row => {
       const status = row.status;
       return !status || status === 'pending' || status === 'approved' || status === 'active';
     });
@@ -287,33 +317,73 @@ export async function createPrayer(
     return null;
   }
 
+  // Validate prayer data
+  const validationResult = prayerSchema.validate({
+    title: prayer.title,
+    content: prayer.content,
+    content_type: prayer.content_type,
+    is_anonymous: prayer.is_anonymous,
+    location: prayer.location,
+  });
+
+  if (!validationResult.valid) {
+    console.error('Prayer validation failed:', validationResult.errors);
+    throw new Error(`Validation failed: ${validationResult.errors.map(e => e.message).join(', ')}`);
+  }
+
+  // Validate coordinates
+  if (!validators.coordinates(prayer.location.lat, prayer.location.lng)) {
+    throw new Error('Invalid coordinates');
+  }
+
+  // Sanitize content
+  const sanitizedContent = prayer.content_type === 'text'
+    ? sanitizeUserContent(prayer.content)
+    : prayer.content;
+
+  const sanitizedTitle = prayer.title
+    ? sanitizeUserContent(prayer.title)
+    : undefined;
+
+  // Create resilient operation
+  const resilientCreate = createResilientOperation({
+    operation: async () => {
+      const { data, error } = await supabase.rpc('create_prayer', {
+        p_user_id: prayer.user_id,
+        p_title: sanitizedTitle || '',
+        p_content: sanitizedContent,
+        p_content_type: prayer.content_type,
+        p_content_url: prayer.content_url || '',
+        p_lat: prayer.location.lat,
+        p_lng: prayer.location.lng,
+        p_user_name: prayer.user_name || '',
+        p_is_anonymous: prayer.is_anonymous,
+      });
+
+      if (error) {
+        console.error('Error creating prayer:', error);
+        throw error;
+      }
+
+      // RPC returns an array, get the first element
+      const prayerData = Array.isArray(data) ? data[0] : data;
+      if (!prayerData) {
+        throw new Error('No prayer data returned from create_prayer');
+      }
+
+      return prayerData as PrayerRow;
+    },
+    retry: {
+      maxAttempts: 2, // Only retry once for mutations
+      baseDelay: 1000,
+    },
+    timeout: 15000, // 15 second timeout for creation
+    circuitBreaker: supabaseCircuitBreaker,
+  });
+
   try {
-    // Use RPC function to properly create prayer with PostGIS geography
-    const { data, error } = await supabase.rpc('create_prayer', {
-      p_user_id: prayer.user_id,
-      p_title: prayer.title || '',
-      p_content: prayer.content,
-      p_content_type: prayer.content_type,
-      p_content_url: prayer.content_url || '',
-      p_lat: prayer.location.lat,
-      p_lng: prayer.location.lng,
-      p_user_name: prayer.user_name || '',
-      p_is_anonymous: prayer.is_anonymous,
-    });
-
-    if (error) {
-      console.error('Error creating prayer:', error);
-      throw error;
-    }
-
-    // RPC returns an array, get the first element
-    const prayerData = Array.isArray(data) ? data[0] : data;
-    if (!prayerData) {
-      console.error('No prayer data returned from create_prayer');
-      return null;
-    }
-
-    return rowToPrayer(prayerData as PrayerRow);
+    const prayerData = await resilientCreate();
+    return rowToPrayer(prayerData);
   } catch (error) {
     console.error('Failed to create prayer:', error);
     return null;
@@ -447,49 +517,84 @@ export async function respondToPrayer(
     return null;
   }
 
-  try {
-    // Create prayer response
-    const { data: responseData, error: responseError } = await supabase
-      .from('prayer_responses')
-      .insert({
-        prayer_id: prayerId,
-        responder_id: responderId,
-        responder_name: isAnonymous ? null : responderName,
-        is_anonymous: isAnonymous,
-        message,
-        content_type: contentType,
-        content_url: contentUrl,
-      })
-      .select()
-      .single();
+  // Validate response data
+  const validationResult = prayerResponseSchema.validate({
+    message,
+    content_type: contentType,
+    is_anonymous: isAnonymous,
+  });
 
-    if (responseError) {
-      console.error('Error creating prayer response:', responseError);
-      throw responseError;
-    }
+  if (!validationResult.valid) {
+    console.error('Response validation failed:', validationResult.errors);
+    throw new Error(`Validation failed: ${validationResult.errors.map(e => e.message).join(', ')}`);
+  }
 
-    const response = rowToPrayerResponse(responseData as PrayerResponseRow);
+  // Validate coordinates if provided
+  if (responderLocation && !validators.coordinates(responderLocation.lat, responderLocation.lng)) {
+    throw new Error('Invalid responder coordinates');
+  }
 
-    // Create prayer connection with RPC function if we have the responder's location
-    let connectionData = null;
-    if (responderLocation) {
-      const { data, error: connectionError } = await supabase
-        .rpc('create_prayer_connection', {
-          p_prayer_id: prayerId,
-          p_prayer_response_id: response.id,
-          p_responder_lat: responderLocation.lat,
-          p_responder_lng: responderLocation.lng,
-        });
+  // Sanitize message
+  const sanitizedMessage = contentType === 'text'
+    ? sanitizeUserContent(message)
+    : message;
 
-      if (connectionError) {
-        console.error('Error creating prayer connection:', connectionError);
-        // Don't throw - the response was created successfully
-      } else {
-        connectionData = data;
+  // Create resilient operation
+  const resilientRespond = createResilientOperation({
+    operation: async () => {
+      // Create prayer response
+      const { data: responseData, error: responseError } = await supabase
+        .from('prayer_responses')
+        .insert({
+          prayer_id: prayerId,
+          responder_id: responderId,
+          responder_name: isAnonymous ? null : responderName,
+          is_anonymous: isAnonymous,
+          message: sanitizedMessage,
+          content_type: contentType,
+          content_url: contentUrl,
+        })
+        .select()
+        .single();
+
+      if (responseError) {
+        console.error('Error creating prayer response:', responseError);
+        throw responseError;
       }
-    }
 
-    return { response, connection: connectionData };
+      const response = rowToPrayerResponse(responseData as PrayerResponseRow);
+
+      // Create prayer connection with RPC function if we have the responder's location
+      let connectionData = null;
+      if (responderLocation) {
+        const { data, error: connectionError } = await supabase
+          .rpc('create_prayer_connection', {
+            p_prayer_id: prayerId,
+            p_prayer_response_id: response.id,
+            p_responder_lat: responderLocation.lat,
+            p_responder_lng: responderLocation.lng,
+          });
+
+        if (connectionError) {
+          console.error('Error creating prayer connection:', connectionError);
+          // Don't throw - the response was created successfully
+        } else {
+          connectionData = data;
+        }
+      }
+
+      return { response, connection: connectionData };
+    },
+    retry: {
+      maxAttempts: 2,
+      baseDelay: 1000,
+    },
+    timeout: 15000,
+    circuitBreaker: supabaseCircuitBreaker,
+  });
+
+  try {
+    return await resilientRespond();
   } catch (error) {
     console.error('Failed to respond to prayer:', error);
     return null;
