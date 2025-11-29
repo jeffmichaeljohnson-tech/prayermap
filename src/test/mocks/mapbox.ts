@@ -1,10 +1,8 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
 import { vi } from 'vitest';
 
 // Mock Mapbox GL Map
 export class MockMap {
-  _events: Record<string, Function[]> = {};
+  _events: Record<string, ((...args: unknown[]) => void)[]> = {};
   _center = [0, 0];
   _zoom = 10;
   _bearing = 0;
@@ -12,7 +10,7 @@ export class MockMap {
 
   constructor() {}
 
-  on(event: string, callback: Function) {
+  on(event: string, callback: (...args: unknown[]) => void) {
     if (!this._events[event]) {
       this._events[event] = [];
     }
@@ -20,15 +18,15 @@ export class MockMap {
     return this;
   }
 
-  off(event: string, callback: Function) {
+  off(event: string, callback: (...args: unknown[]) => void) {
     if (this._events[event]) {
       this._events[event] = this._events[event].filter(cb => cb !== callback);
     }
     return this;
   }
 
-  once(event: string, callback: Function) {
-    const onceCallback = (...args: any[]) => {
+  once(event: string, callback: (...args: unknown[]) => void) {
+    const onceCallback = (...args: unknown[]) => {
       callback(...args);
       this.off(event, onceCallback);
     };
@@ -36,7 +34,7 @@ export class MockMap {
     return this;
   }
 
-  emit(event: string, ...args: any[]) {
+  emit(event: string, ...args: unknown[]) {
     if (this._events[event]) {
       this._events[event].forEach(callback => callback(...args));
     }
@@ -159,7 +157,7 @@ export class MockMarker {
   _element: HTMLElement | null = null;
   _map: MockMap | null = null;
 
-  constructor(options?: any) {
+  constructor(options?: { element?: HTMLElement }) {
     if (options?.element) {
       this._element = options.element;
     }

@@ -24,9 +24,6 @@ const mockSession = {
 
 // Mock Supabase module - must be at top level before any imports that use it
 vi.mock('../../lib/supabase', () => {
-  const mockAuthStateChangeCallback = vi.fn();
-  let authStateChangeSubscription: (() => void) | null = null;
-
   const mockGetSession = vi.fn(async () => ({
     data: { session: null },
     error: null,
@@ -207,9 +204,8 @@ describe('useAuth', () => {
 
       const { result } = renderHook(() => useAuth());
 
-      let signInResult;
       await act(async () => {
-        signInResult = await result.current.signIn('test@example.com', 'password');
+        await result.current.signIn('test@example.com', 'password');
       });
 
       // Restore original mock

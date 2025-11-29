@@ -61,6 +61,7 @@ export function useVideoRecorder(): UseVideoRecorderReturn {
         URL.revokeObjectURL(state.videoUrl);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const startTimer = useCallback(() => {

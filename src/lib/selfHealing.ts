@@ -322,6 +322,7 @@ export function useSWR<T>(config: SWRConfig<T>): {
 
     // Fetch fresh data
     void fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [config.cacheKey]);
 
   // Check staleness
@@ -338,6 +339,7 @@ export function useSWR<T>(config: SWRConfig<T>): {
     }, config.staleTime);
 
     return () => clearInterval(checkStale);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, config.staleTime]);
 
   return { data, isLoading, isStale, error, refetch };
@@ -590,6 +592,7 @@ export function useAutoSave<T>(
         clearTimeout(timeoutRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, delayMs]);
 
   const save = async (): Promise<void> => {

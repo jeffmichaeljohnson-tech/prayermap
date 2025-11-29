@@ -325,7 +325,7 @@ describe('userService', () => {
       const result = await userService.updateUserProfile('user-123', {
         display_name: null,
         avatar_url: null,
-      } as any);
+      });
 
       expect(result?.display_name).toBeNull();
       expect(result?.avatar_url).toBeNull();
@@ -356,7 +356,7 @@ describe('userService', () => {
     it('should handle auth error', async () => {
       vi.mocked(supabase.auth.updateUser).mockResolvedValueOnce({
         error: { message: 'Password too weak' }
-      } as any);
+      } as unknown as AuthResponse);
 
       const result = await userService.changePassword('weak');
 
@@ -371,7 +371,7 @@ describe('userService', () => {
     it('should handle invalid password format', async () => {
       vi.mocked(supabase.auth.updateUser).mockResolvedValueOnce({
         error: { message: 'Password must be at least 6 characters' }
-      } as any);
+      } as unknown as AuthResponse);
 
       const result = await userService.changePassword('123');
 
@@ -395,7 +395,7 @@ describe('userService', () => {
     it('should handle session expired error', async () => {
       vi.mocked(supabase.auth.updateUser).mockResolvedValueOnce({
         error: { message: 'Session expired' }
-      } as any);
+      } as unknown as AuthResponse);
 
       const result = await userService.changePassword('newPassword');
 
@@ -406,7 +406,7 @@ describe('userService', () => {
     it('should handle empty password', async () => {
       vi.mocked(supabase.auth.updateUser).mockResolvedValueOnce({
         error: { message: 'Password is required' }
-      } as any);
+      } as unknown as AuthResponse);
 
       const result = await userService.changePassword('');
 
@@ -443,7 +443,7 @@ describe('userService', () => {
     it('should handle invalid email format', async () => {
       vi.mocked(supabase.auth.resetPasswordForEmail).mockResolvedValueOnce({
         error: { message: 'Invalid email format' }
-      } as any);
+      } as unknown as AuthResponse);
 
       const result = await userService.sendPasswordResetEmail('invalid-email');
 
@@ -454,7 +454,7 @@ describe('userService', () => {
     it('should handle user not found', async () => {
       vi.mocked(supabase.auth.resetPasswordForEmail).mockResolvedValueOnce({
         error: { message: 'User not found' }
-      } as any);
+      } as unknown as AuthResponse);
 
       const result = await userService.sendPasswordResetEmail('nonexistent@example.com');
 
@@ -465,7 +465,7 @@ describe('userService', () => {
     it('should handle rate limiting', async () => {
       vi.mocked(supabase.auth.resetPasswordForEmail).mockResolvedValueOnce({
         error: { message: 'Email rate limit exceeded' }
-      } as any);
+      } as unknown as AuthResponse);
 
       const result = await userService.sendPasswordResetEmail('user@example.com');
 
@@ -489,7 +489,7 @@ describe('userService', () => {
     it('should handle SMTP error', async () => {
       vi.mocked(supabase.auth.resetPasswordForEmail).mockResolvedValueOnce({
         error: { message: 'SMTP server unavailable' }
-      } as any);
+      } as unknown as AuthResponse);
 
       const result = await userService.sendPasswordResetEmail('user@example.com');
 

@@ -319,7 +319,7 @@ class Diagnostics {
   private async checkSupabase(): Promise<'connected' | 'disconnected' | 'error'> {
     try {
       // Try to get session
-      const { data, error } = await supabase.auth.getSession();
+      const { error } = await supabase.auth.getSession();
 
       if (error) {
         logger.warn('Supabase connection error', {
@@ -409,7 +409,7 @@ class Diagnostics {
 
     try {
       for (const key in localStorage) {
-        if (localStorage.hasOwnProperty(key)) {
+        if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
           total += key.length + (localStorage[key]?.length || 0);
         }
       }
@@ -508,6 +508,7 @@ export function useConnectivity(): {
     }).connection;
 
     if (connection) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setNetworkInfo({
         effectiveType: connection.effectiveType,
         downlink: connection.downlink,

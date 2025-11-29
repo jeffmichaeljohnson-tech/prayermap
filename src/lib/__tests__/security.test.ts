@@ -40,8 +40,8 @@ describe('Security - Input Sanitization', () => {
 
     it('should handle empty strings', () => {
       expect(sanitizeInput('')).toBe('');
-      expect(sanitizeInput(null as any)).toBe('');
-      expect(sanitizeInput(undefined as any)).toBe('');
+      expect(sanitizeInput(null as unknown as string)).toBe('');
+      expect(sanitizeInput(undefined as unknown as string)).toBe('');
     });
   });
 
@@ -67,7 +67,7 @@ describe('Security - Input Sanitization', () => {
 
     it('should handle empty strings', () => {
       expect(sanitizeHtml('')).toBe('');
-      expect(sanitizeHtml(null as any)).toBe('');
+      expect(sanitizeHtml(null as unknown as string)).toBe('');
     });
   });
 

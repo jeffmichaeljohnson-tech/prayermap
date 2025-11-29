@@ -156,7 +156,7 @@ describe('prayerService', () => {
       vi.mocked(supabase.rpc).mockResolvedValueOnce({
         data: null,
         error: { message: 'Database error', code: '42P01' }
-      } as any);
+      } as unknown as SupabaseResponse<null>);
 
       const result = await prayerService.fetchAllPrayers();
 
@@ -289,7 +289,7 @@ describe('prayerService', () => {
       vi.mocked(supabase.rpc).mockResolvedValueOnce({
         data: null,
         error: { message: 'Connection error' }
-      } as any);
+      } as unknown as SupabaseResponse<null>);
 
       const result = await prayerService.fetchAllConnections();
 
@@ -351,7 +351,7 @@ describe('prayerService', () => {
       vi.mocked(supabase.rpc).mockResolvedValueOnce({
         data: null,
         error: { message: 'Query error' }
-      } as any);
+      } as unknown as SupabaseResponse<null>);
 
       const result = await prayerService.fetchNearbyPrayers(40.7128, -74.006);
 
@@ -482,7 +482,7 @@ describe('prayerService', () => {
       vi.mocked(supabase.rpc).mockResolvedValueOnce({
         data: null,
         error: { message: 'Insert failed' }
-      } as any);
+      } as unknown as SupabaseResponse<null>);
 
       const prayer = {
         user_id: 'user-456',
@@ -603,7 +603,7 @@ describe('prayerService', () => {
       const mockConnection = createMockConnectionRow();
       const builder = mockQueryBuilder(mockResponse);
       vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockConnection, error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockConnection, error: null } as unknown as SupabaseResponse<typeof mockConnection>);
 
       const result = await prayerService.respondToPrayer(
         'prayer-123',
@@ -728,7 +728,7 @@ describe('prayerService', () => {
         subscribe: vi.fn().mockReturnThis(),
         unsubscribe: vi.fn(),
       };
-      vi.mocked(supabase.channel).mockReturnValueOnce(mockChannel as any);
+      vi.mocked(supabase.channel).mockReturnValueOnce(mockChannel as unknown as ReturnType<typeof supabase.channel>);
 
       prayerService.subscribeToPrayers(() => {});
 
@@ -744,7 +744,7 @@ describe('prayerService', () => {
         subscribe: vi.fn().mockReturnValue({ unsubscribe: mockUnsubscribe }),
         unsubscribe: mockUnsubscribe,
       };
-      vi.mocked(supabase.channel).mockReturnValueOnce(mockChannel as any);
+      vi.mocked(supabase.channel).mockReturnValueOnce(mockChannel as unknown as ReturnType<typeof supabase.channel>);
 
       const unsubscribe = prayerService.subscribeToPrayers(() => {});
 
@@ -761,7 +761,7 @@ describe('prayerService', () => {
         subscribe: vi.fn(),
         unsubscribe: vi.fn(),
       };
-      vi.mocked(supabase.channel).mockReturnValueOnce(mockChannel as any);
+      vi.mocked(supabase.channel).mockReturnValueOnce(mockChannel as unknown as ReturnType<typeof supabase.channel>);
 
       prayerService.subscribeToAllConnections(() => {});
 
@@ -771,7 +771,7 @@ describe('prayerService', () => {
 
   describe('markResponseAsRead', () => {
     it('should mark response as read', async () => {
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: true, error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: true, error: null } as unknown as SupabaseResponse<boolean>);
 
       const result = await prayerService.markResponseAsRead('response-123');
 
@@ -785,7 +785,7 @@ describe('prayerService', () => {
       vi.mocked(supabase.rpc).mockResolvedValueOnce({
         data: null,
         error: { message: 'Failed' }
-      } as any);
+      } as unknown as SupabaseResponse<null>);
 
       const result = await prayerService.markResponseAsRead('response-123');
 
@@ -795,7 +795,7 @@ describe('prayerService', () => {
 
   describe('markAllResponsesRead', () => {
     it('should mark all responses as read', async () => {
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: 5, error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: 5, error: null } as unknown as SupabaseResponse<number>);
 
       const result = await prayerService.markAllResponsesRead('prayer-123');
 
@@ -805,7 +805,7 @@ describe('prayerService', () => {
 
   describe('getUnreadCount', () => {
     it('should get unread count for user', async () => {
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: 10, error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: 10, error: null } as unknown as SupabaseResponse<number>);
 
       const result = await prayerService.getUnreadCount('user-456');
 
