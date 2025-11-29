@@ -12,6 +12,7 @@ import { AdminLayout } from './components/layout/AdminLayout'
 import { DashboardPage } from './pages/DashboardPage'
 import { ModerationPage } from './pages/ModerationPage'
 import { PrayersPage } from './pages/PrayersPage'
+import { PrayerResponsesPage } from './pages/PrayerResponsesPage'
 import { UsersPage } from './pages/UsersPage'
 import { AuditLogsPage } from './pages/AuditLogsPage'
 import { SettingsPage } from './pages/SettingsPage'
@@ -175,6 +176,7 @@ function AppRoutes() {
         <Route index element={<DashboardPage />} />
         <Route path="moderation" element={<ModerationPage />} />
         <Route path="prayers" element={<PrayersPage />} />
+        <Route path="prayer-responses" element={<PrayerResponsesPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="audit-logs" element={<AuditLogsPage />} />
         <Route path="settings" element={<SettingsPage />} />

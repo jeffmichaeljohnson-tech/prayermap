@@ -22,6 +22,7 @@ interface PrayerDetailModalProps {
   userLocation: { lat: number; lng: number };
   onClose: () => void;
   onPray: (prayer: Prayer, replyData?: PrayerReplyData) => void;
+  onOpenVideoFeed?: (prayer: Prayer) => void;
 }
 
 // Calculate distance between two coordinates using Haversine formula
@@ -42,7 +43,7 @@ function calculateDistance(
   return R * c;
 }
 
-export function PrayerDetailModal({ prayer, userLocation, onClose, onPray }: PrayerDetailModalProps) {
+export function PrayerDetailModal({ prayer, userLocation, onClose, onPray, onOpenVideoFeed }: PrayerDetailModalProps) {
   const [isPraying, setIsPraying] = useState(false);
   const [showSpotlight, setShowSpotlight] = useState(false);
   const [replyType, setReplyType] = useState<'text' | 'audio' | 'video'>(
@@ -227,13 +228,36 @@ export function PrayerDetailModal({ prayer, userLocation, onClose, onPray }: Pra
 
           {/* Video Prayer */}
           {prayer.content_type === 'video' && prayer.content_url && (
-            <div className="rounded-xl overflow-hidden aspect-video bg-gray-100">
+            <div className="relative group rounded-xl overflow-hidden aspect-video bg-gray-100">
               <video
                 src={prayer.content_url}
                 controls
                 autoPlay
                 className="w-full h-full object-cover"
               />
+              {/* Fullscreen Button */}
+              {onOpenVideoFeed && (
+                <motion.button
+                  onClick={() => onOpenVideoFeed(prayer)}
+                  className="absolute top-3 right-3 glass-strong p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <svg 
+                    className="w-5 h-5 text-white" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={2} 
+                      d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" 
+                    />
+                  </svg>
+                </motion.button>
+              )}
             </div>
           )}
 

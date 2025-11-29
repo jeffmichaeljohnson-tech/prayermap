@@ -192,12 +192,15 @@ async function main() {
         try {
             switch (name) {
                 case "memory_search":
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     return await handleMemorySearch(args);
                 case "memory_ingest":
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     return await handleMemoryIngest(args);
                 case "memory_stats":
                     return await handleMemoryStats();
                 case "memory_context":
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     return await handleMemoryContext(args);
                 case "memory_topics":
                     return await handleMemoryTopics();
@@ -233,20 +236,8 @@ async function handleMemorySearch(args) {
     const searchFn = async () => {
         // Generate embedding for the query
         const queryEmbedding = await generateEmbedding(query);
-        // Use advanced filtering if any filters are specified
-        const hasAdvancedFilters = topics || messageType || hasCode !== undefined || dateRange;
-        if (hasAdvancedFilters) {
-            return queryWithFilters(queryEmbedding, {
-                topK: limit,
-                topics,
-                sources: source !== "all" ? [source] : undefined,
-                projects: project ? [project] : undefined,
-                messageTypes: messageType ? [messageType] : undefined,
-                hasCode,
-                dateRange,
-            });
-        }
-        // Simple query with basic filters
+        // Build filter
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const filter = {};
         if (source !== "all") {
             filter.source = { $eq: source };

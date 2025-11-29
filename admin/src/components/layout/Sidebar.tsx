@@ -11,6 +11,7 @@ const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/admin', icon: '📊' },
   { label: 'Moderation', href: '/admin/moderation', icon: '🛡️' },
   { label: 'Prayers', href: '/admin/prayers', icon: '🙏' },
+  { label: 'Prayer Responses', href: '/admin/prayer-responses', icon: '💬' },
   { label: 'Users', href: '/admin/users', icon: '👥' },
   { label: 'Audit Logs', href: '/admin/audit-logs', icon: '📋' },
   { label: 'Settings', href: '/admin/settings', icon: '⚙️' },

@@ -3,13 +3,36 @@
 > **READ THIS FIRST**: This file contains the most critical context and principles for the PrayerMap project.
 > These principles must NEVER be forgotten and should guide EVERY decision you make.
 
+> **📖 FOUNDATIONAL READING**: Before proceeding, you MUST read `ARTICLE.md` - The Autonomous Excellence Manifesto. This document defines the operational philosophy, research standards, quality gates (85%+ quality, 90%+ accuracy), and execution methodology that governs ALL our work. The principles in ARTICLE.md supersede and inform everything in this file.
+
 ---
 
 ## ⚠️ CRITICAL PRINCIPLES (NEVER FORGET THESE)
 
+### PRINCIPLE 0: AUTOMATIC MULTI-AGENT WORKFLOW AT ALL TIMES
+
+  /*
+  MEMORY LOG:
+  Topic: Automatic Multi-Agent Workflow Activation
+  Context: User wants Claude to automatically recognize when to use Ora multi-agent workflows
+  Decision: Auto-trigger Ora workflow for complex/multi-domain tasks
+  Pattern Recognition:
+    - 3+ distinct steps OR
+    - Multiple technology domains OR  
+    - Research + implementation phases OR
+    - Multiple file types involved OR
+    - User says "fix all" / "implement X" / "optimize"
+  Response Template: "I'll use the Ora multi-agent workflow to..."
+  Success Metric: No need for user to explicitly request multi-agent approach
+  Mobile Notes: Especially important for mobile tasks (iOS + Android + web)
+  Date: 2024-11-29
+  */
+
 ### 🔬 PRINCIPLE 1: RESEARCH-DRIVEN DEVELOPMENT
 
 **ALWAYS check the MOST RECENT official technical documentation BEFORE making decisions.**
+
+**FOUNDATION**: This principle directly implements "The Research Protocol" from `ARTICLE.md` - we identify world leaders, study primary sources, extract transferable patterns, validate empirically, and document everything. All research must meet the quality gates: 85%+ quality, 90%+ accuracy, with proper citations.
 
 #### The Rule
 ```
@@ -287,9 +310,17 @@ Track these metrics:
 
 **Before making ANY significant decision, query the memory system to learn from past decisions.**
 
-#### The Memory System (Pinecone Integration)
+**CRITICAL**: This principle directly implements the "Omniscient Memory" superpower from `ARTICLE.md`. We use multiple memory systems as defined in the Autonomous Excellence Manifesto - Pinecone vectors, conversation search, and project knowledge search must ALL be consulted before decisions.
 
-PrayerMap uses Pinecone vector database to store:
+#### The Memory System (Multi-Layer Integration per ARTICLE.md)
+
+PrayerMap uses multiple memory systems as outlined in our foundational methodology:
+- **Pinecone** — 2,400+ vectors of conversations, docs, and code
+- **PostgreSQL** — Persistent state with optimized performance  
+- **LangSmith** — Agent performance tracking
+- **Cursor conversation sync** — Every 5 minutes to Pinecone
+
+Legacy Context (PrayerMap-specific):
 - Past architectural decisions
 - Bug fixes and their solutions
 - Performance optimizations

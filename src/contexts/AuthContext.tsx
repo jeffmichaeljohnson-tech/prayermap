@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       options: {
         data: {
-          name: name || '',
+          display_name: name || '',  // Fixed: use display_name to match database trigger
         },
       },
     });
