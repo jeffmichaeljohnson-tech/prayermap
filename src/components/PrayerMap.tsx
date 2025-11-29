@@ -1,95 +1,47 @@
 /**
- * PrayerMap - GLOBAL LIVING MAP
+ * PrayerMap - GLOBAL LIVING MAP (REFACTORED)
  *
  * This is the heart of PrayerMap - a GLOBAL LIVING MAP where everyone sees
- * all prayers from around the world in real-time. This is not a local or
- * regional prayer map; it's a worldwide community where:
+ * all prayers from around the world in real-time.
  *
- * - ALL prayers are visible globally, not just nearby ones
- * - ALL prayer connections (lines) are displayed worldwide
- * - Real-time updates show new prayers and connections as they happen anywhere
- * - Users start at their location but can zoom out to see the entire world
- * - Geographic boundaries fade away, creating a living tapestry of global faith
+ * REFACTORED: Extracted responsibilities into focused components:
+ * - MapContainer: MapBox GL initialization
+ * - PrayerMarkers: Marker rendering and clustering
+ * - ConnectionLines: Connection line rendering
+ * - MapUI: UI chrome (header, buttons)
+ * - MapModals: All modal components
+ * - usePrayerMapState: Centralized state management
  *
- * The map displays:
- * 1. Prayer markers (dots) for every prayer request worldwide
- * 2. Connection lines showing when someone prays for someone else
- * 3. Real-time animations as new prayers are created and answered
+ * This component now focuses on:
+ * - Data fetching (prayers, inbox, connections)
+ * - Business logic (prayer submission, creation)
+ * - UI composition
  */
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
-import mapboxgl from 'mapbox-gl';
-import 'mapbox-gl/dist/mapbox-gl.css';
+import { useEffect, useRef, useCallback } from 'react';
+import { AnimatePresence } from 'framer-motion';
+import type mapboxgl from 'mapbox-gl';
+import type { LngLatBounds } from 'mapbox-gl';
 import type { Prayer, PrayerConnection } from '../types/prayer';
-import { PrayerMarker } from './PrayerMarker';
-import { PrayerDetailModal } from './PrayerDetailModal';
 import type { PrayerReplyData } from './PrayerDetailModal';
 import { uploadAudio } from '../services/storageService';
-import { RequestPrayerModal } from './RequestPrayerModal';
-import { PrayerAnimationLayer } from './PrayerAnimationLayer';
-import { PrayerCreationAnimation } from './PrayerCreationAnimation';
-import { PrayerConnection as PrayerConnectionComponent } from './PrayerConnection';
-import { InboxModal } from './InboxModal';
-import { InfoModal } from './InfoModal';
-import { SunMoonIndicator } from './SunMoonIndicator';
-import { InAppNotification } from './InAppNotification';
-import { Inbox, Settings, Info } from 'lucide-react';
 import { usePrayers } from '../hooks/usePrayers';
 import { useAuth } from '../contexts/AuthContext';
 import { useInbox } from '../hooks/useInbox';
+import { usePrayerMapState, useInboxNotifications } from '../hooks/usePrayerMapState';
 import { fetchAllConnections, subscribeToAllConnections } from '../services/prayerService';
+import { getVisibleConnections, extendBounds } from '../utils/viewportCulling';
+import { debounce } from '../utils/debounce';
 
-// Helper to group prayers by approximate location
-interface PrayerGroup {
-  prayers: Prayer[];
-  primaryPrayer: Prayer;
-  offset: { x: number; y: number };
-  count: number;
-  isSameUser: boolean;
-}
-
-function groupPrayersByLocation(prayers: Prayer[], threshold: number = 0.0001): PrayerGroup[] {
-  const groups: PrayerGroup[] = [];
-  const assigned = new Set<string>();
-
-  for (const prayer of prayers) {
-    if (assigned.has(prayer.id)) continue;
-
-    // Find all prayers at similar coordinates
-    const nearby = prayers.filter(p => {
-      if (assigned.has(p.id)) return false;
-      const latDiff = Math.abs(p.location.lat - prayer.location.lat);
-      const lngDiff = Math.abs(p.location.lng - prayer.location.lng);
-      return latDiff < threshold && lngDiff < threshold;
-    });
-
-    // Check if all nearby prayers are from the same user
-    const userIds = new Set(nearby.map(p => p.user_id));
-    const isSameUser = userIds.size === 1;
-
-    // Calculate offset based on group index
-    const groupIndex = groups.length;
-    const offsetAngle = (groupIndex * 45) * (Math.PI / 180);
-    const offsetDistance = 0; // No offset for primary marker
-
-    nearby.forEach(p => assigned.add(p.id));
-
-    groups.push({
-      prayers: nearby,
-      primaryPrayer: nearby[0], // Most recent (assuming sorted)
-      offset: { x: Math.cos(offsetAngle) * offsetDistance, y: Math.sin(offsetAngle) * offsetDistance },
-      count: nearby.length,
-      isSameUser
-    });
-  }
-
-  return groups;
-}
-
-// Mapbox access token from environment variable
-const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN || '';
-mapboxgl.accessToken = mapboxToken;
+// Extracted components
+import { MapContainer } from './map/MapContainer';
+import { PrayerMarkers } from './map/PrayerMarkers';
+import { ConnectionLines } from './map/ConnectionLines';
+import { MapUI } from './map/MapUI';
+import { MapModals } from './map/MapModals';
+import { PrayerAnimationLayer } from './PrayerAnimationLayer';
+import { PrayerCreationAnimation } from './PrayerCreationAnimation';
+import { InAppNotification } from './InAppNotification';
 
 interface PrayerMapProps {
   userLocation: { lat: number; lng: number };
@@ -97,174 +49,99 @@ interface PrayerMapProps {
 }
 
 export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
-  const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const { user } = useAuth();
+  const { state, actions } = usePrayerMapState();
 
-  // GLOBAL LIVING MAP: Fetch ALL prayers worldwide, not just nearby ones
-  // This creates a living tapestry of prayer connecting people across the globe
-  const {
-    prayers,
-    createPrayer,
-    respondToPrayer
-  } = usePrayers({
+  // GLOBAL LIVING MAP: Fetch ALL prayers worldwide
+  const { prayers, createPrayer, respondToPrayer } = usePrayers({
     location: userLocation,
-    radiusKm: 50, // Not used in global mode, but kept for compatibility
+    radiusKm: 50,
     enableRealtime: true,
-    globalMode: true // Enable GLOBAL LIVING MAP - show all prayers worldwide
+    globalMode: true
   });
 
-  // Use the useInbox hook to get unread count and track changes
+  // Inbox for notifications
   const { totalUnread, inbox } = useInbox({
     userId: user?.id || '',
     autoFetch: !!user,
     enableRealtime: true
   });
 
-  // Track previous unread count to detect new messages
-  const [prevUnreadCount, setPrevUnreadCount] = useState(0);
-  const [showNotification, setShowNotification] = useState(false);
-  const [notificationMessage, setNotificationMessage] = useState('');
-
-  const [connections, setConnections] = useState<PrayerConnection[]>([]);
-  const [mapLoaded, setMapLoaded] = useState(false);
-  const [selectedPrayer, setSelectedPrayer] = useState<Prayer | null>(null);
-  const [showRequestModal, setShowRequestModal] = useState(false);
-  const [showInbox, setShowInbox] = useState(false);
-  const [showInfo, setShowInfo] = useState(false);
-  const [hoveredConnection, setHoveredConnection] = useState<string | null>(null);
-  const [animatingPrayer, setAnimatingPrayer] = useState<{
-    prayer: Prayer;
-    userLocation: { lat: number; lng: number };
-  } | null>(null);
-  const [creatingPrayerAnimation, setCreatingPrayerAnimation] = useState<{
-    targetLocation: { lat: number; lng: number };
-  } | null>(null);
-
-
-  // Group prayers by location to handle overlapping markers
-  const prayerGroups = useMemo(() => groupPrayersByLocation(prayers), [prayers]);
-
-  // Debug: log connections state
-  console.log('PrayerMap render - connections:', connections.length, 'mapLoaded:', mapLoaded);
+  // Handle inbox notifications
+  useInboxNotifications(
+    totalUnread,
+    state.prevUnreadCount,
+    inbox,
+    actions.showNotificationMessage,
+    actions.setPrevUnreadCount
+  );
 
   // GLOBAL LIVING MAP: Fetch and subscribe to ALL prayer connections worldwide
-  // This displays the beautiful web of prayer connections spanning the entire globe
   useEffect(() => {
-    // Initial fetch of all global connections
     fetchAllConnections().then((globalConnections) => {
       console.log('Loaded global connections:', globalConnections.length);
-      setConnections(globalConnections);
+      actions.setConnections(globalConnections);
     });
 
-    // Subscribe to real-time updates for all connections worldwide
     const unsubscribe = subscribeToAllConnections((updatedConnections) => {
       console.log('Real-time connection update:', updatedConnections.length);
-      setConnections(updatedConnections);
+      actions.setConnections(updatedConnections);
     });
 
-    // Cleanup subscription on unmount
-    return () => {
-      unsubscribe();
-    };
-  }, []); // Empty dependency array - only run once on mount
+    return unsubscribe;
+  }, [actions]);
 
-  // Detect when new messages arrive and show notification
+  // Handle map load
+  const handleMapLoad = useCallback((mapInstance: mapboxgl.Map) => {
+    map.current = mapInstance;
+  }, []);
+
+  // Viewport culling: Update bounds on map move (debounced for performance)
+  // Debouncing prevents excessive re-renders during smooth pan/zoom
   useEffect(() => {
-    if (totalUnread > prevUnreadCount && prevUnreadCount > 0) {
-      // New message(s) arrived!
-      const newMessageCount = totalUnread - prevUnreadCount;
-      const latestResponse = inbox[0]?.responses[0]; // Most recent response
-      
-      let message = `You have ${newMessageCount} new prayer response${newMessageCount > 1 ? 's' : ''}`;
-      if (latestResponse && !latestResponse.is_anonymous && latestResponse.responder_name) {
-        message = `${latestResponse.responder_name} responded to your prayer`;
+    if (!map.current) return;
+
+    const updateBounds = debounce(() => {
+      if (map.current) {
+        // Extend bounds by 20% buffer to prevent pop-in during panning
+        const currentBounds = map.current.getBounds();
+        const bufferedBounds = extendBounds(currentBounds, 0.2);
+        actions.setMapBounds(bufferedBounds);
       }
-      
-      setNotificationMessage(message);
-      setShowNotification(true);
+    }, 100);
+
+    // Set initial bounds when map loads
+    if (state.mapLoaded && !state.mapBounds) {
+      const currentBounds = map.current.getBounds();
+      const bufferedBounds = extendBounds(currentBounds, 0.2);
+      actions.setMapBounds(bufferedBounds);
     }
-    setPrevUnreadCount(totalUnread);
-  }, [totalUnread, prevUnreadCount, inbox]);
 
-  // Initialize map with ethereal style
-  // GLOBAL LIVING MAP: Starts centered on user's location but allows zooming out to see the entire world
-  // Users can explore prayers and connections from anywhere on the planet
-  useEffect(() => {
-    if (!mapContainer.current || map.current) return;
-
-    console.log('Initializing GLOBAL LIVING MAP at user location:', userLocation);
-
-    map.current = new mapboxgl.Map({
-      container: mapContainer.current,
-      style: 'mapbox://styles/mapbox/light-v11',
-      center: [userLocation.lng, userLocation.lat],
-      zoom: 12, // Start at local zoom but allow global zoom out
-      pitch: 0,
-      bearing: 0,
-      attributionControl: false,
-      // Allow zooming out to see the entire world
-      minZoom: 1, // World view
-      maxZoom: 18 // Street-level detail
-    });
-
-    // Don't add navigation controls - users will use touch gestures
-
-    // Add custom styling for ethereal look
-    map.current.on('load', () => {
-      console.log('Map loaded successfully');
-      if (!map.current) return;
-
-      // Mark map as loaded for connection rendering
-      setMapLoaded(true);
-
-      // Customize map colors for ethereal theme
-      try {
-        if (map.current.getLayer('water')) {
-          map.current.setPaintProperty('water', 'fill-color', 'hsl(210, 80%, 85%)');
-        }
-        if (map.current.getLayer('landuse')) {
-          map.current.setPaintProperty('landuse', 'fill-opacity', 0.3);
-        }
-      } catch (e) {
-        console.log('Layer customization:', e);
-      }
-    });
-
-    map.current.on('error', (e) => {
-      console.error('Map error:', e);
-    });
+    // Update bounds when map moves (pan, zoom, rotate)
+    map.current.on('moveend', updateBounds);
 
     return () => {
-      map.current?.remove();
-      map.current = null;
+      map.current?.off('moveend', updateBounds);
     };
-  }, [userLocation]);
+  }, [state.mapLoaded, state.mapBounds, actions]);
 
-  const handlePrayerClick = (prayer: Prayer) => {
-    // Show modal immediately without animation
-    setSelectedPrayer(prayer);
-  };
-
-  // Note: Animation completion is now handled by setTimeout in handlePrayerSubmit
-  // This callback is still passed to PrayerAnimationLayer but is a no-op since
-  // setTimeout handles both adding the connection and clearing animatingPrayer
+  // Animation completion callback
   const handleAnimationComplete = useCallback(() => {
-    // No-op - setTimeout in handlePrayerSubmit handles everything
     console.log('Animation layer complete callback (no-op)');
   }, []);
 
+  // Prayer submission handler
   const handlePrayerSubmit = async (prayer: Prayer, replyData?: PrayerReplyData) => {
     if (!user) return;
 
-    // Close modal and trigger the beautiful animation
-    setSelectedPrayer(null);
+    actions.closePrayerDetail();
     const userName = user.user_metadata?.name || user.email?.split('@')[0] || 'Anonymous';
 
-    // Start the animation
-    setAnimatingPrayer({ prayer, userLocation });
+    // Start animation
+    actions.startPrayerAnimation(prayer, userLocation);
 
-    // Extract reply data with defaults
+    // Extract reply data
     const message = replyData?.message || 'Praying for you!';
     const contentType = replyData?.contentType || 'text';
     const isAnonymous = replyData?.isAnonymous || false;
@@ -272,18 +149,13 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
     // Upload audio if present
     let contentUrl: string | undefined;
     if (replyData?.audioBlob && contentType === 'audio') {
-      console.log('Uploading audio response...');
       const audioUrl = await uploadAudio(replyData.audioBlob, user.id);
       if (audioUrl) {
         contentUrl = audioUrl;
-        console.log('Audio uploaded:', audioUrl);
-      } else {
-        console.error('Failed to upload audio');
       }
     }
 
-    // Submit the prayer response to Supabase
-    console.log('Submitting prayer response for:', prayer.id, 'with location:', userLocation, 'contentType:', contentType);
+    // Submit prayer response
     respondToPrayer(
       prayer.id,
       user.id,
@@ -292,13 +164,10 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
       contentType,
       contentUrl,
       isAnonymous,
-      userLocation // Pass user's location to create prayer connection line
-    ).then(success => {
-      console.log('Prayer response result:', success);
-    });
+      userLocation
+    );
 
-    // Create connection data and add it after animation completes (6 seconds)
-    // Following the original Figma design pattern with setTimeout
+    // Create connection after animation (6 seconds)
     const createdDate = new Date();
     const expiresDate = new Date(createdDate);
     expiresDate.setFullYear(expiresDate.getFullYear() + 1);
@@ -314,29 +183,19 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
       expiresAt: expiresDate
     };
 
-    // Add connection after animation completes (matching animation duration)
     setTimeout(() => {
-      console.log('Animation complete - adding connection:', newConnection.id);
-      setConnections(prev => {
-        console.log('Previous connections:', prev.length, 'Adding new connection');
-        return [...prev, newConnection];
-      });
-      setAnimatingPrayer(null);
+      actions.setConnections(prev => [...prev, newConnection]);
+      actions.stopPrayerAnimation();
     }, 6000);
   };
 
+  // Prayer request handler
   const handleRequestPrayer = async (newPrayer: Omit<Prayer, 'id' | 'created_at' | 'updated_at'>) => {
     if (!user) return;
 
-    // Close modal first
-    setShowRequestModal(false);
+    actions.closeRequestModal();
+    actions.startCreationAnimation(newPrayer.location);
 
-    // Start the creation animation
-    setCreatingPrayerAnimation({
-      targetLocation: newPrayer.location
-    });
-
-    // Create the prayer in the database
     try {
       await createPrayer({
         ...newPrayer,
@@ -347,206 +206,88 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
     }
   };
 
-  const handleCreationAnimationComplete = useCallback(() => {
-    setCreatingPrayerAnimation(null);
-  }, []);
-
   return (
     <div className="relative w-full h-full">
-      {/* Map Container - ensure it has explicit height */}
-      <div 
-        ref={mapContainer} 
-        className="absolute inset-0" 
-        style={{ 
-          width: '100%', 
-          height: '100%',
-          backgroundColor: '#e8f4f8' // Light blue background while map loads
-        }} 
+      {/* Map with all overlays */}
+      <MapContainer
+        userLocation={userLocation}
+        onMapLoad={handleMapLoad}
+        onMapLoaded={actions.setMapLoaded}
+      >
+        {/* Prayer Markers */}
+        <PrayerMarkers
+          prayers={prayers}
+          map={map.current}
+          onMarkerClick={actions.openPrayerDetail}
+        />
+
+        {/* Connection Lines */}
+        <ConnectionLines
+          connections={state.connections}
+          map={map.current}
+          mapLoaded={state.mapLoaded}
+          mapBounds={state.mapBounds}
+          hoveredConnection={state.hoveredConnection}
+          onHover={actions.setHoveredConnection}
+          onLeave={() => actions.setHoveredConnection(null)}
+        />
+
+        {/* Animation Layers */}
+        <AnimatePresence>
+          {state.animatingPrayer && (
+            <PrayerAnimationLayer
+              prayer={state.animatingPrayer.prayer}
+              userLocation={state.animatingPrayer.userLocation}
+              map={map.current}
+              onComplete={handleAnimationComplete}
+            />
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {state.creatingPrayerAnimation && (
+            <PrayerCreationAnimation
+              targetLocation={state.creatingPrayerAnimation.targetLocation}
+              map={map.current}
+              onComplete={actions.stopCreationAnimation}
+            />
+          )}
+        </AnimatePresence>
+      </MapContainer>
+
+      {/* UI Chrome */}
+      <MapUI
+        userLocation={userLocation}
+        totalUnread={totalUnread}
+        onOpenInbox={actions.openInbox}
+        onOpenSettings={onOpenSettings}
+        onOpenRequestModal={actions.openRequestModal}
+        onOpenInfo={actions.openInfo}
       />
 
-      {/* Custom Markers Overlay */}
-      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
-        {/* eslint-disable-next-line react-hooks/refs */}
-        {prayerGroups.map(group => (
-          <PrayerMarker
-            key={group.primaryPrayer.id}
-            prayer={group.primaryPrayer}
-            map={map.current}
-            onClick={() => handlePrayerClick(group.primaryPrayer)}
-            isPrayed={group.primaryPrayer.prayedBy && group.primaryPrayer.prayedBy.length > 0}
-            stackCount={group.isSameUser ? group.count : 1}
-            allPrayers={group.isSameUser ? group.prayers : [group.primaryPrayer]}
-            onSelectPrayer={handlePrayerClick}
-          />
-        ))}
-      </div>
+      {/* All Modals */}
+      <MapModals
+        selectedPrayer={state.selectedPrayer}
+        onClosePrayerDetail={actions.closePrayerDetail}
+        onPray={handlePrayerSubmit}
+        userLocation={userLocation}
+        showInbox={state.showInbox}
+        onCloseInbox={actions.closeInbox}
+        showRequestModal={state.showRequestModal}
+        onCloseRequestModal={actions.closeRequestModal}
+        onSubmitPrayer={handleRequestPrayer}
+        showInfo={state.showInfo}
+        onCloseInfo={actions.closeInfo}
+      />
 
-      {/* Prayer Connections */}
-      <svg className="absolute inset-0 w-full h-full" style={{ pointerEvents: 'none', zIndex: 5 }}>
-        <defs>
-          <linearGradient id="connectionGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="hsl(45, 100%, 70%)" stopOpacity="0.8" />
-            <stop offset="50%" stopColor="hsl(200, 80%, 70%)" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="hsl(270, 60%, 70%)" stopOpacity="0.8" />
-          </linearGradient>
-          <linearGradient id="connectionGradientHover" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="hsl(45, 100%, 65%)" stopOpacity="1" />
-            <stop offset="50%" stopColor="hsl(200, 80%, 75%)" stopOpacity="1" />
-            <stop offset="100%" stopColor="hsl(270, 60%, 75%)" stopOpacity="1" />
-          </linearGradient>
-          <linearGradient id="glowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="hsl(45, 100%, 80%)" />
-            <stop offset="50%" stopColor="hsl(200, 80%, 85%)" />
-            <stop offset="100%" stopColor="hsl(270, 60%, 85%)" />
-          </linearGradient>
-        </defs>
-
-        {/* eslint-disable-next-line react-hooks/refs */}
-        {mapLoaded && map.current && connections.map(conn => {
-          console.log('Rendering connection in map:', conn.id, 'mapLoaded:', mapLoaded);
-          return (
-            <PrayerConnectionComponent
-              key={conn.id}
-              connection={conn}
-              map={map.current!}
-              isHovered={hoveredConnection === conn.id}
-              onHover={() => setHoveredConnection(conn.id)}
-              onLeave={() => setHoveredConnection(null)}
-            />
-          );
-        })}
-      </svg>
-
-      {/* Animation Layer - for responding to prayers */}
-      {/* eslint-disable react-hooks/refs */}
-      <AnimatePresence>
-        {animatingPrayer && (
-          <PrayerAnimationLayer
-            prayer={animatingPrayer.prayer}
-            userLocation={animatingPrayer.userLocation}
-            map={map.current}
-            onComplete={handleAnimationComplete}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Prayer Creation Animation */}
-      <AnimatePresence>
-        {creatingPrayerAnimation && (
-          <PrayerCreationAnimation
-            targetLocation={creatingPrayerAnimation.targetLocation}
-            map={map.current}
-            onComplete={handleCreationAnimationComplete}
-          />
-        )}
-      </AnimatePresence>
-      {/* eslint-enable react-hooks/refs */}
-
-      {/* Header */}
-      <div className="absolute top-0 left-0 right-0 p-4 pointer-events-none" style={{ zIndex: 30 }}>
-        <div className="glass-strong rounded-2xl p-4 flex items-center justify-between pointer-events-auto">
-          <button
-            onClick={() => setShowInbox(true)}
-            className="p-2 hover:bg-white/20 rounded-lg transition-colors relative"
-          >
-            <Inbox className="w-6 h-6 text-gray-700" />
-            {/* Notification badge - only show if there are unread messages */}
-            {totalUnread > 0 && (
-              <motion.span
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 0.3, type: "spring" }}
-                className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg animate-pulse border-2 border-white"
-              >
-                {totalUnread > 9 ? '9+' : totalUnread}
-              </motion.span>
-            )}
-          </button>
-          
-          <h1 className="text-2xl text-gray-800">PrayerMap</h1>
-          
-          <button 
-            onClick={onOpenSettings}
-            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-          >
-            <Settings className="w-6 h-6 text-gray-700" />
-          </button>
-        </div>
-      </div>
-
-      {/* Sunset/Sunrise Time Indicator */}
-      <div className="absolute top-24 right-4 pointer-events-none" style={{ zIndex: 30 }}>
-        <SunMoonIndicator location={userLocation} />
-      </div>
-
-      {/* Request Prayer Button - moved higher */}
-      <motion.button
-        onClick={() => setShowRequestModal(true)}
-        className="absolute bottom-20 left-1/2 -translate-x-1/2 glass-strong rounded-full px-8 py-4 flex items-center gap-3 shadow-xl hover:shadow-2xl transition-shadow"
-        style={{ zIndex: 40 }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <span className="text-2xl">🙏</span>
-        <span className="text-gray-800 text-[16px]">Request Prayer</span>
-      </motion.button>
-
-      {/* Info Button - lower right corner */}
-      <motion.button
-        onClick={() => setShowInfo(true)}
-        className="absolute bottom-20 right-6 glass-strong rounded-full p-4 shadow-xl hover:shadow-2xl transition-shadow"
-        style={{ zIndex: 40 }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <Info className="w-6 h-6 text-gray-700" />
-      </motion.button>
-
-      {/* Prayer Detail Modal */}
-      <AnimatePresence>
-        {selectedPrayer && (
-          <PrayerDetailModal
-            prayer={selectedPrayer}
-            userLocation={userLocation}
-            onClose={() => setSelectedPrayer(null)}
-            onPray={handlePrayerSubmit}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Inbox Modal */}
-      <AnimatePresence>
-        {showInbox && (
-          <InboxModal onClose={() => setShowInbox(false)} />
-        )}
-      </AnimatePresence>
-
-      {/* Request Prayer Modal */}
-      <AnimatePresence>
-        {showRequestModal && (
-          <RequestPrayerModal
-            userLocation={userLocation}
-            onClose={() => setShowRequestModal(false)}
-            onSubmit={handleRequestPrayer}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Info Modal */}
-      <AnimatePresence>
-        {showInfo && (
-          <InfoModal onClose={() => setShowInfo(false)} />
-        )}
-      </AnimatePresence>
-
-      {/* In-App Notification for new prayer responses */}
+      {/* In-App Notification */}
       <InAppNotification
-        message={notificationMessage}
-        show={showNotification}
-        onClose={() => setShowNotification(false)}
+        message={state.notificationMessage}
+        show={state.showNotification}
+        onClose={actions.hideNotification}
         onClick={() => {
-          setShowNotification(false);
-          setShowInbox(true);
+          actions.hideNotification();
+          actions.openInbox();
         }}
       />
     </div>

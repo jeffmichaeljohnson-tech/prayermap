@@ -1,70 +1,43 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import type { Map as MapboxMap } from 'mapbox-gl';
 import type { PrayerConnection as PrayerConnectionType } from '../types/prayer';
 
 interface PrayerConnectionProps {
   connection: PrayerConnectionType;
   map: MapboxMap;
+  updateKey: number; // Triggers position recalculation when map moves
   isHovered: boolean;
   onHover: () => void;
   onLeave: () => void;
 }
 
-export function PrayerConnection({ 
-  connection, 
-  map, 
-  isHovered, 
-  onHover, 
-  onLeave 
+export function PrayerConnection({
+  connection,
+  map,
+  updateKey,
+  isHovered,
+  onHover,
+  onLeave
 }: PrayerConnectionProps) {
-  const [positions, setPositions] = useState<{
-    from: { x: number; y: number };
-    to: { x: number; y: number };
-  } | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
   const lineRef = useRef<SVGPathElement>(null);
 
-  useEffect(() => {
-    console.log('PrayerConnection mounted for:', connection.id);
-    
-    const updatePositions = () => {
-      const fromPoint = map.project([connection.fromLocation.lng, connection.fromLocation.lat]);
-      const toPoint = map.project([connection.toLocation.lng, connection.toLocation.lat]);
-      setPositions({
-        from: { x: fromPoint.x, y: fromPoint.y },
-        to: { x: toPoint.x, y: toPoint.y }
-      });
+  // Calculate positions using useMemo - recalculates when updateKey changes
+  // This is triggered by the parent's centralized map event handler
+  // Performance: No individual map listeners needed (was 8 × N, now 0)
+  const positions = useMemo(() => {
+    console.log('Recalculating position for connection:', connection.id, 'updateKey:', updateKey);
+
+    const fromPoint = map.project([connection.fromLocation.lng, connection.fromLocation.lat]);
+    const toPoint = map.project([connection.toLocation.lng, connection.toLocation.lat]);
+
+    return {
+      from: { x: fromPoint.x, y: fromPoint.y },
+      to: { x: toPoint.x, y: toPoint.y }
     };
+  }, [map, connection, updateKey]);
 
-    updatePositions();
-    
-    // Update on all map movement events for smooth tracking
-    map.on('move', updatePositions);
-    map.on('movestart', updatePositions);
-    map.on('moveend', updatePositions);
-    map.on('zoom', updatePositions);
-    map.on('zoomstart', updatePositions);
-    map.on('zoomend', updatePositions);
-    map.on('rotate', updatePositions);
-    map.on('pitch', updatePositions);
-
-    return () => {
-      map.off('move', updatePositions);
-      map.off('movestart', updatePositions);
-      map.off('moveend', updatePositions);
-      map.off('zoom', updatePositions);
-      map.off('zoomstart', updatePositions);
-      map.off('zoomend', updatePositions);
-      map.off('rotate', updatePositions);
-      map.off('pitch', updatePositions);
-    };
-  }, [map, connection]);
-
-  if (!positions) {
-    console.log('No positions yet for connection:', connection.id);
-    return null;
-  }
-
+  // Calculate path control point for quadratic curve
   const midX = (positions.from.x + positions.to.x) / 2;
   const midY = (positions.from.y + positions.to.y) / 2 - 40;
 
