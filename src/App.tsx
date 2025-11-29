@@ -10,7 +10,6 @@ import { performanceMonitor } from './lib/performanceMonitor';
 import { debugMode, DebugPanel } from './lib/debugMode.tsx';
 import { DiagnosticOverlay } from './components/DiagnosticOverlay';
 import { AppErrorBoundary } from './components/ErrorBoundary';
-import { ConnectionManager } from './lib/selfHealing';
 import { OfflineIndicator } from './components/FallbackUI';
 import { useConnectionStatus } from './lib/selfHealing';
 
@@ -91,6 +90,8 @@ function AppContent() {
       logger.warn('Geolocation not supported', {
         action: 'geolocation_unsupported',
       });
+      // One-time initialization check on mount to verify browser support
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocationError('Geolocation is not supported by your browser');
     }
   }, []);
