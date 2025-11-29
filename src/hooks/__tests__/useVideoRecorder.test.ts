@@ -1,4 +1,4 @@
-import { renderHook, act, waitFor } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { useVideoRecorder, formatVideoDuration } from '../useVideoRecorder';
 
@@ -156,11 +156,10 @@ describe('useVideoRecorder', () => {
 
       await act(async () => {
         await result.current.switchCamera();
+        await Promise.resolve();
       });
 
-      await waitFor(() => {
-        expect(result.current.facingMode).toBe('environment');
-      });
+      expect(result.current.facingMode).toBe('environment');
     });
 
     it('should stop current stream before switching', async () => {
@@ -188,17 +187,16 @@ describe('useVideoRecorder', () => {
 
       await act(async () => {
         await result.current.switchCamera();
+        await Promise.resolve();
       });
 
-      await waitFor(() => {
-        expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith(
-          expect.objectContaining({
-            video: expect.objectContaining({
-              facingMode: 'environment',
-            }),
-          })
-        );
-      });
+      expect(navigator.mediaDevices.getUserMedia).toHaveBeenCalledWith(
+        expect.objectContaining({
+          video: expect.objectContaining({
+            facingMode: 'environment',
+          }),
+        })
+      );
     });
 
     it('should handle switch errors gracefully', async () => {
@@ -215,11 +213,10 @@ describe('useVideoRecorder', () => {
 
       await act(async () => {
         await result.current.switchCamera();
+        await Promise.resolve();
       });
 
-      await waitFor(() => {
-        expect(result.current.error).toContain('Failed to switch camera');
-      });
+      expect(result.current.error).toContain('Failed to switch camera');
     });
   });
 
@@ -303,11 +300,10 @@ describe('useVideoRecorder', () => {
 
       await act(async () => {
         vi.advanceTimersByTime(1000);
+        await Promise.resolve();
       });
 
-      await waitFor(() => {
-        expect(result.current.duration).toBeGreaterThan(0);
-      });
+      expect(result.current.duration).toBeGreaterThan(0);
     });
 
     it('should collect video chunks', async () => {
@@ -331,12 +327,14 @@ describe('useVideoRecorder', () => {
       await act(async () => {
         await result.current.initializeCamera();
         await result.current.startRecording();
-        result.current.stopRecording();
       });
 
-      await waitFor(() => {
-        expect(result.current.isRecording).toBe(false);
+      await act(async () => {
+        result.current.stopRecording();
+        await Promise.resolve();
       });
+
+      expect(result.current.isRecording).toBe(false);
     });
 
     it('should create videoBlob from chunks', async () => {
@@ -346,12 +344,14 @@ describe('useVideoRecorder', () => {
       await act(async () => {
         await result.current.initializeCamera();
         await result.current.startRecording();
-        result.current.stopRecording();
       });
 
-      await waitFor(() => {
-        expect(result.current.videoBlob).toBeTruthy();
+      await act(async () => {
+        result.current.stopRecording();
+        await Promise.resolve();
       });
+
+      expect(result.current.videoBlob).toBeTruthy();
     });
 
     it('should create videoUrl', async () => {
@@ -361,12 +361,14 @@ describe('useVideoRecorder', () => {
       await act(async () => {
         await result.current.initializeCamera();
         await result.current.startRecording();
-        result.current.stopRecording();
       });
 
-      await waitFor(() => {
-        expect(result.current.videoUrl).toBeTruthy();
+      await act(async () => {
+        result.current.stopRecording();
+        await Promise.resolve();
       });
+
+      expect(result.current.videoUrl).toBeTruthy();
     });
 
     it('should NOT stop camera stream (allow re-recording)', async () => {
@@ -376,12 +378,14 @@ describe('useVideoRecorder', () => {
       await act(async () => {
         await result.current.initializeCamera();
         await result.current.startRecording();
-        result.current.stopRecording();
       });
 
-      await waitFor(() => {
-        expect(result.current.isCameraReady).toBe(true);
+      await act(async () => {
+        result.current.stopRecording();
+        await Promise.resolve();
       });
+
+      expect(result.current.isCameraReady).toBe(true);
     });
   });
 
