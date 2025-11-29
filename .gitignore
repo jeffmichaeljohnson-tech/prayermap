@@ -51,3 +51,7 @@ ios/App/Pods/
 # Capacitor generated files
 ios/App/public/
 android/app/src/main/assets/public/
+
+# Test reports (generated)
+playwright-report/
+test-results/
