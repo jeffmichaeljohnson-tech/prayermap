@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Type, Mic, Video, Heart } from 'lucide-react';
 import type { Prayer } from '../types/prayer';
@@ -6,8 +6,22 @@ import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Switch } from './ui/switch';
 import { AudioPlayer } from './AudioPlayer';
-import { AudioRecorder } from './AudioRecorder';
-import { VideoRecorder } from './VideoRecorder';
+
+// CODE SPLITTING: Lazy-load heavy recording components
+// Only loaded when user chooses to record audio/video
+const AudioRecorder = lazy(() =>
+  import('./AudioRecorder').then(m => ({ default: m.AudioRecorder }))
+);
+const VideoRecorder = lazy(() =>
+  import('./VideoRecorder').then(m => ({ default: m.VideoRecorder }))
+);
+
+// Loading component for recorders
+const RecorderLoader = () => (
+  <div className="glass rounded-xl p-6 text-center">
+    <div className="animate-pulse text-gray-600">Loading recorder...</div>
+  </div>
+);
 
 export interface PrayerReplyData {
   message: string;
@@ -447,19 +461,23 @@ export function PrayerDetailModal({ prayer, userLocation, onClose, onPray, onOpe
 
                         {/* Audio Reply */}
                         {replyType === 'audio' && (
-                          <AudioRecorder
-                            onRecordingComplete={handleReplyAudioComplete}
-                            maxDuration={120}
-                          />
+                          <Suspense fallback={<RecorderLoader />}>
+                            <AudioRecorder
+                              onRecordingComplete={handleReplyAudioComplete}
+                              maxDuration={120}
+                            />
+                          </Suspense>
                         )}
 
                         {/* Video Reply */}
                         {replyType === 'video' && (
                           <div className="glass rounded-xl p-4">
-                            <VideoRecorder
-                              onRecordingComplete={handleReplyVideoComplete}
-                              maxDuration={90}
-                            />
+                            <Suspense fallback={<RecorderLoader />}>
+                              <VideoRecorder
+                                onRecordingComplete={handleReplyVideoComplete}
+                                maxDuration={90}
+                              />
+                            </Suspense>
                             {replyVideoBlob && (
                               <p className="text-sm text-green-600 mt-3 text-center">
                                 Video response recorded
@@ -548,10 +566,12 @@ export function PrayerDetailModal({ prayer, userLocation, onClose, onPray, onOpe
                           />
                         )}
                         {replyType === 'audio' && (
-                          <AudioRecorder
-                            onRecordingComplete={handleReplyAudioComplete}
-                            maxDuration={120}
-                          />
+                          <Suspense fallback={<RecorderLoader />}>
+                            <AudioRecorder
+                              onRecordingComplete={handleReplyAudioComplete}
+                              maxDuration={120}
+                            />
+                          </Suspense>
                         )}
 
                         <Button

@@ -145,7 +145,7 @@ We have MCP servers configured for both Cursor and Claude Desktop, providing:
 The intelligent skill recommendation system that matches conversation context against our skill library:
 
 **Current Capabilities:**
-- Automatic skill discovery from conversation context
+- Automatic skill discovery from conversational context
 - Multi-dimensional matching with confidence scores
 - Pattern learning from usage history
 - Sub-100ms response times
@@ -195,7 +195,7 @@ For any new topic, project, or decision:
 
 Every deliverable must pass:
 - **Quality:** 85%+ target
-- **Accuracy:** 90%+ target  
+- **Accuracy:** 90%+ target
 - **Completeness:** 95%+ documentation coverage
 - **Citations:** All claims backed by sources
 - **Testing notes:** How was this verified?
@@ -362,7 +362,7 @@ Use the appropriate skill file:
 
 ### What We're Building
 
-**Prayer Map:** The most dynamic real time map, sharing real-time user events, past events, and animations at all times to all users, connecting them in the first live visual and historical map of prayer. PrayerMap is a free, location-based spiritual platform that enables users to share prayer requests, respond to requests, chat, and support one another through a beautifully designed interactive map interface. The map is a "living map" that leaves memorial connection lines wherever prayer has been answered, leaving a network of prayers drawn on the map, providing a visual representation of prayer that "makes the invisible, visible". 
+**Prayer Map:** The most dynamic real time map, sharing real-time user events, past events, and animations at all times to all users, connecting them in the first live visual and historical map of prayer. PrayerMap is a free, location-based spiritual platform that enables users to share prayer requests, respond to requests, chat, and support one another through a beautifully designed interactive map interface. The map is a "living map" that leaves memorial connection lines wherever prayer has been answered, leaving a network of prayers drawn on the map, providing a visual representation of prayer that "makes the invisible, visible".
 
 **Ora Framework:** The autonomous coordination system extracted from MCP-WP, enabling rapid deployment of isolated development environments across multiple projects.
 
@@ -381,7 +381,7 @@ The system succeeds when:
 
 ### The Vision
 
-We're not just building products. We're building a way of building—an autonomous, world-class development methodology that can be applied to any project, producing results that match or exceed the best companies in the world. 
+We're not just building products. We're building a way of building—an autonomous, world-class development methodology that can be applied to any project, producing results that match or exceed the best companies in the world.
 
 ---
 

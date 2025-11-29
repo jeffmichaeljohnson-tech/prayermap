@@ -107,3 +107,22 @@ h1, h2, h3, h4, h5, h6 {
 .mapboxgl-ctrl-attrib {
   display: none !important;
 }
+
+/* Reduced Motion Support - WCAG 2.1 AA Compliance */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Disable specific animations */
+  .animate-float,
+  .animate-pulse-glow,
+  .animate-spotlight {
+    animation: none !important;
+  }
+}

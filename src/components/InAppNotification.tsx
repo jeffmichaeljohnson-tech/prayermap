@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { Heart, X } from 'lucide-react';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 
 interface InAppNotificationProps {
   message: string;
@@ -10,6 +11,8 @@ interface InAppNotificationProps {
 }
 
 export function InAppNotification({ message, show, onClose, onClick }: InAppNotificationProps) {
+  const reducedMotion = useReducedMotion();
+
   // Auto-hide after 5 seconds
   useEffect(() => {
     if (show) {
@@ -24,10 +27,10 @@ export function InAppNotification({ message, show, onClose, onClick }: InAppNoti
     <AnimatePresence>
       {show && (
         <motion.div
-          initial={{ opacity: 0, y: -50, scale: 0.9 }}
+          initial={reducedMotion ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -50, scale: 0.9 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -50, scale: 0.9 }}
-          transition={{ duration: 0.3, type: "spring" }}
+          exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -50, scale: 0.9 }}
+          transition={reducedMotion ? { duration: 0 } : { duration: 0.3, type: "spring" }}
           className="fixed top-4 right-4 z-50 pointer-events-auto"
         >
           <div

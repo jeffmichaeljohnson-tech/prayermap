@@ -112,13 +112,13 @@ describe('prayerService', () => {
   });
 
   describe('fetchAllPrayers', () => {
-    it('should fetch all prayers using RPC', async () => {
+    it('should fetch all prayers using RPC with default limit', async () => {
       const mockData = [createMockPrayerRow()];
       vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
 
       const result = await prayerService.fetchAllPrayers();
 
-      expect(supabase.rpc).toHaveBeenCalledWith('get_all_prayers');
+      expect(supabase.rpc).toHaveBeenCalledWith('get_all_prayers', { limit_count: 500 });
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('prayer-123');
     });
@@ -237,6 +237,24 @@ describe('prayerService', () => {
 
       expect(result[0].location).toEqual({ lat: 0, lng: 0 });
       expect(console.warn).toHaveBeenCalled();
+    });
+
+    it('should pass custom limit to RPC function', async () => {
+      const mockData = [createMockPrayerRow()];
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
+
+      await prayerService.fetchAllPrayers(100);
+
+      expect(supabase.rpc).toHaveBeenCalledWith('get_all_prayers', { limit_count: 100 });
+    });
+
+    it('should enforce maximum limit of 1000', async () => {
+      const mockData = [createMockPrayerRow()];
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
+
+      await prayerService.fetchAllPrayers(5000);
+
+      expect(supabase.rpc).toHaveBeenCalledWith('get_all_prayers', { limit_count: 1000 });
     });
   });
 

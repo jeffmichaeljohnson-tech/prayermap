@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Component, ReactNode } from 'react';
 import { LoadingScreen } from './components/LoadingScreen';
 import { AuthModal } from './components/AuthModal';
 import { PrayerMap } from './components/PrayerMap';
@@ -19,7 +19,57 @@ import { useConnectionStatus } from './lib/selfHealing';
 // import { monitoringOrchestrator } from './lib/logging/monitoringOrchestrator';
 // import { useObservability } from './hooks/useObservability';
 
-// Initialize world-class observability systems on app start (100% automated log monitoring)
+// Error boundary specifically for lazy loading failures
+class LazyLoadErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    // Log to error tracker
+    errorTracker.captureError(error, {
+      context: 'lazy_load_failure',
+      componentStack: errorInfo.componentStack,
+    });
+    logger.error('Lazy load component failed', error, {
+      action: 'lazy_load_error',
+    });
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-purple-100 to-blue-100 p-4">
+          <div className="glass-strong rounded-3xl p-8 max-w-md text-center">
+            <div className="text-6xl mb-4">⚠️</div>
+            <h2 className="text-xl text-gray-800 mb-2">Component Load Error</h2>
+            <p className="text-gray-600 mb-4">
+              Failed to load a component. Please refresh the page to try again.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 bg-gradient-to-r from-yellow-300 to-purple-300 rounded-full text-gray-800 font-medium hover:from-yellow-400 hover:to-purple-400 transition-colors"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
+// Initialize observability systems on app start
 errorTracker.init();
 performanceMonitor.init();
 // newErrorTracker.init();
@@ -228,9 +278,11 @@ function AppContent() {
 export default function App() {
   return (
     <AppErrorBoundary>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
+      <LazyLoadErrorBoundary>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </LazyLoadErrorBoundary>
     </AppErrorBoundary>
   );
 }

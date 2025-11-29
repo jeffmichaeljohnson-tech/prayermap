@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { X, Type, Mic, Video, Loader2, AlertCircle } from 'lucide-react';
 import type { Prayer } from '../types/prayer';
@@ -6,13 +6,27 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Switch } from './ui/switch';
-import { AudioRecorder } from './AudioRecorder';
-import { VideoRecorder } from './VideoRecorder';
 import { uploadAudio, uploadVideo } from '../services/storageService';
 import { useAuth } from '../hooks/useAuth';
 import { formatDuration } from '../hooks/useAudioRecorder';
 import { formatVideoDuration } from '../hooks/useVideoRecorder';
 import { validators } from '../lib/security';
+
+// CODE SPLITTING: Lazy-load heavy recording components
+// Only loaded when user chooses to record audio/video
+const AudioRecorder = lazy(() =>
+  import('./AudioRecorder').then(m => ({ default: m.AudioRecorder }))
+);
+const VideoRecorder = lazy(() =>
+  import('./VideoRecorder').then(m => ({ default: m.VideoRecorder }))
+);
+
+// Loading component for recorders
+const RecorderLoader = () => (
+  <div className="glass rounded-xl p-6 text-center">
+    <div className="animate-pulse text-gray-600">Loading recorder...</div>
+  </div>
+);
 
 interface RequestPrayerModalProps {
   userLocation: { lat: number; lng: number };
@@ -346,10 +360,12 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
           {contentType === 'audio' && (
             <div className="glass rounded-xl p-4">
               <p className="text-sm text-gray-700 mb-4 text-center">Record your prayer request</p>
-              <AudioRecorder
-                onRecordingComplete={handleAudioRecordingComplete}
-                maxDuration={120}
-              />
+              <Suspense fallback={<RecorderLoader />}>
+                <AudioRecorder
+                  onRecordingComplete={handleAudioRecordingComplete}
+                  maxDuration={120}
+                />
+              </Suspense>
               {uploadError && (
                 <p className="text-sm text-red-500 mt-3 text-center">{uploadError}</p>
               )}
@@ -364,10 +380,12 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
           {contentType === 'video' && (
             <div className="glass rounded-xl p-4">
               <p className="text-sm text-gray-700 mb-4 text-center">Record your video prayer</p>
-              <VideoRecorder
-                onRecordingComplete={handleVideoRecordingComplete}
-                maxDuration={90}
-              />
+              <Suspense fallback={<RecorderLoader />}>
+                <VideoRecorder
+                  onRecordingComplete={handleVideoRecordingComplete}
+                  maxDuration={90}
+                />
+              </Suspense>
               {uploadError && (
                 <p className="text-sm text-red-500 mt-3 text-center">{uploadError}</p>
               )}
