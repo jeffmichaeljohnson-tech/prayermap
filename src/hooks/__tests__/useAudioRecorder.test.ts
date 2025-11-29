@@ -59,11 +59,10 @@ describe('useAudioRecorder', () => {
 
       await act(async () => {
         await result.current.startRecording();
+        await Promise.resolve(); // Let MediaRecorder callbacks complete
       });
 
-      await waitFor(() => {
-        expect(result.current.isRecording).toBe(true);
-      });
+      expect(result.current.isRecording).toBe(true);
     });
 
     it('should set isRecording to true', async () => {
@@ -81,17 +80,17 @@ describe('useAudioRecorder', () => {
 
       await act(async () => {
         await result.current.startRecording();
+        await Promise.resolve(); // Let MediaRecorder callbacks complete
       });
 
       expect(result.current.duration).toBe(0);
 
       await act(async () => {
         vi.advanceTimersByTime(1000);
+        await Promise.resolve(); // Let state updates complete
       });
 
-      await waitFor(() => {
-        expect(result.current.duration).toBeGreaterThan(0);
-      });
+      expect(result.current.duration).toBeGreaterThan(0);
     });
 
     it('should handle permission denied error', async () => {
@@ -170,15 +169,15 @@ describe('useAudioRecorder', () => {
 
       await act(async () => {
         await result.current.startRecording();
+        await Promise.resolve(); // Let MediaRecorder callbacks complete
       });
 
       await act(async () => {
         result.current.stopRecording();
+        await Promise.resolve(); // Let onstop callback complete
       });
 
-      await waitFor(() => {
-        expect(result.current.isRecording).toBe(false);
-      });
+      expect(result.current.isRecording).toBe(false);
     });
 
     it('should stop the duration timer', async () => {
@@ -186,19 +185,20 @@ describe('useAudioRecorder', () => {
 
       await act(async () => {
         await result.current.startRecording();
+        await Promise.resolve(); // Let MediaRecorder callbacks complete
       });
 
       await act(async () => {
         vi.advanceTimersByTime(1000);
+        await Promise.resolve(); // Let state updates complete
       });
 
       await act(async () => {
         result.current.stopRecording();
+        await Promise.resolve(); // Let onstop callback complete
       });
 
-      await waitFor(() => {
-        expect(result.current.isRecording).toBe(false);
-      });
+      expect(result.current.isRecording).toBe(false);
     });
 
     it('should create audioBlob from chunks', async () => {
@@ -206,15 +206,15 @@ describe('useAudioRecorder', () => {
 
       await act(async () => {
         await result.current.startRecording();
+        await Promise.resolve(); // Let MediaRecorder callbacks complete
       });
 
       await act(async () => {
         result.current.stopRecording();
+        await Promise.resolve(); // Let onstop callback complete
       });
 
-      await waitFor(() => {
-        expect(result.current.audioBlob).toBeTruthy();
-      });
+      expect(result.current.audioBlob).toBeTruthy();
     });
 
     it('should create audioUrl from blob', async () => {
@@ -222,12 +222,12 @@ describe('useAudioRecorder', () => {
 
       await act(async () => {
         await result.current.startRecording();
+        await Promise.resolve(); // Let MediaRecorder callbacks complete
         result.current.stopRecording();
+        await Promise.resolve(); // Let onstop callback complete
       });
 
-      await waitFor(() => {
-        expect(result.current.audioUrl).toBeTruthy();
-      });
+      expect(result.current.audioUrl).toBeTruthy();
     });
 
     it('should stop all media tracks', async () => {
@@ -237,17 +237,17 @@ describe('useAudioRecorder', () => {
 
       await act(async () => {
         await result.current.startRecording();
+        await Promise.resolve(); // Let MediaRecorder callbacks complete
       });
 
       const stream = await getUserMediaSpy.mock.results[0].value;
 
       await act(async () => {
         result.current.stopRecording();
+        await Promise.resolve(); // Let onstop callback complete
       });
 
-      await waitFor(() => {
-        expect(result.current.isRecording).toBe(false);
-      });
+      expect(result.current.isRecording).toBe(false);
 
       getUserMediaSpy.mockRestore();
     });
@@ -257,12 +257,12 @@ describe('useAudioRecorder', () => {
 
       await act(async () => {
         await result.current.startRecording();
+        await Promise.resolve(); // Let MediaRecorder callbacks complete
         result.current.stopRecording();
+        await Promise.resolve(); // Let onstop callback complete
       });
 
-      await waitFor(() => {
-        expect(result.current.isRecording).toBe(false);
-      });
+      expect(result.current.isRecording).toBe(false);
     });
   });
 
@@ -417,12 +417,12 @@ describe('useAudioRecorder', () => {
 
       await act(async () => {
         await result.current.startRecording();
+        await Promise.resolve(); // Let MediaRecorder callbacks complete
         result.current.stopRecording();
+        await Promise.resolve(); // Let onstop callback complete
       });
 
-      await waitFor(() => {
-        expect(result.current.audioUrl).toBeTruthy();
-      });
+      expect(result.current.audioUrl).toBeTruthy();
 
       await act(async () => {
         result.current.resetRecording();
@@ -439,12 +439,12 @@ describe('useAudioRecorder', () => {
 
       await act(async () => {
         await result.current.startRecording();
+        await Promise.resolve(); // Let MediaRecorder callbacks complete
         result.current.stopRecording();
+        await Promise.resolve(); // Let onstop callback complete
       });
 
-      await waitFor(() => {
-        expect(result.current.audioUrl).toBeTruthy();
-      });
+      expect(result.current.audioUrl).toBeTruthy();
 
       await act(async () => {
         result.current.resetRecording();
@@ -501,15 +501,15 @@ describe('useAudioRecorder', () => {
 
       await act(async () => {
         await result.current.startRecording();
+        await Promise.resolve(); // Let MediaRecorder callbacks complete
       });
 
       await act(async () => {
         vi.advanceTimersByTime(1000);
+        await Promise.resolve(); // Let state updates complete
       });
 
-      await waitFor(() => {
-        expect(result.current.duration).toBeGreaterThan(0);
-      });
+      expect(result.current.duration).toBeGreaterThan(0);
     });
 
     it('should pause duration when recording is paused', async () => {
@@ -621,12 +621,12 @@ describe('useAudioRecorder', () => {
 
       await act(async () => {
         await result.current.startRecording();
+        await Promise.resolve(); // Let MediaRecorder callbacks complete
         result.current.stopRecording();
+        await Promise.resolve(); // Let onstop callback complete
       });
 
-      await waitFor(() => {
-        expect(result.current.audioUrl).toBeTruthy();
-      });
+      expect(result.current.audioUrl).toBeTruthy();
 
       unmount();
       expect(true).toBe(true);
