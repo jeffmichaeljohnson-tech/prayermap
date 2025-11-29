@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /**
  * EXAMPLE: How to integrate logging in a React Component
  *
