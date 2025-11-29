@@ -7,6 +7,41 @@
 
 ---
 
+## 📖 MANDATORY READING: ARTICLE.md
+
+> **STOP. Before proceeding with ANY work, you MUST read [ARTICLE.md](./ARTICLE.md).**
+
+**ARTICLE.md is the Autonomous Excellence Manifesto** — the philosophical and operational foundation for everything we build. It is:
+
+- **The source of truth** for how we think, build, and win
+- **Required daily reading** for all agents and workers
+- **The benchmark** against which all decisions are measured
+- **Non-negotiable** — every interaction must embody these principles
+
+### Why ARTICLE.md Matters
+
+ARTICLE.md captures:
+1. **How We Think** — Pursuit of truth, world-class standards, speed-first execution
+2. **Our Superpowers** — Autonomous AI workforce, omniscient memory, Ora framework
+3. **Research Excellence** — Quality gates (85%+ quality, 90%+ accuracy, 95%+ docs)
+4. **Operating Principles** — Validation before optimizing, parallel over sequential
+5. **The North Star** — What PrayerMap truly is and our success criteria
+
+**When in doubt, return to ARTICLE.md. It is the source of truth for how we operate.**
+
+### The Core Mindset (from ARTICLE.md)
+
+Every interaction should embody:
+- **Relentless pursuit of truth** — Find the best in the world, study them, outproduce them
+- **World-class as minimum standard** — Benchmark against Anthropic, Stripe, Google, Cursor
+- **Speed without sacrificing quality** — 150+ hours of work in 7 hours through parallelization
+- **Measurement before optimization** — Never assume, always measure
+- **Parallel execution by default** — Run multiple agent tracks simultaneously
+- **Complete transparency** — Radical honesty in capability assessment
+- **Zero corners cut** — Premium infrastructure, no exceptions
+
+---
+
 ## ⚠️ CRITICAL PRINCIPLES (NEVER FORGET THESE)
 
 ### PRINCIPLE 0: AUTOMATIC MULTI-AGENT WORKFLOW AT ALL TIMES
@@ -827,12 +862,13 @@ Use this EVERY time before implementing a feature or making a change:
 ## 📁 Key Files to Know
 
 ### Documentation
+- **ARTICLE.md** - **MANDATORY READING** - The Autonomous Excellence Manifesto (read daily)
 - **CLAUDE.md** (this file) - Core project instructions
 - **AGENTS.md** - Detailed agent guidelines and conventions
 - **README.md** - Project overview and setup
-- **PrayerMap_PRD_v2.md** - Product requirements (comprehensive)
-- **prayermap_api_spec_v2.md** - API documentation
-- **DEPLOYMENT_INSTRUCTIONS.md** - How to deploy
+- **PRD.md** - Product requirements (comprehensive)
+- **docs/technical/API-SPEC.md** - API documentation
+- **docs/archive/DEPLOYMENT_INSTRUCTIONS.md** - How to deploy
 
 ### Configuration
 - **package.json** - Dependencies and scripts
@@ -854,6 +890,25 @@ Use this EVERY time before implementing a feature or making a change:
 ---
 
 ## 💎 What Makes This Project Special
+
+### The North Star (from ARTICLE.md)
+
+**PrayerMap** is the most dynamic real-time map, sharing real-time user events, past events, and animations at all times to all users, connecting them in the first live visual and historical map of prayer.
+
+It is a free, location-based spiritual platform that enables users to share prayer requests, respond to requests, chat, and support one another through a beautifully designed interactive map interface.
+
+**The "Living Map" Vision:** The map leaves memorial connection lines wherever prayer has been answered, creating a network of prayers drawn on the map, providing a visual representation of prayer that **"makes the invisible, visible"**.
+
+### Success Criteria (from ARTICLE.md)
+
+The system succeeds when:
+1. New users see all historical data, all animations in real time, world-class messaging, chat, privacy, and security
+2. All custom code visible in one dashboard (no scattered fields)
+3. System prevents conflicts before they happen
+4. Works across web, iOS, Android
+5. AI to production in <10 seconds
+6. AI moderates inappropriate content or hate speech at lightning speed
+7. PrayerMap debugs itself in real time and deploys fixes
 
 ### The Spiritual Nature
 
@@ -882,6 +937,10 @@ Most prayer apps feel static and lifeless. PrayerMap should feel:
 "See where prayer is needed. Send prayer where you are."
 
 We're building something that matters. Every optimization isn't just about metrics - it's about a person in crisis being able to quickly share their burden. Every animation isn't just polish - it's about creating a peaceful moment in someone's day. Every decision to reduce steps isn't just UX - it's about removing barriers between people and hope.
+
+### The Bigger Vision (from ARTICLE.md)
+
+We're not just building products. We're building **a way of building** — an autonomous, world-class development methodology that can be applied to any project, producing results that match or exceed the best companies in the world.
 
 ---
 
@@ -989,12 +1048,22 @@ Examples:
 
 ## 📊 Success Metrics
 
+### Quality Gates (from ARTICLE.md)
+
+Every deliverable must pass:
+- **Quality:** 85%+ target
+- **Accuracy:** 90%+ target
+- **Completeness:** 95%+ documentation coverage
+- **Citations:** All claims backed by sources
+- **Testing notes:** How was this verified?
+
 ### Performance
 - First Contentful Paint: < 1.5s
 - Time to Interactive: < 2s
 - Map load time: < 1s
 - Animation frame rate: 60fps
 - Bundle size: < 500kb (main app)
+- AI to production: < 10 seconds
 
 ### UX
 - Time to first prayer view: < 3 seconds
@@ -1027,8 +1096,31 @@ If you can answer "yes" to all five, you're on the right track.
 
 ---
 
+## 🆕 Recent Features (2025)
+
+### Video Prayer Responses
+- Social media-style video prayers
+- Video recording and playback support
+- Video moderation in admin dashboard
+
+### Prayer Response System
+- Users can respond to prayers with text, audio, or video
+- Notification system for prayer responses
+- Admin moderation for prayer responses
+
+### Admin Moderation Dashboard
+- Review and moderate prayer content
+- Manage user reports
+- Content approval workflows
+
+---
+
 *This is a sacred project. Code accordingly.*
 
-**Last Updated:** 2024-11-29
+**Remember: Read [ARTICLE.md](./ARTICLE.md) daily. It is the source of truth.**
+
+---
+
+**Last Updated:** 2025-11-29
 **Maintained for:** Claude Code (Anthropic CLI)
-**Version:** 1.0
+**Version:** 2.0 (Autonomous Excellence Edition)
