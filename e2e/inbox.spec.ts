@@ -18,7 +18,7 @@ test.describe('Inbox', () => {
     if (await inboxButton.isVisible().catch(() => false)) {
       // Look for badge with count
       const badge = authenticatedPage.locator('[data-testid="unread-badge"], [class*="badge"]');
-      const _hasBadge = await badge.isVisible().catch(() => false);
+      await badge.isVisible().catch(() => false);
 
       // Badge may or may not be visible depending on unread count
       expect(true).toBeTruthy();
@@ -46,7 +46,7 @@ test.describe('Inbox', () => {
 
       // Look for list of responses
       const responseList = authenticatedPage.locator('[data-testid="response-list"], [class*="response"]');
-      const _hasResponses = await responseList.isVisible().catch(() => false);
+      await responseList.isVisible().catch(() => false);
 
       // May or may not have responses
       expect(true).toBeTruthy();
@@ -66,7 +66,7 @@ test.describe('Inbox', () => {
     if (await inboxButton.isVisible().catch(() => false)) {
       // Get initial badge count
       const badge = authenticatedPage.locator('[data-testid="unread-badge"], [class*="badge"]');
-      const _initialBadgeVisible = await badge.isVisible().catch(() => false);
+      await badge.isVisible().catch(() => false);
 
       // Open inbox
       await inboxButton.click();
@@ -114,7 +114,7 @@ test.describe('Inbox', () => {
         await authenticatedPage.waitForTimeout(1000);
 
         const prayerDetail = authenticatedPage.locator('[data-testid="prayer-detail"], text=/prayer/i');
-        const _hasPrayerDetail = await prayerDetail.isVisible().catch(() => false);
+        await prayerDetail.isVisible().catch(() => false);
 
         expect(true).toBeTruthy();
       }

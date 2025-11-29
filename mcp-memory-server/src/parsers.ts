@@ -88,7 +88,7 @@ export function parseClaudeCodeSession(filePath: string): ConversationSession | 
             });
           }
         }
-      } catch (_parseError) {
+      } catch {
         // Skip malformed lines
         continue;
       }

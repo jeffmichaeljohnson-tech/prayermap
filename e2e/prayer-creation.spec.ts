@@ -1,14 +1,14 @@
 import { test, expect } from './fixtures/test-fixtures';
 
 test.describe('Prayer Creation', () => {
-  test.beforeEach(async ({ _page, context }) => {
+  test.beforeEach(async ({ context }) => {
     // Grant geolocation permission
     await context.grantPermissions(['geolocation']);
     await context.setGeolocation({ latitude: 42.6885, longitude: -83.1751 });
   });
 
   test.describe('Text Prayer', () => {
-    test('should open prayer request modal', async ({ authenticatedPage, _geolocatedPage }) => {
+    test('should open prayer request modal', async ({ authenticatedPage }) => {
       await authenticatedPage.goto('/');
 
       // Wait for map to load
@@ -25,7 +25,7 @@ test.describe('Prayer Creation', () => {
       await expect(authenticatedPage.locator('text=Request Prayer, text=Add Prayer')).toBeVisible({ timeout: 5000 });
     });
 
-    test('should select text content type', async ({ authenticatedPage, _geolocatedPage }) => {
+    test('should select text content type', async ({ authenticatedPage }) => {
       await authenticatedPage.goto('/');
       await authenticatedPage.waitForTimeout(5000);
 
@@ -44,7 +44,7 @@ test.describe('Prayer Creation', () => {
       expect(classList).toContain('bg-gradient');
     });
 
-    test('should require minimum content length', async ({ authenticatedPage, _geolocatedPage }) => {
+    test('should require minimum content length', async ({ authenticatedPage }) => {
       await authenticatedPage.goto('/');
       await authenticatedPage.waitForTimeout(5000);
 
@@ -63,7 +63,7 @@ test.describe('Prayer Creation', () => {
       await expect(submitButton).toBeDisabled();
     });
 
-    test('should submit text prayer successfully', async ({ authenticatedPage, _geolocatedPage }) => {
+    test('should submit text prayer successfully', async ({ authenticatedPage }) => {
       await authenticatedPage.goto('/');
       await authenticatedPage.waitForTimeout(5000);
 
@@ -100,7 +100,7 @@ test.describe('Prayer Creation', () => {
       expect(hasPrayerMarker || hasSuccessMessage).toBeTruthy();
     });
 
-    test('should create anonymous prayer', async ({ authenticatedPage, _geolocatedPage }) => {
+    test('should create anonymous prayer', async ({ authenticatedPage }) => {
       await authenticatedPage.goto('/');
       await authenticatedPage.waitForTimeout(5000);
 
@@ -137,7 +137,7 @@ test.describe('Prayer Creation', () => {
   });
 
   test.describe('Audio Prayer', () => {
-    test('should switch to audio mode', async ({ authenticatedPage, _geolocatedPage, context }) => {
+    test('should switch to audio mode', async ({ authenticatedPage, context }) => {
       await context.grantPermissions(['microphone']);
 
       await authenticatedPage.goto('/');
@@ -157,7 +157,7 @@ test.describe('Prayer Creation', () => {
       await expect(authenticatedPage.locator('[data-testid="audio-recorder"], text=/record your prayer/i')).toBeVisible();
     });
 
-    test('should request microphone permission', async ({ authenticatedPage, _geolocatedPage }) => {
+    test('should request microphone permission', async ({ authenticatedPage }) => {
       await authenticatedPage.goto('/');
       await authenticatedPage.waitForTimeout(5000);
 
@@ -176,7 +176,7 @@ test.describe('Prayer Creation', () => {
       expect(hasRecorder).toBeTruthy();
     });
 
-    test('should record audio prayer', async ({ authenticatedPage, _geolocatedPage, context }) => {
+    test('should record audio prayer', async ({ authenticatedPage, context }) => {
       await context.grantPermissions(['microphone']);
 
       await authenticatedPage.goto('/');
@@ -208,7 +208,7 @@ test.describe('Prayer Creation', () => {
       }
     });
 
-    test('should show recording duration', async ({ authenticatedPage, _geolocatedPage, context }) => {
+    test('should show recording duration', async ({ authenticatedPage, context }) => {
       await context.grantPermissions(['microphone']);
 
       await authenticatedPage.goto('/');
@@ -228,7 +228,7 @@ test.describe('Prayer Creation', () => {
       expect(hasDuration).toBeTruthy();
     });
 
-    test('should allow playback before submit', async ({ authenticatedPage, _geolocatedPage, context }) => {
+    test('should allow playback before submit', async ({ authenticatedPage, context }) => {
       await context.grantPermissions(['microphone']);
 
       await authenticatedPage.goto('/');
@@ -258,7 +258,7 @@ test.describe('Prayer Creation', () => {
       }
     });
 
-    test('should submit audio prayer', async ({ authenticatedPage, _geolocatedPage, context }) => {
+    test('should submit audio prayer', async ({ authenticatedPage, context }) => {
       await context.grantPermissions(['microphone']);
 
       await authenticatedPage.goto('/');
@@ -283,7 +283,7 @@ test.describe('Prayer Creation', () => {
   });
 
   test.describe('Video Prayer', () => {
-    test('should switch to video mode', async ({ authenticatedPage, _geolocatedPage, context }) => {
+    test('should switch to video mode', async ({ authenticatedPage, context }) => {
       await context.grantPermissions(['camera', 'microphone']);
 
       await authenticatedPage.goto('/');
@@ -302,7 +302,7 @@ test.describe('Prayer Creation', () => {
       await expect(authenticatedPage.locator('[data-testid="video-recorder"], text=/record your video/i')).toBeVisible();
     });
 
-    test('should show camera preview', async ({ authenticatedPage, _geolocatedPage, context }) => {
+    test('should show camera preview', async ({ authenticatedPage, context }) => {
       await context.grantPermissions(['camera', 'microphone']);
 
       await authenticatedPage.goto('/');
@@ -322,7 +322,7 @@ test.describe('Prayer Creation', () => {
       expect(hasPreview).toBeTruthy();
     });
 
-    test('should switch between front/back camera', async ({ authenticatedPage, _geolocatedPage, context }) => {
+    test('should switch between front/back camera', async ({ authenticatedPage, context }) => {
       await context.grantPermissions(['camera', 'microphone']);
 
       await authenticatedPage.goto('/');
@@ -349,7 +349,7 @@ test.describe('Prayer Creation', () => {
       expect(true).toBeTruthy(); // Test passes if we got this far
     });
 
-    test('should record video prayer', async ({ authenticatedPage, _geolocatedPage, context }) => {
+    test('should record video prayer', async ({ authenticatedPage, context }) => {
       await context.grantPermissions(['camera', 'microphone']);
 
       await authenticatedPage.goto('/');
@@ -369,7 +369,7 @@ test.describe('Prayer Creation', () => {
       expect(hasRecordButton).toBeTruthy();
     });
 
-    test('should show progress ring during recording', async ({ authenticatedPage, _geolocatedPage, context }) => {
+    test('should show progress ring during recording', async ({ authenticatedPage, context }) => {
       await context.grantPermissions(['camera', 'microphone']);
 
       await authenticatedPage.goto('/');
@@ -389,7 +389,7 @@ test.describe('Prayer Creation', () => {
       expect(hasProgress).toBeTruthy();
     });
 
-    test('should auto-stop at max duration', async ({ authenticatedPage, _geolocatedPage, context }) => {
+    test('should auto-stop at max duration', async ({ authenticatedPage, context }) => {
       // This test would take 90 seconds to run, so we'll just verify the max duration is set
       await context.grantPermissions(['camera', 'microphone']);
 
@@ -409,7 +409,7 @@ test.describe('Prayer Creation', () => {
       expect(hasDuration).toBeTruthy();
     });
 
-    test('should allow preview before submit', async ({ authenticatedPage, _geolocatedPage, context }) => {
+    test('should allow preview before submit', async ({ authenticatedPage, context }) => {
       await context.grantPermissions(['camera', 'microphone']);
 
       await authenticatedPage.goto('/');
@@ -429,7 +429,7 @@ test.describe('Prayer Creation', () => {
       expect(hasVideo).toBeTruthy();
     });
 
-    test('should submit video prayer', async ({ authenticatedPage, _geolocatedPage, context }) => {
+    test('should submit video prayer', async ({ authenticatedPage, context }) => {
       await context.grantPermissions(['camera', 'microphone']);
 
       await authenticatedPage.goto('/');

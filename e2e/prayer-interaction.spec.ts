@@ -1,14 +1,14 @@
 import { test, expect } from './fixtures/test-fixtures';
 
 test.describe('Prayer Interaction', () => {
-  test.beforeEach(async ({ _page, context }) => {
+  test.beforeEach(async ({ context }) => {
     // Grant permissions
     await context.grantPermissions(['geolocation']);
     await context.setGeolocation({ latitude: 42.6885, longitude: -83.1751 });
   });
 
   test.describe('Viewing Prayers', () => {
-    test('should display prayers on map', async ({ authenticatedPage, _geolocatedPage }) => {
+    test('should display prayers on map', async ({ authenticatedPage }) => {
       await authenticatedPage.goto('/');
 
       // Wait for map to load
@@ -26,19 +26,19 @@ test.describe('Prayer Interaction', () => {
       expect(markerCount).toBeGreaterThanOrEqual(0);
     });
 
-    test('should cluster nearby prayers', async ({ authenticatedPage, _geolocatedPage }) => {
+    test('should cluster nearby prayers', async ({ authenticatedPage }) => {
       await authenticatedPage.goto('/');
       await authenticatedPage.waitForTimeout(5000);
 
       // Look for cluster markers (typically shown as numbers)
       const clusterMarker = authenticatedPage.locator('[data-testid="cluster-marker"], .mapboxgl-marker text, [class*="cluster"]');
-      const _hasClusters = await clusterMarker.isVisible().catch(() => false);
+      await clusterMarker.isVisible().catch(() => false);
 
       // Clustering may or may not be present depending on prayer density
       expect(true).toBeTruthy();
     });
 
-    test('should show prayer details on click', async ({ authenticatedPage, _geolocatedPage }) => {
+    test('should show prayer details on click', async ({ authenticatedPage }) => {
       await authenticatedPage.goto('/');
       await authenticatedPage.waitForTimeout(5000);
 
@@ -58,7 +58,7 @@ test.describe('Prayer Interaction', () => {
       }
     });
 
-    test('should play audio prayers', async ({ authenticatedPage, _geolocatedPage }) => {
+    test('should play audio prayers', async ({ authenticatedPage }) => {
       await authenticatedPage.goto('/');
       await authenticatedPage.waitForTimeout(5000);
 
@@ -70,7 +70,7 @@ test.describe('Prayer Interaction', () => {
 
         // Look for audio player
         const audioPlayer = authenticatedPage.locator('audio, [data-testid="audio-player"], button:has-text("Play")');
-        const _hasAudio = await audioPlayer.isVisible().catch(() => false);
+        await audioPlayer.isVisible().catch(() => false);
 
         // May or may not have audio prayers
         expect(true).toBeTruthy();
@@ -79,7 +79,7 @@ test.describe('Prayer Interaction', () => {
       }
     });
 
-    test('should play video prayers', async ({ authenticatedPage, _geolocatedPage }) => {
+    test('should play video prayers', async ({ authenticatedPage }) => {
       await authenticatedPage.goto('/');
       await authenticatedPage.waitForTimeout(5000);
 
@@ -91,7 +91,7 @@ test.describe('Prayer Interaction', () => {
 
         // Look for video player
         const videoPlayer = authenticatedPage.locator('video, [data-testid="video-player"]');
-        const _hasVideo = await videoPlayer.isVisible().catch(() => false);
+        await videoPlayer.isVisible().catch(() => false);
 
         // May or may not have video prayers
         expect(true).toBeTruthy();
@@ -102,7 +102,7 @@ test.describe('Prayer Interaction', () => {
   });
 
   test.describe('Responding to Prayers', () => {
-    test('should show response options', async ({ authenticatedPage, _geolocatedPage }) => {
+    test('should show response options', async ({ authenticatedPage }) => {
       await authenticatedPage.goto('/');
       await authenticatedPage.waitForTimeout(5000);
 
@@ -124,7 +124,7 @@ test.describe('Prayer Interaction', () => {
       }
     });
 
-    test('should send text response', async ({ authenticatedPage, _geolocatedPage }) => {
+    test('should send text response', async ({ authenticatedPage }) => {
       await authenticatedPage.goto('/');
       await authenticatedPage.waitForTimeout(5000);
 
@@ -158,7 +158,7 @@ test.describe('Prayer Interaction', () => {
       expect(true).toBeTruthy();
     });
 
-    test('should send audio response', async ({ authenticatedPage, _geolocatedPage, context }) => {
+    test('should send audio response', async ({ authenticatedPage, context }) => {
       await context.grantPermissions(['microphone']);
 
       await authenticatedPage.goto('/');
@@ -171,7 +171,7 @@ test.describe('Prayer Interaction', () => {
 
         // Look for audio response option
         const audioButton = authenticatedPage.locator('button:has-text("Audio"), [data-testid="audio-response"]');
-        const _hasAudioResponse = await audioButton.isVisible().catch(() => false);
+        await audioButton.isVisible().catch(() => false);
 
         // May or may not have audio response option
         expect(true).toBeTruthy();
@@ -180,7 +180,7 @@ test.describe('Prayer Interaction', () => {
       }
     });
 
-    test('should send video response', async ({ authenticatedPage, _geolocatedPage, context }) => {
+    test('should send video response', async ({ authenticatedPage, context }) => {
       await context.grantPermissions(['camera', 'microphone']);
 
       await authenticatedPage.goto('/');
@@ -193,7 +193,7 @@ test.describe('Prayer Interaction', () => {
 
         // Look for video response option
         const videoButton = authenticatedPage.locator('button:has-text("Video"), [data-testid="video-response"]');
-        const _hasVideoResponse = await videoButton.isVisible().catch(() => false);
+        await videoButton.isVisible().catch(() => false);
 
         // May or may not have video response option
         expect(true).toBeTruthy();
@@ -202,7 +202,7 @@ test.describe('Prayer Interaction', () => {
       }
     });
 
-    test('should create prayer connection', async ({ authenticatedPage, _geolocatedPage }) => {
+    test('should create prayer connection', async ({ authenticatedPage }) => {
       await authenticatedPage.goto('/');
       await authenticatedPage.waitForTimeout(5000);
 
@@ -222,7 +222,7 @@ test.describe('Prayer Interaction', () => {
 
           // Connection animation or visual should appear
           const connectionLine = authenticatedPage.locator('[data-testid="prayer-connection"], [class*="connection"]');
-          const _hasConnection = await connectionLine.isVisible().catch(() => false);
+          await connectionLine.isVisible().catch(() => false);
 
           // Connections may or may not be immediately visible
           expect(true).toBeTruthy();
@@ -232,7 +232,7 @@ test.describe('Prayer Interaction', () => {
       }
     });
 
-    test('should show spotlight animation', async ({ authenticatedPage, _geolocatedPage }) => {
+    test('should show spotlight animation', async ({ authenticatedPage }) => {
       await authenticatedPage.goto('/');
       await authenticatedPage.waitForTimeout(5000);
 
@@ -243,7 +243,7 @@ test.describe('Prayer Interaction', () => {
 
         // Look for spotlight or animation
         const spotlight = authenticatedPage.locator('[data-testid="spotlight"], [class*="spotlight"], [class*="animation"]');
-        const _hasSpotlight = await spotlight.isVisible().catch(() => false);
+        await spotlight.isVisible().catch(() => false);
 
         // Spotlight animation may or may not be implemented
         expect(true).toBeTruthy();
@@ -254,7 +254,7 @@ test.describe('Prayer Interaction', () => {
   });
 
   test.describe('Quick Pray', () => {
-    test('should send quick prayer response', async ({ authenticatedPage, _geolocatedPage }) => {
+    test('should send quick prayer response', async ({ authenticatedPage }) => {
       await authenticatedPage.goto('/');
       await authenticatedPage.waitForTimeout(5000);
 
@@ -275,7 +275,7 @@ test.describe('Prayer Interaction', () => {
           await authenticatedPage.waitForTimeout(1000);
 
           const confirmation = authenticatedPage.locator('text=/prayed|sent|thank/i');
-          const _hasConfirmation = await confirmation.isVisible().catch(() => false);
+          await confirmation.isVisible().catch(() => false);
 
           expect(true).toBeTruthy();
         }

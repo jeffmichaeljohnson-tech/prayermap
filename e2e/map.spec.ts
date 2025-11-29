@@ -33,7 +33,7 @@ test.describe('Map', () => {
 
     // Look for user location marker or indicator
     const userMarker = authenticatedPage.locator('[data-testid="user-marker"], .user-location, [class*="user"]');
-    const _hasUserMarker = await userMarker.isVisible().catch(() => false);
+    await userMarker.isVisible().catch(() => false);
 
     // User marker may or may not be visible depending on implementation
     expect(true).toBeTruthy();
@@ -77,7 +77,7 @@ test.describe('Map', () => {
 
     // Look for connection lines on the map
     const connections = authenticatedPage.locator('[data-testid="prayer-connection"], [class*="connection"], line, path');
-    const _hasConnections = await connections.first().isVisible().catch(() => false);
+    await connections.first().isVisible().catch(() => false);
 
     // Connections may or may not be visible depending on data
     expect(true).toBeTruthy();
@@ -89,7 +89,7 @@ test.describe('Map', () => {
 
     // Get initial marker count
     const markers = authenticatedPage.locator('[data-testid="prayer-marker"], .mapboxgl-marker');
-    const _initialCount = await markers.count();
+    await markers.count();
 
     // Wait for potential real-time updates
     await authenticatedPage.waitForTimeout(3000);
@@ -124,7 +124,7 @@ test.describe('Map', () => {
 
     // Look for map controls
     const controls = authenticatedPage.locator('.mapboxgl-ctrl, .mapbox-gl-controls');
-    const _hasControls = await controls.first().isVisible().catch(() => false);
+    await controls.first().isVisible().catch(() => false);
 
     expect(true).toBeTruthy();
   });
