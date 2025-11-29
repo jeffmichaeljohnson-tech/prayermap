@@ -169,7 +169,10 @@ describe('RequestPrayerModal', () => {
       const audioButton = screen.getByText('Audio').closest('button');
       await user.click(audioButton!);
 
-      expect(screen.getByTestId('audio-recorder')).toBeInTheDocument();
+      // Wait for lazy-loaded AudioRecorder component to appear
+      await waitFor(() => {
+        expect(screen.getByTestId('audio-recorder')).toBeInTheDocument();
+      });
       expect(screen.getByText(/record your prayer request/i)).toBeInTheDocument();
     });
 
@@ -186,7 +189,10 @@ describe('RequestPrayerModal', () => {
       const videoButton = screen.getByText('Video').closest('button');
       await user.click(videoButton!);
 
-      expect(screen.getByTestId('video-recorder')).toBeInTheDocument();
+      // Wait for lazy-loaded VideoRecorder component to appear
+      await waitFor(() => {
+        expect(screen.getByTestId('video-recorder')).toBeInTheDocument();
+      });
       expect(screen.getByText(/record your video prayer/i)).toBeInTheDocument();
     });
 

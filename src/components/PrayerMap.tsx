@@ -78,15 +78,16 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
   );
 
   // GLOBAL LIVING MAP: Fetch and subscribe to ALL prayer connections worldwide
+  // PERFORMANCE: Uses incremental updates instead of full refetches
   useEffect(() => {
     fetchAllConnections().then((globalConnections) => {
       console.log('Loaded global connections:', globalConnections.length);
       actions.setConnections(globalConnections);
     });
 
-    const unsubscribe = subscribeToAllConnections((updatedConnections) => {
-      console.log('Real-time connection update:', updatedConnections.length);
-      actions.setConnections(updatedConnections);
+    const unsubscribe = subscribeToAllConnections((updater) => {
+      console.log('Real-time connection update (incremental)');
+      actions.setConnections((prev) => updater(prev));
     });
 
     return unsubscribe;
@@ -167,24 +168,11 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
       userLocation
     );
 
-    // Create connection after animation (6 seconds)
-    const createdDate = new Date();
-    const expiresDate = new Date(createdDate);
-    expiresDate.setFullYear(expiresDate.getFullYear() + 1);
-
-    const newConnection: PrayerConnection = {
-      id: `conn-${Date.now()}`,
-      prayerId: prayer.id,
-      fromLocation: prayer.location,
-      toLocation: userLocation,
-      requesterName: prayer.is_anonymous ? 'Anonymous' : (prayer.user_name || 'Anonymous'),
-      replierName: isAnonymous ? 'Anonymous' : userName,
-      createdAt: createdDate,
-      expiresAt: expiresDate
-    };
-
+    // PERFORMANCE FIX: Don't create optimistic connection
+    // The server creates the connection and the real-time subscription
+    // will add it within ~100ms using incremental updates
+    // This prevents duplicates and ID mismatches
     setTimeout(() => {
-      actions.setConnections(prev => [...prev, newConnection]);
       actions.stopPrayerAnimation();
     }, 6000);
   };

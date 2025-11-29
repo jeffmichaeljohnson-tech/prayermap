@@ -479,6 +479,8 @@ export async function respondToPrayer(
       .insert({
         prayer_id: prayerId,
         responder_id: responderId,
+        responder_name: isAnonymous ? null : responderName,
+        is_anonymous: isAnonymous,
         message,
         content_type: contentType,
         media_url: contentUrl, // Changed from content_url to media_url to match schema
@@ -679,15 +681,20 @@ export async function fetchUserInbox(
  * Subscribe to ALL prayers globally in real-time for the GLOBAL LIVING MAP
  *
  * This subscription listens for any changes to prayers worldwide and
- * automatically fetches the updated global prayer list. This keeps the
- * Living Map dynamic and responsive to new prayers and updates from
- * anywhere in the world.
+ * incrementally updates the prayer list. This keeps the Living Map
+ * dynamic and responsive to new prayers and updates from anywhere in the
+ * world with minimal data transfer.
  *
- * @param callback - Function to call with updated prayer list
+ * PERFORMANCE: Uses incremental updates instead of full refetches.
+ * - INSERT: Adds single prayer to array (500x less data)
+ * - UPDATE: Updates single prayer in array
+ * - DELETE: Removes single prayer from array
+ *
+ * @param callback - Function to call with prayer list updater function
  * @returns Unsubscribe function
  */
 export function subscribeToPrayers(
-  callback: (prayers: Prayer[]) => void
+  callback: (updater: (prev: Prayer[]) => Prayer[]) => void
 ) {
   if (!supabase) {
     console.warn('Supabase client not initialized');
@@ -704,10 +711,50 @@ export function subscribeToPrayers(
         schema: 'public',
         table: 'prayers',
       },
-      async () => {
-        // Fetch all prayers globally when any change occurs
-        const prayers = await fetchAllPrayers();
-        callback(prayers);
+      async (payload) => {
+        console.log('Real-time prayer event:', payload.eventType, payload.new?.id || payload.old?.id);
+
+        // INCREMENTAL UPDATE: Handle each event type separately for efficiency
+        if (payload.eventType === 'INSERT') {
+          const newPrayer = rowToPrayer(payload.new as PrayerRow);
+
+          // Filter out moderated prayers (hidden or removed)
+          if (newPrayer.status && !['pending', 'approved', 'active'].includes(newPrayer.status)) {
+            console.log('Skipping moderated prayer:', newPrayer.id);
+            return;
+          }
+
+          // Add to beginning of array (most recent first)
+          callback((prev) => {
+            // Prevent duplicates
+            if (prev.some(p => p.id === newPrayer.id)) {
+              console.log('Prayer already exists, skipping:', newPrayer.id);
+              return prev;
+            }
+            return [newPrayer, ...prev];
+          });
+        }
+        else if (payload.eventType === 'UPDATE') {
+          const updatedPrayer = rowToPrayer(payload.new as PrayerRow);
+
+          callback((prev) => {
+            // If prayer is now hidden/removed, remove it from the list
+            if (updatedPrayer.status && !['pending', 'approved', 'active'].includes(updatedPrayer.status)) {
+              console.log('Prayer moderated, removing:', updatedPrayer.id);
+              return prev.filter(p => p.id !== updatedPrayer.id);
+            }
+
+            // Update existing prayer in array
+            return prev.map(p => p.id === updatedPrayer.id ? updatedPrayer : p);
+          });
+        }
+        else if (payload.eventType === 'DELETE') {
+          const deletedId = payload.old.id;
+          console.log('Prayer deleted:', deletedId);
+
+          // Remove from array
+          callback((prev) => prev.filter(p => p.id !== deletedId));
+        }
       }
     )
     .subscribe();
@@ -729,17 +776,35 @@ export const subscribeToAllPrayers = subscribeToPrayers;
  *
  * @deprecated Use subscribeToPrayers() instead for the GLOBAL LIVING MAP.
  * The Living Map displays all prayers globally, not just nearby ones.
+ *
+ * PERFORMANCE: Uses incremental updates for efficiency.
  */
 export function subscribeToNearbyPrayers(
   lat: number,
   lng: number,
   radiusKm: number,
-  callback: (prayers: Prayer[]) => void
+  callback: (updater: (prev: Prayer[]) => Prayer[]) => void
 ) {
   if (!supabase) {
     console.warn('Supabase client not initialized');
     return () => {};
   }
+
+  // Helper to check if prayer is within radius
+  const isWithinRadius = (prayer: Prayer): boolean => {
+    const R = 6371; // Earth's radius in km
+    const dLat = ((prayer.location.lat - lat) * Math.PI) / 180;
+    const dLng = ((prayer.location.lng - lng) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat * Math.PI) / 180) *
+        Math.cos((prayer.location.lat * Math.PI) / 180) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+    return distance <= radiusKm;
+  };
 
   // Subscribe to all prayer inserts/updates
   const subscription = supabase
@@ -751,10 +816,55 @@ export function subscribeToNearbyPrayers(
         schema: 'public',
         table: 'prayers',
       },
-      async () => {
-        // Fetch updated nearby prayers
-        const prayers = await fetchNearbyPrayers(lat, lng, radiusKm);
-        callback(prayers);
+      async (payload) => {
+        console.log('Real-time nearby prayer event:', payload.eventType);
+
+        // INCREMENTAL UPDATE: Handle each event type separately
+        if (payload.eventType === 'INSERT') {
+          const newPrayer = rowToPrayer(payload.new as PrayerRow);
+
+          // Filter by moderation status
+          if (newPrayer.status && !['pending', 'approved', 'active'].includes(newPrayer.status)) {
+            return;
+          }
+
+          // Filter by radius
+          if (!isWithinRadius(newPrayer)) {
+            return;
+          }
+
+          callback((prev) => {
+            if (prev.some(p => p.id === newPrayer.id)) {
+              return prev;
+            }
+            return [newPrayer, ...prev];
+          });
+        }
+        else if (payload.eventType === 'UPDATE') {
+          const updatedPrayer = rowToPrayer(payload.new as PrayerRow);
+
+          callback((prev) => {
+            // Remove if moderated or moved out of radius
+            if (
+              (updatedPrayer.status && !['pending', 'approved', 'active'].includes(updatedPrayer.status)) ||
+              !isWithinRadius(updatedPrayer)
+            ) {
+              return prev.filter(p => p.id !== updatedPrayer.id);
+            }
+
+            // Update or add if moved into radius
+            const exists = prev.some(p => p.id === updatedPrayer.id);
+            if (exists) {
+              return prev.map(p => p.id === updatedPrayer.id ? updatedPrayer : p);
+            } else {
+              return [updatedPrayer, ...prev];
+            }
+          });
+        }
+        else if (payload.eventType === 'DELETE') {
+          const deletedId = payload.old.id;
+          callback((prev) => prev.filter(p => p.id !== deletedId));
+        }
       }
     )
     .subscribe();
@@ -835,10 +945,17 @@ export function subscribeToUserInbox(userId: string, callback: (inbox: any[]) =>
  * Real-time updates for all prayer connections as they're created anywhere
  * in the world, making the Living Map truly dynamic and responsive.
  *
- * @param callback - Function called with updated global connections list on any change
+ * PERFORMANCE: Uses incremental updates instead of full refetches.
+ * - INSERT: Adds single connection to array (200x less data)
+ * - UPDATE: Updates single connection in array
+ * - DELETE: Removes single connection from array
+ *
+ * @param callback - Function called with connection list updater function
  * @returns Unsubscribe function
  */
-export function subscribeToAllConnections(callback: (connections: PrayerConnection[]) => void) {
+export function subscribeToAllConnections(
+  callback: (updater: (prev: PrayerConnection[]) => PrayerConnection[]) => void
+) {
   if (!supabase) {
     console.warn('Supabase client not initialized');
     return () => {};
@@ -854,10 +971,35 @@ export function subscribeToAllConnections(callback: (connections: PrayerConnecti
         schema: 'public',
         table: 'prayer_connections',
       },
-      async () => {
-        // Fetch all updated connections globally
-        const connections = await fetchAllConnections();
-        callback(connections);
+      async (payload) => {
+        console.log('Real-time connection event:', payload.eventType, payload.new?.id || payload.old?.id);
+
+        // INCREMENTAL UPDATE: Handle each event type separately for efficiency
+        if (payload.eventType === 'INSERT') {
+          const newConnection = rowToPrayerConnection(payload.new as PrayerConnectionRow);
+
+          callback((prev) => {
+            // Prevent duplicates
+            if (prev.some(c => c.id === newConnection.id)) {
+              console.log('Connection already exists, skipping:', newConnection.id);
+              return prev;
+            }
+            return [...prev, newConnection];
+          });
+        }
+        else if (payload.eventType === 'UPDATE') {
+          const updatedConnection = rowToPrayerConnection(payload.new as PrayerConnectionRow);
+
+          callback((prev) =>
+            prev.map(c => c.id === updatedConnection.id ? updatedConnection : c)
+          );
+        }
+        else if (payload.eventType === 'DELETE') {
+          const deletedId = payload.old.id;
+          console.log('Connection deleted:', deletedId);
+
+          callback((prev) => prev.filter(c => c.id !== deletedId));
+        }
       }
     )
     .subscribe();

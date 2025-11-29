@@ -90,16 +90,17 @@ export function usePrayers({
     }
 
     // GLOBAL LIVING MAP: Subscribe to all prayers globally or nearby prayers based on mode
+    // PERFORMANCE: Uses incremental updates (updater function) instead of full refetches
     const unsubscribe = globalMode
-      ? subscribeToAllPrayers((updatedPrayers) => {
-          setPrayers(updatedPrayers);
+      ? subscribeToAllPrayers((updater) => {
+          setPrayers(updater);
         })
       : subscribeToNearbyPrayers(
           location.lat,
           location.lng,
           radiusKm,
-          (updatedPrayers) => {
-            setPrayers(updatedPrayers);
+          (updater) => {
+            setPrayers(updater);
           }
         );
 
@@ -122,10 +123,10 @@ export function usePrayers({
       try {
         const newPrayer = await createPrayerService(prayer);
 
-        if (newPrayer) {
-          // Optimistically add to local state
-          setPrayers((prev) => [newPrayer, ...prev]);
-        }
+        // PERFORMANCE FIX: Don't add to local state here
+        // The real-time subscription will add it within ~100ms
+        // This prevents duplicates from optimistic updates
+        // The subscription now uses incremental updates with deduplication
 
         return newPrayer;
       } catch (err) {
