@@ -275,7 +275,7 @@ export function useSWR<T>(config: SWRConfig<T>): {
           `swr_${config.cacheKey}`,
           JSON.stringify({ data: result, timestamp: Date.now() })
         );
-      } catch (e) {
+      } catch {
         // Ignore cache errors
       }
 
@@ -316,7 +316,7 @@ export function useSWR<T>(config: SWRConfig<T>): {
           return;
         }
       }
-    } catch (e) {
+    } catch {
       // Ignore cache errors
     }
 
@@ -350,6 +350,7 @@ export function useVisibilityRefresh(
   refetch: () => void,
   staleTime: number
 ): void {
+  // eslint-disable-next-line react-hooks/purity
   const lastVisibleRef = useRef<number>(Date.now());
 
   useEffect(() => {

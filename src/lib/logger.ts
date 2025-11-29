@@ -11,7 +11,7 @@
  * - Configurable transports (console, remote)
  */
 
-import { useRef, useEffect } from 'react';
+import { useMemo, useEffect } from 'react';
 
 export enum LogLevel {
   DEBUG = 0,
@@ -378,13 +378,8 @@ export const logger = new Logger({
 
 // React hook for component logging
 export function useLogger(component: string): Logger {
-  const loggerRef = useRef<Logger | null>(null);
-
-  if (!loggerRef.current) {
-    loggerRef.current = logger.child({ component });
-  }
-
-  return loggerRef.current;
+  // Use useMemo to avoid accessing ref during render
+  return useMemo(() => logger.child({ component }), [component]);
 }
 
 // React hook for performance tracking

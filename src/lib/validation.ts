@@ -326,6 +326,7 @@ export class ObjectValidator<T = Record<string, unknown>> extends Validator {
 /**
  * Array validator
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export class ArrayValidator<T = unknown> extends Validator {
   private minLength_value?: number;
   private maxLength_value?: number;

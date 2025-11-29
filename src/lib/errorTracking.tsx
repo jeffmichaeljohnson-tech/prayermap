@@ -564,7 +564,7 @@ export function withErrorTracking<P extends object>(
   const WrappedComponent = (props: P) => {
     return (
       <ErrorBoundary
-        onError={(error) => {
+        onError={() => {
           errorTracker.addBreadcrumb({
             category: 'error',
             message: `Error in ${componentName || Component.name}`,

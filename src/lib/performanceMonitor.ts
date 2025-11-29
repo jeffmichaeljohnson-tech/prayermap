@@ -383,7 +383,7 @@ class PerformanceMonitor {
 
       longTaskObserver.observe({ type: 'longtask', buffered: true });
       this.observers.push(longTaskObserver);
-    } catch (error) {
+    } catch {
       // Long task API might not be supported
       logger.debug('Long task observation not supported', {
         action: 'long_task_unsupported',
@@ -556,6 +556,7 @@ export function usePerformanceMetrics(): {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     refresh();
     const interval = setInterval(refresh, 5000);
     return () => clearInterval(interval);
