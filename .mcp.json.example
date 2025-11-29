@@ -1,0 +1,27 @@
+{
+  "mcpServers": {
+    "prayermap-workspace": {
+      "description": "PrayerMap project workspace - exposes workspace to Claude Code and Claude Desktop",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server",
+        "--workspace",
+        "/Users/computer/jeffmichaeljohnson-tech/projects/prayermap"
+      ]
+    },
+    "github": {
+      "description": "GitHub MCP server for repository access",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      }
+    }
+  }
+}
+
+
