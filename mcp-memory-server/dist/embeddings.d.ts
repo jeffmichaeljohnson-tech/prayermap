@@ -1,5 +1,5 @@
 /**
- * OpenAI Embeddings integration
+ * OpenAI Embeddings integration with LangSmith tracing
  */
 /**
  * Initialize OpenAI client

@@ -13,6 +13,7 @@ import * as os from "os";
 import { initOpenAI, generateEmbedding, generateEmbeddings } from "./embeddings.js";
 import { initPinecone, upsertConversations, queryConversations, getIndexStats } from "./pinecone.js";
 import { loadClaudeCodeSessions, getSessionStats } from "./parsers.js";
+import { initTracing, withTrace, isTracingEnabled } from "./tracing.js";
 // Environment variables
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const PINECONE_API_KEY = process.env.PINECONE_API_KEY;
@@ -36,6 +37,8 @@ async function initialize() {
         return false;
     }
     try {
+        // Initialize LangSmith tracing (optional - continues if not configured)
+        initTracing();
         initOpenAI(OPENAI_API_KEY);
         await initPinecone(PINECONE_API_KEY, PINECONE_INDEX);
         isInitialized = true;
@@ -194,21 +197,28 @@ async function main() {
  */
 async function handleMemorySearch(args) {
     const { query, limit = 10, source = "all", project } = args;
-    // Generate embedding for the query
-    const queryEmbedding = await generateEmbedding(query);
-    // Build filter
-    const filter = {};
-    if (source !== "all") {
-        filter.source = { $eq: source };
-    }
-    if (project) {
-        filter.projectPath = { $contains: project };
-    }
-    // Query Pinecone
-    const results = await queryConversations(queryEmbedding, {
-        topK: limit,
-        filter: Object.keys(filter).length > 0 ? filter : undefined,
-    });
+    const searchFn = async () => {
+        // Generate embedding for the query
+        const queryEmbedding = await generateEmbedding(query);
+        // Build filter
+        const filter = {};
+        if (source !== "all") {
+            filter.source = { $eq: source };
+        }
+        if (project) {
+            filter.projectPath = { $contains: project };
+        }
+        // Query Pinecone
+        const results = await queryConversations(queryEmbedding, {
+            topK: limit,
+            filter: Object.keys(filter).length > 0 ? filter : undefined,
+        });
+        return results;
+    };
+    // Execute with tracing if enabled
+    const results = isTracingEnabled()
+        ? await withTrace("memory_search", "retriever", { query, limit, source, project }, searchFn, { tool: "memory_search" })
+        : await searchFn();
     // Format results
     const formattedResults = results.map((r, i) => {
         const meta = r.metadata;
@@ -239,21 +249,38 @@ ${formattedResults.join("\n---\n\n")}`,
  */
 async function handleMemoryIngest(args) {
     const { source = "claude-code", projectFilter } = args;
-    console.error(`Ingesting conversations from ${source}...`);
-    // Load sessions from Claude Code
-    let sessions = loadClaudeCodeSessions(CLAUDE_CODE_PROJECTS);
-    // Filter by project if specified
-    if (projectFilter) {
-        sessions = sessions.filter((s) => s.projectPath && s.projectPath.includes(projectFilter));
-    }
-    // Get stats
-    const stats = getSessionStats(sessions);
-    // Collect all messages
-    const allMessages = [];
-    for (const session of sessions) {
-        allMessages.push(...session.messages);
-    }
-    if (allMessages.length === 0) {
+    const ingestFn = async () => {
+        console.error(`Ingesting conversations from ${source}...`);
+        // Load sessions from Claude Code
+        let sessions = loadClaudeCodeSessions(CLAUDE_CODE_PROJECTS);
+        // Filter by project if specified
+        if (projectFilter) {
+            sessions = sessions.filter((s) => s.projectPath && s.projectPath.includes(projectFilter));
+        }
+        // Get stats
+        const stats = getSessionStats(sessions);
+        // Collect all messages
+        const allMessages = [];
+        for (const session of sessions) {
+            allMessages.push(...session.messages);
+        }
+        if (allMessages.length === 0) {
+            return { stats, result: { upserted: 0, errors: 0 }, empty: true };
+        }
+        console.error(`Generating embeddings for ${allMessages.length} messages...`);
+        // Generate embeddings for all messages
+        const texts = allMessages.map((m) => m.content);
+        const embeddings = await generateEmbeddings(texts);
+        console.error(`Upserting to Pinecone...`);
+        // Upsert to Pinecone
+        const result = await upsertConversations(allMessages, embeddings);
+        return { stats, result, empty: false };
+    };
+    // Execute with tracing if enabled
+    const { stats, result, empty } = isTracingEnabled()
+        ? await withTrace("memory_ingest", "chain", { source, projectFilter }, ingestFn, { tool: "memory_ingest" })
+        : await ingestFn();
+    if (empty) {
         return {
             content: [
                 {
@@ -263,13 +290,6 @@ async function handleMemoryIngest(args) {
             ],
         };
     }
-    console.error(`Generating embeddings for ${allMessages.length} messages...`);
-    // Generate embeddings for all messages
-    const texts = allMessages.map((m) => m.content);
-    const embeddings = await generateEmbeddings(texts);
-    console.error(`Upserting to Pinecone...`);
-    // Upsert to Pinecone
-    const result = await upsertConversations(allMessages, embeddings);
     return {
         content: [
             {

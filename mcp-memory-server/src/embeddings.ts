@@ -1,8 +1,9 @@
 /**
- * OpenAI Embeddings integration
+ * OpenAI Embeddings integration with LangSmith tracing
  */
 
 import OpenAI from "openai";
+import { withTrace, isTracingEnabled } from "./tracing.js";
 
 let openaiClient: OpenAI | null = null;
 
@@ -25,12 +26,30 @@ export async function generateEmbedding(text: string): Promise<number[]> {
   const maxChars = 8000; // Approximately 2000 tokens
   const truncatedText = text.length > maxChars ? text.slice(0, maxChars) + "..." : text;
 
-  const response = await openaiClient.embeddings.create({
-    model: "text-embedding-3-small",
-    input: truncatedText,
-  });
+  const generateFn = async () => {
+    const response = await openaiClient!.embeddings.create({
+      model: "text-embedding-3-small",
+      input: truncatedText,
+    });
+    return response.data[0].embedding;
+  };
 
-  return response.data[0].embedding;
+  // Wrap with tracing if enabled
+  if (isTracingEnabled()) {
+    return withTrace(
+      "generate_embedding",
+      "embedding",
+      {
+        text_length: text.length,
+        truncated: text.length > maxChars,
+        model: "text-embedding-3-small",
+      },
+      generateFn,
+      { operation: "single_embedding" }
+    );
+  }
+
+  return generateFn();
 }
 
 /**
@@ -44,34 +63,54 @@ export async function generateEmbeddings(
     throw new Error("OpenAI client not initialized. Call initOpenAI first.");
   }
 
-  const allEmbeddings: number[][] = [];
+  const generateBatchFn = async () => {
+    const allEmbeddings: number[][] = [];
 
-  // Process in batches to avoid rate limits
-  for (let i = 0; i < texts.length; i += batchSize) {
-    const batch = texts.slice(i, i + batchSize);
+    // Process in batches to avoid rate limits
+    for (let i = 0; i < texts.length; i += batchSize) {
+      const batch = texts.slice(i, i + batchSize);
 
-    // Truncate texts
-    const truncatedBatch = batch.map((text) => {
-      const maxChars = 8000;
-      return text.length > maxChars ? text.slice(0, maxChars) + "..." : text;
-    });
+      // Truncate texts
+      const truncatedBatch = batch.map((text) => {
+        const maxChars = 8000;
+        return text.length > maxChars ? text.slice(0, maxChars) + "..." : text;
+      });
 
-    const response = await openaiClient.embeddings.create({
-      model: "text-embedding-3-small",
-      input: truncatedBatch,
-    });
+      const response = await openaiClient!.embeddings.create({
+        model: "text-embedding-3-small",
+        input: truncatedBatch,
+      });
 
-    for (const item of response.data) {
-      allEmbeddings.push(item.embedding);
+      for (const item of response.data) {
+        allEmbeddings.push(item.embedding);
+      }
+
+      // Small delay between batches to avoid rate limits
+      if (i + batchSize < texts.length) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
     }
 
-    // Small delay between batches to avoid rate limits
-    if (i + batchSize < texts.length) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
+    return allEmbeddings;
+  };
+
+  // Wrap with tracing if enabled
+  if (isTracingEnabled()) {
+    return withTrace(
+      "generate_embeddings_batch",
+      "embedding",
+      {
+        total_texts: texts.length,
+        batch_size: batchSize,
+        num_batches: Math.ceil(texts.length / batchSize),
+        model: "text-embedding-3-small",
+      },
+      generateBatchFn,
+      { operation: "batch_embedding" }
+    );
   }
 
-  return allEmbeddings;
+  return generateBatchFn();
 }
 
 /**
