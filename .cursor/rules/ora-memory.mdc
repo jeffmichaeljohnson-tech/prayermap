@@ -1,0 +1,281 @@
+---
+description: Ora memory integration patterns - Pinecone and PostgreSQL
+globs:
+  - ".ora/**/*"
+alwaysApply: false
+---
+
+# Ora Memory Integration
+
+## Two-Tier Memory Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    MEMORY SYSTEM                            │
+├─────────────────────────┬───────────────────────────────────┤
+│     TIER 1: Pinecone    │       TIER 2: PostgreSQL          │
+│    (Semantic Search)    │        (Structured State)         │
+├─────────────────────────┼───────────────────────────────────┤
+│ • Conversation history  │ • Agent registry                  │
+│ • Code snippets         │ • Task tracking                   │
+│ • Decisions & rationale │ • Performance metrics             │
+│ • Project knowledge     │ • Director decisions              │
+│ • Error resolutions     │ • Audit logs                      │
+└─────────────────────────┴───────────────────────────────────┘
+```
+
+## Pinecone Operations
+
+### Namespace
+All prayermap vectors use namespace: `prayermap`
+
+### Vector Schema
+```json
+{
+  "id": "vec-{type}-{timestamp}",
+  "values": [0.1, 0.2, ...],  // 1536 dimensions (OpenAI)
+  "metadata": {
+    "type": "code|decision|conversation|error|knowledge",
+    "project": "prayermap",
+    "agent": "implementation-agent-01",
+    "task_id": "task-20241129-001",
+    "file_path": "src/components/PrayerCard.tsx",
+    "timestamp": "2024-11-29T12:00:00Z",
+    "content_preview": "First 200 chars of content...",
+    "tags": ["react", "component", "loading-state"]
+  }
+}
+```
+
+### Query Patterns
+
+#### Find Similar Code
+```python
+results = index.query(
+    namespace="prayermap",
+    vector=embed("loading skeleton component react"),
+    top_k=5,
+    filter={
+        "type": {"$eq": "code"},
+        "tags": {"$in": ["react", "component"]}
+    },
+    include_metadata=True
+)
+```
+
+#### Find Past Decisions
+```python
+results = index.query(
+    namespace="prayermap",
+    vector=embed("how to handle Supabase real-time subscription cleanup"),
+    top_k=3,
+    filter={
+        "type": {"$eq": "decision"}
+    },
+    include_metadata=True
+)
+```
+
+#### Find Error Resolutions
+```python
+results = index.query(
+    namespace="prayermap",
+    vector=embed("TypeScript error: cannot find module"),
+    top_k=5,
+    filter={
+        "type": {"$eq": "error"}
+    },
+    include_metadata=True
+)
+```
+
+### Upsert Patterns
+
+#### Store Code Snippet
+```python
+index.upsert(
+    namespace="prayermap",
+    vectors=[{
+        "id": f"vec-code-{timestamp}",
+        "values": embed(code_content),
+        "metadata": {
+            "type": "code",
+            "project": "prayermap",
+            "file_path": "src/components/PrayerCard.tsx",
+            "function_name": "PrayerCardSkeleton",
+            "timestamp": datetime.utcnow().isoformat(),
+            "content_preview": code_content[:200],
+            "tags": ["react", "skeleton", "loading"]
+        }
+    }]
+)
+```
+
+#### Store Decision
+```python
+index.upsert(
+    namespace="prayermap",
+    vectors=[{
+        "id": f"vec-decision-{timestamp}",
+        "values": embed(decision_text),
+        "metadata": {
+            "type": "decision",
+            "project": "prayermap",
+            "decision_type": "architectural",
+            "context": "Chose Capacitor for iOS deployment",
+            "rationale": "Fastest path with existing React codebase",
+            "alternatives_considered": ["React Native", "Native Swift"],
+            "timestamp": datetime.utcnow().isoformat(),
+            "tags": ["ios", "mobile", "deployment"]
+        }
+    }]
+)
+```
+
+## PostgreSQL Operations
+
+### Schema: `ora_prayermap`
+
+#### Tables
+```sql
+-- Agent registry
+CREATE TABLE ora_prayermap.agents (
+    id UUID PRIMARY KEY,
+    agent_type VARCHAR NOT NULL,
+    agent_name VARCHAR NOT NULL,
+    status VARCHAR DEFAULT 'idle',
+    last_heartbeat TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Task tracking
+CREATE TABLE ora_prayermap.tasks (
+    id VARCHAR PRIMARY KEY,
+    type VARCHAR NOT NULL,
+    priority VARCHAR NOT NULL,
+    title VARCHAR NOT NULL,
+    description TEXT,
+    assigned_to VARCHAR,
+    status VARCHAR DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT NOW(),
+    started_at TIMESTAMP,
+    completed_at TIMESTAMP,
+    metadata JSONB
+);
+
+-- Director decisions
+CREATE TABLE ora_prayermap.director_decisions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    decision_type VARCHAR NOT NULL,
+    context TEXT,
+    decision TEXT NOT NULL,
+    rationale TEXT,
+    related_tasks VARCHAR[],
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Performance metrics
+CREATE TABLE ora_prayermap.metrics (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    agent_id UUID REFERENCES ora_prayermap.agents(id),
+    task_id VARCHAR REFERENCES ora_prayermap.tasks(id),
+    metric_type VARCHAR NOT NULL,
+    value NUMERIC,
+    timestamp TIMESTAMP DEFAULT NOW()
+);
+```
+
+### Query Patterns
+
+#### Get Active Tasks
+```sql
+SELECT * FROM ora_prayermap.tasks
+WHERE status IN ('assigned', 'in_progress')
+ORDER BY
+    CASE priority
+        WHEN 'critical' THEN 1
+        WHEN 'high' THEN 2
+        WHEN 'medium' THEN 3
+        ELSE 4
+    END,
+    created_at ASC;
+```
+
+#### Get Agent Status
+```sql
+SELECT
+    a.agent_name,
+    a.status,
+    a.last_heartbeat,
+    COUNT(t.id) as active_tasks
+FROM ora_prayermap.agents a
+LEFT JOIN ora_prayermap.tasks t
+    ON t.assigned_to = a.agent_name
+    AND t.status = 'in_progress'
+GROUP BY a.id;
+```
+
+#### Get Recent Decisions
+```sql
+SELECT * FROM ora_prayermap.director_decisions
+ORDER BY created_at DESC
+LIMIT 10;
+```
+
+#### Task Completion Rate
+```sql
+SELECT
+    DATE(created_at) as date,
+    COUNT(*) FILTER (WHERE status = 'completed') as completed,
+    COUNT(*) as total,
+    ROUND(
+        COUNT(*) FILTER (WHERE status = 'completed')::NUMERIC /
+        COUNT(*)::NUMERIC * 100,
+        2
+    ) as completion_rate
+FROM ora_prayermap.tasks
+WHERE created_at > NOW() - INTERVAL '7 days'
+GROUP BY DATE(created_at)
+ORDER BY date DESC;
+```
+
+## Memory Integration Workflow
+
+### Before Assigning Task
+1. Query Pinecone for similar past work
+2. Check PostgreSQL for related active tasks
+3. Review recent decisions for context
+4. Include relevant context in task assignment
+
+### After Task Completion
+1. Store code changes in Pinecone
+2. Update task status in PostgreSQL
+3. Record any decisions made
+4. Store error resolutions if applicable
+
+### During 15-Minute Review
+1. Query both tiers for full context
+2. Identify patterns and blockers
+3. Update metrics
+4. Store review summary
+
+## Context Window Management
+
+### For Cursor Agents
+When assigning tasks, include:
+- Relevant code snippets from Pinecone (top 3)
+- Recent decisions (last 5)
+- Active/blocked tasks from PostgreSQL
+- File references from project
+
+### Token Budget
+- Task description: ~500 tokens
+- Context from memory: ~2000 tokens
+- File contents: ~3000 tokens
+- Reserve for response: ~2500 tokens
+
+### Prioritization
+1. Directly relevant code
+2. Recent decisions
+3. Similar error resolutions
+4. Related documentation

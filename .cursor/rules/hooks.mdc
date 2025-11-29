@@ -1,0 +1,254 @@
+---
+description: Custom React hooks patterns for PrayerMap
+globs:
+  - "src/hooks/**/*.ts"
+alwaysApply: false
+---
+
+# Custom Hooks Patterns
+
+## Hook Structure Template
+```typescript
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { fetchData, subscribeToData } from '@/services/dataService';
+import type { DataType } from '@/types/data';
+
+interface UseDataOptions {
+  autoFetch?: boolean;
+  enableRealtime?: boolean;
+  filterBy?: string;
+}
+
+interface UseDataReturn {
+  data: DataType[];
+  loading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+}
+
+export function useData(options: UseDataOptions = {}): UseDataReturn {
+  const {
+    autoFetch = true,
+    enableRealtime = true,
+    filterBy,
+  } = options;
+
+  const [data, setData] = useState<DataType[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Use ref for subscription cleanup
+  const unsubscribeRef = useRef<(() => void) | null>(null);
+
+  // Fetch function
+  const fetchDataItems = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await fetchData(filterBy);
+      setData(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch data');
+    } finally {
+      setLoading(false);
+    }
+  }, [filterBy]);
+
+  // Initial fetch
+  useEffect(() => {
+    if (autoFetch) {
+      fetchDataItems();
+    }
+  }, [autoFetch, fetchDataItems]);
+
+  // Real-time subscription
+  useEffect(() => {
+    if (!enableRealtime) return;
+
+    unsubscribeRef.current = subscribeToData((updatedData) => {
+      setData(updatedData);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
+      }
+    };
+  }, [enableRealtime]);
+
+  return {
+    data,
+    loading,
+    error,
+    refetch: fetchDataItems,
+  };
+}
+```
+
+## Subscription Cleanup Pattern
+**Critical**: Always clean up subscriptions to prevent memory leaks.
+
+```typescript
+// Using useRef for stable reference
+const unsubscribeRef = useRef<(() => void) | null>(null);
+
+useEffect(() => {
+  // Set up subscription
+  unsubscribeRef.current = subscribeToChannel(callback);
+
+  // Cleanup function
+  return () => {
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
+    }
+  };
+}, [dependency]);
+```
+
+## Optimistic Updates Pattern
+```typescript
+export function usePrayers() {
+  const [prayers, setPrayers] = useState<Prayer[]>([]);
+
+  const createPrayer = useCallback(async (input: CreatePrayerInput) => {
+    // Create optimistic prayer with temporary ID
+    const optimisticPrayer: Prayer = {
+      id: `temp-${Date.now()}`,
+      ...input,
+      created_at: new Date(),
+    };
+
+    // Immediately update UI
+    setPrayers(prev => [optimisticPrayer, ...prev]);
+
+    try {
+      // Actual API call
+      const result = await prayerService.createPrayer(input);
+
+      if (result) {
+        // Replace optimistic with real
+        setPrayers(prev =>
+          prev.map(p => p.id === optimisticPrayer.id ? result : p)
+        );
+        return result;
+      } else {
+        // Revert on failure
+        setPrayers(prev => prev.filter(p => p.id !== optimisticPrayer.id));
+        return null;
+      }
+    } catch (error) {
+      // Revert on error
+      setPrayers(prev => prev.filter(p => p.id !== optimisticPrayer.id));
+      throw error;
+    }
+  }, []);
+
+  return { prayers, createPrayer };
+}
+```
+
+## useCallback for Stable References
+Always wrap callbacks that are passed to children or used in effects:
+
+```typescript
+// Good - stable reference
+const handleSelect = useCallback((id: string) => {
+  setSelectedId(id);
+}, []);
+
+// Bad - new function every render
+const handleSelect = (id: string) => {
+  setSelectedId(id);
+};
+```
+
+## Existing Hooks Reference
+
+### useAuth()
+```typescript
+interface UseAuthReturn {
+  user: User | null;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, name?: string) => Promise<{ error: Error | null }>;
+  signOut: () => Promise<{ error: Error | null }>;
+}
+```
+
+### usePrayers()
+```typescript
+interface UsePrayersOptions {
+  location: { lat: number; lng: number };
+  radiusKm?: number;
+  autoFetch?: boolean;
+  enableRealtime?: boolean;
+  globalMode?: boolean;  // Fetch ALL prayers worldwide
+}
+
+interface UsePrayersReturn {
+  prayers: Prayer[];
+  loading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+  createPrayer: (prayer: CreatePrayerInput) => Promise<Prayer | null>;
+  respondToPrayer: (...args) => Promise<boolean>;
+}
+```
+
+### useInbox()
+```typescript
+interface UseInboxReturn {
+  inbox: InboxItem[];
+  loading: boolean;
+  error: string | null;
+  totalUnread: number;
+  refetch: () => Promise<void>;
+  markAsRead: (prayerId: string) => void;
+}
+```
+
+### useAudioRecorder()
+```typescript
+interface UseAudioRecorderReturn {
+  isRecording: boolean;
+  duration: number;
+  startRecording: () => Promise<void>;
+  stopRecording: () => Promise<Blob | null>;
+  error: string | null;
+}
+```
+
+## Dependency Array Rules
+```typescript
+// Include all external values used in the effect/callback
+useEffect(() => {
+  doSomething(userId, filterBy);
+}, [userId, filterBy]); // Both must be listed
+
+// Functions from props should be in dependencies
+useEffect(() => {
+  onDataLoaded(data);
+}, [data, onDataLoaded]);
+
+// Refs don't need to be in dependencies (stable reference)
+useEffect(() => {
+  unsubscribeRef.current = subscribe();
+  return () => unsubscribeRef.current?.();
+}, []); // ref not needed in deps
+```
+
+## Error Boundary Integration
+Hooks should throw errors that can be caught by error boundaries:
+
+```typescript
+// For critical errors, throw instead of setting state
+if (!supabase) {
+  throw new Error('Supabase client not available');
+}
+
+// For recoverable errors, use state
+setError('Failed to load data. Please try again.');
+```
