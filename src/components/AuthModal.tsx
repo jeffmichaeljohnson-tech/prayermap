@@ -11,7 +11,6 @@ export function AuthModal() {
     email: '',
     password: ''
   });
-  const [focusedField, setFocusedField] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -63,25 +62,16 @@ export function AuthModal() {
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-sky-400/90 via-purple-300/90 to-amber-200/90 backdrop-blur-xl">
-      {/* Animated background particles */}
+      {/* Background particles - reduced from 20 to 6 for mobile performance, using CSS animations */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(20)].map((_, i) => (
-          <motion.div
+        {[...Array(6)].map((_, i) => (
+          <div
             key={i}
-            className="absolute w-2 h-2 bg-white/30 rounded-full"
+            className="absolute w-2 h-2 bg-white/30 rounded-full animate-pulse"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              y: [0, -30, 0],
-              opacity: [0.2, 0.8, 0.2],
-              scale: [1, 1.5, 1],
-            }}
-            transition={{
-              duration: 3 + Math.random() * 2,
-              repeat: Infinity,
-              delay: Math.random() * 2,
+              left: `${15 + i * 15}%`,
+              top: `${20 + (i % 3) * 25}%`,
+              animationDelay: `${i * 0.5}s`,
             }}
           />
         ))}
@@ -94,49 +84,24 @@ export function AuthModal() {
         transition={{ type: "spring", damping: 20, stiffness: 300 }}
         className="relative w-full max-w-md mx-4 z-10"
       >
-        {/* Glow effect behind card */}
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-br from-amber-300/40 via-sky-300/40 to-purple-400/40 rounded-3xl blur-3xl"
-          animate={{
-            scale: [1, 1.05, 1],
-            opacity: [0.6, 0.8, 0.6],
-          }}
-          transition={{
-            duration: 4,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
+        {/* Glow effect behind card - static for mobile performance */}
+        <div className="absolute inset-0 bg-gradient-to-br from-amber-300/40 via-sky-300/40 to-purple-400/40 rounded-3xl blur-3xl opacity-70" />
 
         {/* Glass card */}
         <div className="relative glass-strong rounded-3xl p-8 shadow-2xl border border-white/30">
-          {/* Header with icon */}
+          {/* Header with icon - static for mobile performance */}
           <motion.div
             className="flex flex-col items-center mb-8"
-            animate={{
-              y: [0, -5, 0],
-            }}
-            transition={{
-              duration: 3,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
           >
             <motion.div
               className="relative mb-4"
               whileHover={{ scale: 1.1, rotate: 5 }}
             >
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-br from-amber-300 via-sky-300 to-purple-400 rounded-2xl blur-xl opacity-60"
-                animate={{
-                  scale: [1, 1.2, 1],
-                  opacity: [0.4, 0.7, 0.4],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                }}
-              />
+              {/* Static glow - no infinite animation */}
+              <div className="absolute inset-0 bg-gradient-to-br from-amber-300 via-sky-300 to-purple-400 rounded-2xl blur-xl opacity-50" />
               <div className="relative bg-white/20 rounded-2xl p-4 text-5xl">
                 🙏
               </div>
@@ -208,17 +173,18 @@ export function AuthModal() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Name field - only shown during signup, using opacity + scale instead of height for GPU acceleration */}
             <AnimatePresence mode="wait">
               {!isLogin && (
                 <motion.div
-                  initial={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  animate={{ opacity: 1, height: 'auto', marginBottom: 16 }}
-                  exit={{ opacity: 0, height: 0, marginBottom: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="relative"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                  className="relative mb-4"
                 >
                   <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-                  <motion.input
+                  <input
                     type="text"
                     placeholder="First Name"
                     value={formData.name}
@@ -227,11 +193,6 @@ export function AuthModal() {
                     onBlur={() => setFocusedField(null)}
                     className={inputClasses}
                     required={!isLogin}
-                    animate={{
-                      boxShadow: focusedField === 'name' 
-                        ? '0 0 30px rgba(255, 255, 255, 0.3)' 
-                        : '0 0 0px rgba(255, 255, 255, 0)',
-                    }}
                   />
                 </motion.div>
               )}
@@ -239,43 +200,29 @@ export function AuthModal() {
 
             <div className="relative">
               <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-              <motion.input
+              <input
                 type="email"
                 placeholder="Email Address"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                onFocus={() => setFocusedField('email')}
-                onBlur={() => setFocusedField(null)}
                 className={inputClasses}
                 required
-                animate={{
-                  boxShadow: focusedField === 'email' 
-                    ? '0 0 30px rgba(255, 255, 255, 0.3)' 
-                    : '0 0 0px rgba(255, 255, 255, 0)',
-                }}
               />
             </div>
 
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-              <motion.input
+              <input
                 type="password"
                 placeholder="Password"
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                onFocus={() => setFocusedField('password')}
-                onBlur={() => setFocusedField(null)}
                 className={inputClasses}
                 required
-                animate={{
-                  boxShadow: focusedField === 'password' 
-                    ? '0 0 30px rgba(255, 255, 255, 0.3)' 
-                    : '0 0 0px rgba(255, 255, 255, 0)',
-                }}
               />
             </div>
 
-            {/* Submit button */}
+            {/* Submit button - using static gradient for mobile performance */}
             <motion.button
               type="submit"
               disabled={loading}
@@ -283,26 +230,11 @@ export function AuthModal() {
               whileHover={!loading ? { scale: 1.02 } : {}}
               whileTap={!loading ? { scale: 0.98 } : {}}
             >
-              {/* Animated gradient background */}
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-amber-400 via-sky-400 to-purple-500"
-                animate={{
-                  backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "linear",
-                }}
-                style={{
-                  backgroundSize: '200% 200%',
-                }}
-              />
+              {/* Static gradient background - no backgroundPosition animation (causes layout thrashing) */}
+              <div className="absolute inset-0 bg-gradient-to-r from-amber-400 via-sky-400 to-purple-500" />
 
               {/* Button glow on hover */}
-              <motion.div
-                className="absolute inset-0 bg-white/0 group-hover:bg-white/20 transition-all duration-300"
-              />
+              <div className="absolute inset-0 bg-white/0 group-hover:bg-white/20 transition-all duration-300" />
 
               {/* Button content */}
               <span className="relative flex items-center justify-center gap-2 text-white font-semibold">
@@ -385,24 +317,16 @@ export function AuthModal() {
         </div>
       </motion.div>
 
-      {/* Decorative light rays */}
+      {/* Decorative light rays - static for mobile performance */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {[...Array(6)].map((_, i) => (
-          <motion.div
+          <div
             key={`ray-${i}`}
-            className="absolute top-0 left-1/2 w-1 bg-gradient-to-b from-white/20 to-transparent"
+            className="absolute top-0 left-1/2 w-1 bg-gradient-to-b from-white/15 to-transparent"
             style={{
               height: '100%',
               transformOrigin: 'top center',
-              rotate: `${i * 60}deg`,
-            }}
-            animate={{
-              opacity: [0.1, 0.3, 0.1],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              delay: i * 0.3,
+              transform: `rotate(${i * 60}deg)`,
             }}
           />
         ))}
