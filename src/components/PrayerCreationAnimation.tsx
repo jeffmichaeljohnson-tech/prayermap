@@ -51,6 +51,7 @@ export function PrayerCreationAnimation({
         clearTimeout(timerRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array - only run once on mount
 
   // Handle map becoming null during animation

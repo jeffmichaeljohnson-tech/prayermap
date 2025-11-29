@@ -40,7 +40,7 @@ export function VideoRecorder({ onRecordingComplete, onCancel, maxDuration = 90 
   useEffect(() => {
     initializeCamera();
     return () => stopCamera();
-  }, []);
+  }, [initializeCamera, stopCamera]);
 
   // Auto-stop when max duration reached
   useEffect(() => {

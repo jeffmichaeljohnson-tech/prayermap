@@ -13,7 +13,6 @@ import { useAuth } from '../hooks/useAuth';
 import { formatDuration } from '../hooks/useAudioRecorder';
 import { formatVideoDuration } from '../hooks/useVideoRecorder';
 import { validators } from '../lib/security';
-import { useFormValidation, schema } from '../lib/validation';
 
 interface RequestPrayerModalProps {
   userLocation: { lat: number; lng: number };
