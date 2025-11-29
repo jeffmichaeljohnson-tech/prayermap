@@ -30,12 +30,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { useInbox } from '../hooks/useInbox';
 import { usePrayerMapState, useInboxNotifications } from '../hooks/usePrayerMapState';
 import { fetchAllConnections, subscribeToAllConnections } from '../services/prayerService';
-<<<<<<< HEAD
 import { realtimeMonitor } from '../services/realtimeMonitor';
-=======
 import { getVisibleConnections, extendBounds } from '../utils/viewportCulling';
 import { debounce } from '../utils/debounce';
->>>>>>> 57f01ebf299af966bd359e4df742667ea97f0ca9
 
 // Extracted components
 import { MapContainer } from './map/MapContainer';
@@ -57,7 +54,6 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
   const { user } = useAuth();
   const { state, actions } = usePrayerMapState();
 
-<<<<<<< HEAD
   // GLOBAL LIVING MAP: Fetch ALL prayers worldwide, not just nearby ones
   // This creates a living tapestry of prayer connecting people across the globe
   const {
@@ -66,10 +62,6 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
     respondToPrayer,
     refetch: refetchPrayers
   } = usePrayers({
-=======
-  // GLOBAL LIVING MAP: Fetch ALL prayers worldwide
-  const { prayers, createPrayer, respondToPrayer } = usePrayers({
->>>>>>> 57f01ebf299af966bd359e4df742667ea97f0ca9
     location: userLocation,
     radiusKm: 50,
     enableRealtime: true,
@@ -96,16 +88,16 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
   useEffect(() => {
     console.log('🔄 PRAYERS STATE CHANGED:', {
       count: prayers.length,
-      animationActive: !!creatingPrayerAnimation,
+      animationActive: !!state.creatingPrayerAnimation,
       latestPrayerIds: prayers.slice(0, 3).map(p => p.id),
       timestamp: new Date().toISOString()
     });
 
     // If we have prayers and animation just finished, log success
-    if (prayers.length > 0 && !creatingPrayerAnimation) {
+    if (prayers.length > 0 && !state.creatingPrayerAnimation) {
       console.log('✅ Prayer creation flow appears successful - prayers loaded and no animation active');
     }
-  }, [prayers, creatingPrayerAnimation]);
+  }, [prayers, state.creatingPrayerAnimation]);
 
   // GLOBAL LIVING MAP: Fetch and subscribe to ALL prayer connections worldwide
   useEffect(() => {
@@ -114,24 +106,9 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
       actions.setConnections(globalConnections);
     });
 
-<<<<<<< HEAD
-    // Use enhanced real-time monitor for connections
-    console.log('🔗 Setting up enhanced connection monitoring...');
-    
-    // Ensure monitor is running
-    if (!realtimeMonitor.getStatus().isActive) {
-      realtimeMonitor.start();
-    }
-
-    // Subscribe to enhanced monitoring for connections
-    const unsubscribe = realtimeMonitor.subscribeToConnections((updatedConnections) => {
-      console.log('📥 Enhanced connection update received:', updatedConnections.length);
-      setConnections(updatedConnections);
-=======
     const unsubscribe = subscribeToAllConnections((updatedConnections) => {
       console.log('Real-time connection update:', updatedConnections.length);
       actions.setConnections(updatedConnections);
->>>>>>> 57f01ebf299af966bd359e4df742667ea97f0ca9
     });
 
     return unsubscribe;
@@ -176,17 +153,10 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
     console.log('Animation layer complete callback (no-op)');
   }, []);
 
-<<<<<<< HEAD
   const handlePrayerSubmit = async (prayer: Prayer, replyData?: PrayerReplyData): Promise<boolean> => {
     if (!user) return false;
 
-=======
-  // Prayer submission handler
-  const handlePrayerSubmit = async (prayer: Prayer, replyData?: PrayerReplyData) => {
-    if (!user) return;
-
     actions.closePrayerDetail();
->>>>>>> 57f01ebf299af966bd359e4df742667ea97f0ca9
     const userName = user.user_metadata?.name || user.email?.split('@')[0] || 'Anonymous';
 
     // Start animation
@@ -203,7 +173,6 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
       const audioUrl = await uploadAudio(replyData.audioBlob, user.id);
       if (audioUrl) {
         contentUrl = audioUrl;
-<<<<<<< HEAD
         console.log('Audio uploaded:', audioUrl);
       } else {
         console.error('Failed to upload audio');
@@ -240,57 +209,20 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
         // Clear animation after animation duration
         setTimeout(() => {
           console.log('Animation complete - clearing animation state');
-          setAnimatingPrayer(null);
+          actions.stopPrayerAnimation();
         }, 6000);
         
         return true;
       } else {
         console.error('Prayer response was not created');
-        setAnimatingPrayer(null);
+        actions.stopPrayerAnimation();
         return false;
       }
     } catch (error) {
       console.error('Prayer response failed:', error);
-      setAnimatingPrayer(null);
+      actions.stopPrayerAnimation();
       return false;
     }
-=======
-      }
-    }
-
-    // Submit prayer response
-    respondToPrayer(
-      prayer.id,
-      user.id,
-      userName,
-      message,
-      contentType,
-      contentUrl,
-      isAnonymous,
-      userLocation
-    );
-
-    // Create connection after animation (6 seconds)
-    const createdDate = new Date();
-    const expiresDate = new Date(createdDate);
-    expiresDate.setFullYear(expiresDate.getFullYear() + 1);
-
-    const newConnection: PrayerConnection = {
-      id: `conn-${Date.now()}`,
-      prayerId: prayer.id,
-      fromLocation: prayer.location,
-      toLocation: userLocation,
-      requesterName: prayer.is_anonymous ? 'Anonymous' : (prayer.user_name || 'Anonymous'),
-      replierName: isAnonymous ? 'Anonymous' : userName,
-      createdAt: createdDate,
-      expiresAt: expiresDate
-    };
-
-    setTimeout(() => {
-      actions.setConnections(prev => [...prev, newConnection]);
-      actions.stopPrayerAnimation();
-    }, 6000);
->>>>>>> 57f01ebf299af966bd359e4df742667ea97f0ca9
   };
 
   // Prayer request handler
@@ -312,34 +244,15 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
       } else {
         console.error('Failed to create prayer - no prayer returned');
         // If prayer creation fails, clear animation immediately
-        setCreatingPrayerAnimation(null);
+        actions.stopCreationAnimation();
       }
     } catch (error) {
       console.error('Failed to create prayer:', error);
       // If prayer creation fails, clear animation immediately
-      setCreatingPrayerAnimation(null);
+      actions.stopCreationAnimation();
     }
   };
 
-<<<<<<< HEAD
-  const handleCreationAnimationComplete = useCallback(async () => {
-    console.log('Prayer creation animation completed - clearing animation state');
-    
-    // Force refresh prayers to ensure new prayer marker appears
-    // This handles cases where optimistic updates or real-time subscriptions might have issues
-    console.log('Force refreshing prayers after animation completion...');
-    try {
-      await refetchPrayers();
-      console.log('Successfully refreshed prayers after animation - new marker should now be visible');
-    } catch (error) {
-      console.error('Failed to refresh prayers after animation:', error);
-    }
-    
-    setCreatingPrayerAnimation(null);
-  }, [refetchPrayers]);
-
-=======
->>>>>>> 57f01ebf299af966bd359e4df742667ea97f0ca9
   return (
     <div className="relative w-full h-full">
       {/* Map with all overlays */}
