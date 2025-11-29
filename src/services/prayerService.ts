@@ -32,11 +32,9 @@ interface PrayerResponseRow {
   id: string;
   prayer_id: string;
   responder_id: string;
-  responder_name?: string;
-  is_anonymous: boolean;
   message: string;
   content_type: 'text' | 'audio' | 'video';
-  content_url?: string;
+  media_url?: string; // Database uses media_url, not content_url
   created_at: string;
   read_at?: string | null;
 }
@@ -123,16 +121,16 @@ function rowToPrayer(row: PrayerRow): Prayer {
   };
 }
 
-function rowToPrayerResponse(row: PrayerResponseRow): PrayerResponse {
+function rowToPrayerResponse(row: PrayerResponseRow & { responder_name?: string; is_anonymous?: boolean }): PrayerResponse {
   return {
     id: row.id,
     prayer_id: row.prayer_id,
     responder_id: row.responder_id,
-    responder_name: row.responder_name,
-    is_anonymous: row.is_anonymous,
+    responder_name: row.responder_name || null, // Will be populated when joined with profiles
+    is_anonymous: row.is_anonymous || false, // Default to false for now
     message: row.message,
     content_type: row.content_type,
-    content_url: row.content_url,
+    content_url: row.media_url, // Map media_url to content_url for frontend consistency
     created_at: new Date(row.created_at),
     read_at: row.read_at ? new Date(row.read_at) : null,
   };
@@ -471,16 +469,15 @@ export async function respondToPrayer(
 
   try {
     // Create prayer response
+    console.log('Creating prayer response:', { prayerId, responderId, message, contentType, isAnonymous });
     const { data: responseData, error: responseError } = await supabase
       .from('prayer_responses')
       .insert({
         prayer_id: prayerId,
         responder_id: responderId,
-        responder_name: isAnonymous ? null : responderName,
-        is_anonymous: isAnonymous,
         message,
         content_type: contentType,
-        content_url: contentUrl,
+        media_url: contentUrl, // Changed from content_url to media_url to match schema
       })
       .select()
       .single();
@@ -596,10 +593,15 @@ export async function fetchUserInbox(
 
     const prayerIds = userPrayers.map(p => p.id);
 
-    // Step 2: Get all responses to those prayers
+    // Step 2: Get all responses to those prayers with responder profiles
     const { data: responseData, error: responseError } = await supabase
       .from('prayer_responses')
-      .select('id, prayer_id, responder_id, responder_name, is_anonymous, message, content_type, content_url, created_at, read_at')
+      .select(`
+        id, prayer_id, responder_id, message, content_type, media_url, created_at, read_at,
+        profiles!prayer_responses_responder_id_fkey (
+          display_name
+        )
+      `)
       .in('prayer_id', prayerIds)
       .order('created_at', { ascending: false });
 
@@ -638,7 +640,11 @@ export async function fetchUserInbox(
         const sortedResponses = responses
           .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
           .slice(0, 20)
-          .map(rowToPrayerResponse);
+          .map(response => rowToPrayerResponse({
+            ...response,
+            responder_name: response.profiles?.display_name || 'Anonymous',
+            is_anonymous: !response.profiles?.display_name
+          }));
 
         // Calculate unread count based on read_at being NULL
         const unreadCount = responses.filter(r => !r.read_at).length;
