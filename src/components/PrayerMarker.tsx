@@ -76,18 +76,13 @@ export function PrayerMarker({
         margin: '-20px' // Negative margin to maintain visual position
       }}
     >
-      {/* Preview Bubble - Always visible with floating animation */}
+      {/* Preview Bubble - Static for performance (no infinite animations) */}
       <motion.div
         className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 glass-strong rounded-xl px-3 py-1.5 whitespace-nowrap max-w-[160px]"
         style={{ pointerEvents: 'none' }}
-        animate={isPrayed ? {} : {
-          y: [0, -3, 0],
-        }}
-        transition={isPrayed ? {} : {
-          duration: 2,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
       >
         <p className="text-xs text-gray-700 truncate">{getPreviewText()}</p>
         <div
@@ -95,7 +90,7 @@ export function PrayerMarker({
         />
       </motion.div>
 
-      {/* Prayer Emoji Marker */}
+      {/* Prayer Emoji Marker - Optimized: removed infinite animations, using CSS for glow */}
       <motion.button
         onClick={() => {
           if (stackCount > 1) {
@@ -105,18 +100,13 @@ export function PrayerMarker({
           }
         }}
         className="relative z-10"
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
         whileHover={{ scale: 1.2 }}
         whileTap={{ scale: 0.9 }}
-        animate={isPrayed ? {} : {
-          y: [0, -5, 0],
-        }}
-        transition={isPrayed ? {} : {
-          duration: 2,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
+        transition={{ duration: 0.3 }}
       >
-        <div className={`text-4xl ${isPrayed ? 'opacity-60' : 'animate-pulse-glow'}`}>
+        <div className={`text-4xl ${isPrayed ? 'opacity-60' : ''}`}>
           🙏
         </div>
 
@@ -127,20 +117,11 @@ export function PrayerMarker({
           </div>
         )}
 
-        {/* Glow effect for active prayers */}
+        {/* Glow effect for active prayers - using CSS animation for GPU acceleration */}
         {!isPrayed && (
-          <motion.div
-            className="absolute inset-0 rounded-full bg-yellow-300/30 blur-xl"
-            animate={{
-              scale: [1, 1.5, 1],
-              opacity: [0.3, 0.6, 0.3]
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-            style={{ pointerEvents: 'none' }} // Don't interfere with clicks
+          <div
+            className="absolute inset-0 rounded-full bg-yellow-300/40 blur-xl animate-pulse"
+            style={{ pointerEvents: 'none' }}
           />
         )}
       </motion.button>

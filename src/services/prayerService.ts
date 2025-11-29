@@ -153,22 +153,30 @@ function rowToPrayerConnection(row: PrayerConnectionRow): PrayerConnection {
 }
 
 /**
- * Fetch ALL prayers globally for the GLOBAL LIVING MAP
+ * Fetch prayers globally for the GLOBAL LIVING MAP
  *
- * This function retrieves every active prayer from around the world,
+ * This function retrieves active prayers from around the world,
  * making them visible to all users. This is the core of the Living Map concept -
  * a worldwide view of prayers connecting people across all geographic boundaries.
  *
- * @returns Promise<Prayer[]> - Array of all active prayers worldwide
+ * PERFORMANCE: Limited to 500 prayers max to prevent mobile performance issues.
+ * For future scaling, implement viewport-based loading or add limit param to RPC.
+ *
+ * @param limit - Maximum number of prayers to return (default: 500, max: 1000)
+ * @returns Promise<Prayer[]> - Array of active prayers worldwide
  */
-export async function fetchAllPrayers(): Promise<Prayer[]> {
+export async function fetchAllPrayers(limit: number = 500): Promise<Prayer[]> {
   if (!supabase) {
     console.warn('Supabase client not initialized');
     return [];
   }
 
+  // Enforce hard limit for mobile performance
+  const safeLimit = Math.min(limit, 1000);
+
   try {
     // Call the Supabase RPC function to get all prayers globally
+    // Note: RPC function doesn't support limit yet, applying client-side
     const { data, error } = await supabase.rpc('get_all_prayers');
 
     if (error) {
@@ -183,7 +191,11 @@ export async function fetchAllPrayers(): Promise<Prayer[]> {
       return !status || status === 'pending' || status === 'approved' || status === 'active';
     });
 
-    return filteredData.map(rowToPrayer);
+    // Apply client-side limit for mobile performance
+    // TODO: Add limit_count parameter to get_all_prayers RPC for server-side limiting
+    const limitedData = filteredData.slice(0, safeLimit);
+
+    return limitedData.map(rowToPrayer);
   } catch (error) {
     console.error('Failed to fetch all prayers:', error);
     return [];
@@ -191,23 +203,30 @@ export async function fetchAllPrayers(): Promise<Prayer[]> {
 }
 
 /**
- * Fetch ALL prayer connections globally for the GLOBAL LIVING MAP
+ * Fetch prayer connections globally for the GLOBAL LIVING MAP
  *
  * Prayer connections are the visual lines drawn on the map between
  * a prayer location and the location of someone who responded to it.
  * These connections represent the living web of faith and support
  * spanning across the globe.
  *
- * @returns Promise<PrayerConnection[]> - Array of all active prayer connections worldwide
+ * PERFORMANCE: Limited to 200 connections for mobile performance.
+ *
+ * @param limit - Maximum connections to return (default: 200, max: 500)
+ * @returns Promise<PrayerConnection[]> - Array of active prayer connections worldwide
  */
-export async function fetchAllConnections(): Promise<PrayerConnection[]> {
+export async function fetchAllConnections(limit: number = 200): Promise<PrayerConnection[]> {
   if (!supabase) {
     console.warn('Supabase client not initialized');
     return [];
   }
 
+  // Enforce hard limit for mobile performance
+  const safeLimit = Math.min(limit, 500);
+
   try {
     // Call the Supabase RPC function to get all prayer connections globally
+    // Note: RPC function doesn't support limit yet, applying client-side
     const { data, error } = await supabase.rpc('get_all_connections');
 
     if (error) {
@@ -219,7 +238,10 @@ export async function fetchAllConnections(): Promise<PrayerConnection[]> {
       return [];
     }
 
-    return (data as PrayerConnectionRow[]).map(rowToPrayerConnection);
+    // Apply client-side limit for mobile performance
+    const limitedData = (data as PrayerConnectionRow[]).slice(0, safeLimit);
+
+    return limitedData.map(rowToPrayerConnection);
   } catch (error) {
     console.error('Failed to fetch all connections:', error);
     return [];
@@ -526,8 +548,19 @@ export async function fetchPrayerResponses(prayerId: string): Promise<PrayerResp
 
 /**
  * Fetch inbox - prayers where the user has received responses
+ *
+ * PERFORMANCE: Optimized for mobile with:
+ * - Specific column selection (no SELECT *)
+ * - Limited to 50 prayers with responses
+ * - Responses limited to 20 most recent per prayer
+ *
+ * @param userId - The user's ID
+ * @param limit - Maximum prayers to return (default: 50)
  */
-export async function fetchUserInbox(userId: string): Promise<
+export async function fetchUserInbox(
+  userId: string,
+  limit: number = 50
+): Promise<
   Array<{
     prayer: Prayer;
     responses: PrayerResponse[];
@@ -540,15 +573,22 @@ export async function fetchUserInbox(userId: string): Promise<
   }
 
   try {
-    // Get all prayers created by the user that have responses
+    // Get prayers created by the user that have responses
+    // Optimized: specific columns instead of *, limited results
     const { data: prayers, error: prayersError } = await supabase
       .from('prayers')
       .select(`
-        *,
-        prayer_responses (*)
+        id, user_id, title, content, content_type, media_url, location,
+        user_name, is_anonymous, status, created_at, updated_at,
+        prayer_responses (
+          id, prayer_id, responder_id, responder_name, is_anonymous,
+          message, content_type, content_url, created_at, read_at
+        )
       `)
       .eq('user_id', userId)
-      .not('prayer_responses', 'is', null);
+      .not('prayer_responses', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(limit);
 
     if (prayersError) {
       console.error('Error fetching inbox:', prayersError);
@@ -558,10 +598,12 @@ export async function fetchUserInbox(userId: string): Promise<
     // Transform the data
     return (prayers as any[]).map((row) => {
       const prayer = rowToPrayer(row as PrayerRow);
-      const responses = (row.prayer_responses as PrayerResponseRow[]).map(rowToPrayerResponse);
+      // Limit responses to 20 most recent per prayer for performance
+      const allResponses = (row.prayer_responses as PrayerResponseRow[]) || [];
+      const responses = allResponses.slice(0, 20).map(rowToPrayerResponse);
 
       // Calculate unread count based on read_at being NULL
-      const unreadCount = responses.filter((r: any) => !r.read_at).length;
+      const unreadCount = allResponses.filter((r: any) => !r.read_at).length;
 
       return {
         prayer,
