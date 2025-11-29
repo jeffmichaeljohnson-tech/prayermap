@@ -573,44 +573,92 @@ export async function fetchUserInbox(
   }
 
   try {
-    // Get prayers created by the user that have responses
-    // Optimized: specific columns instead of *, limited results
-    const { data: prayers, error: prayersError } = await supabase
+    console.log('Fetching inbox for user:', userId);
+    
+    // Step 1: Get all prayers by the user 
+    const { data: userPrayers, error: prayersError } = await supabase
       .from('prayers')
-      .select(`
-        id, user_id, title, content, content_type, media_url, location,
-        user_name, is_anonymous, status, created_at, updated_at,
-        prayer_responses (
-          id, prayer_id, responder_id, responder_name, is_anonymous,
-          message, content_type, content_url, created_at, read_at
-        )
-      `)
+      .select('id, user_id, title, content, content_type, media_url, location, user_name, is_anonymous, status, created_at, updated_at')
       .eq('user_id', userId)
-      .not('prayer_responses', 'is', null)
-      .order('created_at', { ascending: false })
-      .limit(limit);
+      .order('created_at', { ascending: false });
 
     if (prayersError) {
-      console.error('Error fetching inbox:', prayersError);
+      console.error('Error fetching user prayers:', prayersError);
       throw prayersError;
     }
 
-    // Transform the data
-    return (prayers as any[]).map((row) => {
-      const prayer = rowToPrayer(row as PrayerRow);
-      // Limit responses to 20 most recent per prayer for performance
-      const allResponses = (row.prayer_responses as PrayerResponseRow[]) || [];
-      const responses = allResponses.slice(0, 20).map(rowToPrayerResponse);
+    console.log('Found', userPrayers?.length || 0, 'prayers by user');
 
-      // Calculate unread count based on read_at being NULL
-      const unreadCount = allResponses.filter((r: any) => !r.read_at).length;
+    if (!userPrayers || userPrayers.length === 0) {
+      console.log('User has no prayers, returning empty inbox');
+      return [];
+    }
 
-      return {
-        prayer,
-        responses,
-        unreadCount,
-      };
+    const prayerIds = userPrayers.map(p => p.id);
+
+    // Step 2: Get all responses to those prayers
+    const { data: responseData, error: responseError } = await supabase
+      .from('prayer_responses')
+      .select('id, prayer_id, responder_id, responder_name, is_anonymous, message, content_type, content_url, created_at, read_at')
+      .in('prayer_id', prayerIds)
+      .order('created_at', { ascending: false });
+
+    if (responseError) {
+      console.error('Error fetching prayer responses:', responseError);
+      throw responseError;
+    }
+
+    console.log('Found', responseData?.length || 0, 'responses to user prayers');
+
+    if (!responseData || responseData.length === 0) {
+      console.log('No responses found, returning empty inbox');
+      return [];
+    }
+
+    // Step 3: Group responses by prayer and create inbox items
+    const responsesByPrayer = new Map<string, any[]>();
+    responseData.forEach((response: any) => {
+      const prayerId = response.prayer_id;
+      if (!responsesByPrayer.has(prayerId)) {
+        responsesByPrayer.set(prayerId, []);
+      }
+      responsesByPrayer.get(prayerId)!.push(response);
     });
+
+    // Step 4: Create inbox items only for prayers that have responses
+    const inboxItems = userPrayers
+      .filter(prayer => responsesByPrayer.has(prayer.id))
+      .map(prayerRow => {
+        const responses = responsesByPrayer.get(prayerRow.id) || [];
+        
+        // Convert prayer row to Prayer object
+        const prayer = rowToPrayer(prayerRow as PrayerRow);
+        
+        // Limit responses to 20 most recent per prayer for performance
+        const sortedResponses = responses
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          .slice(0, 20)
+          .map(rowToPrayerResponse);
+
+        // Calculate unread count based on read_at being NULL
+        const unreadCount = responses.filter(r => !r.read_at).length;
+
+        return {
+          prayer,
+          responses: sortedResponses,
+          unreadCount,
+        };
+      })
+      .sort((a, b) => b.prayer.created_at.getTime() - a.prayer.created_at.getTime())
+      .slice(0, limit);
+
+    console.log('Returning', inboxItems.length, 'inbox items with responses');
+    inboxItems.forEach(item => {
+      console.log('- Prayer:', item.prayer.id, 'has', item.responses.length, 'responses,', item.unreadCount, 'unread');
+    });
+
+    return inboxItems;
+
   } catch (error) {
     console.error('Failed to fetch user inbox:', error);
     return [];
