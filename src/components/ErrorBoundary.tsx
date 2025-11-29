@@ -222,6 +222,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 /**
  * HOC version of ErrorBoundary
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function withErrorBoundary<P extends object>(
   Component: React.ComponentType<P>,
   options?: Omit<ErrorBoundaryProps, 'children'>
@@ -240,6 +241,7 @@ export function withErrorBoundary<P extends object>(
 /**
  * Hook for error handling within components
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useErrorHandler(): {
   error: Error | null;
   handleError: (error: Error) => void;

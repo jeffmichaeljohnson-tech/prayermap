@@ -16,12 +16,14 @@ export function DiagnosticOverlay() {
   const [fps, setFps] = useState(0);
   const [activeTab, setActiveTab] = useState<'performance' | 'errors' | 'network' | 'system'>('performance');
   const frameCountRef = useRef(0);
-  const lastTimeRef = useRef(performance.now());
+  const lastTimeRef = useRef(0);
 
   // FPS counter
   useEffect(() => {
     if (!debug.performanceOverlay) return;
 
+    // Initialize time on mount
+    lastTimeRef.current = performance.now();
     let animationFrameId: number;
 
     const measureFPS = () => {
