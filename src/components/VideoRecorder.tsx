@@ -212,6 +212,7 @@ export function VideoRecorder({ onRecordingComplete, onCancel, maxDuration = 90 
               whileTap={{ scale: 0.9 }}
               onClick={switchCamera}
               className="glass-strong p-2 rounded-full"
+              aria-label="Switch camera"
             >
               <RefreshCw className="w-5 h-5 text-white" />
             </motion.button>
@@ -264,6 +265,7 @@ export function VideoRecorder({ onRecordingComplete, onCancel, maxDuration = 90 
             <Button
               onClick={startRecording}
               className="w-20 h-20 rounded-full bg-gradient-to-br from-red-400 to-red-600 hover:from-red-500 hover:to-red-700 text-white shadow-xl shadow-red-500/40 border-4 border-white/50"
+              aria-label="Start recording"
             >
               <Video className="w-8 h-8" />
             </Button>
@@ -281,6 +283,7 @@ export function VideoRecorder({ onRecordingComplete, onCancel, maxDuration = 90 
             <Button
               onClick={isPaused ? resumeRecording : pauseRecording}
               className="w-14 h-14 rounded-full glass-strong hover:bg-white/30 border border-white/40"
+              aria-label={isPaused ? "Resume recording" : "Pause recording"}
             >
               {isPaused ? <Play className="w-6 h-6 text-white" /> : <Pause className="w-6 h-6 text-white" />}
             </Button>
@@ -289,6 +292,7 @@ export function VideoRecorder({ onRecordingComplete, onCancel, maxDuration = 90 
             <Button
               onClick={stopRecording}
               className="w-20 h-20 rounded-full bg-gradient-to-br from-red-400 to-red-600 hover:from-red-500 hover:to-red-700 text-white shadow-xl shadow-red-500/40 border-4 border-white/50"
+              aria-label="Stop recording"
             >
               <Square className="w-8 h-8 fill-current" />
             </Button>
@@ -306,6 +310,7 @@ export function VideoRecorder({ onRecordingComplete, onCancel, maxDuration = 90 
             <Button
               onClick={handleReset}
               className="w-14 h-14 rounded-full glass-strong hover:bg-white/30 border border-white/40"
+              aria-label="Reset recording"
             >
               <RotateCcw className="w-6 h-6 text-gray-700" />
             </Button>
@@ -314,6 +319,7 @@ export function VideoRecorder({ onRecordingComplete, onCancel, maxDuration = 90 
             <Button
               onClick={handleConfirm}
               className="w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 hover:from-green-500 hover:to-emerald-700 text-white shadow-xl shadow-green-500/40 border-4 border-white/50"
+              aria-label="Confirm recording"
             >
               <Check className="w-8 h-8" />
             </Button>

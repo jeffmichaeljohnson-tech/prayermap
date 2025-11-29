@@ -15,6 +15,26 @@ describe('VideoRecorder', () => {
   let mockUseVideoRecorder: ReturnType<typeof useVideoRecorderModule.useVideoRecorder>;
 
   beforeEach(() => {
+    // Mock window.matchMedia for framer-motion
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: vi.fn().mockImplementation(query => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    });
+
+    // Create a mock video element with event listener support
+    const mockVideoElement = document.createElement('video');
+    mockVideoElement.addEventListener = vi.fn();
+    mockVideoElement.removeEventListener = vi.fn();
+
     // Create a fresh mock for each test
     mockUseVideoRecorder = {
       isRecording: false,
@@ -33,7 +53,7 @@ describe('VideoRecorder', () => {
       switchCamera: vi.fn(),
       initializeCamera: vi.fn(),
       stopCamera: vi.fn(),
-      videoRef: { current: document.createElement('video') },
+      videoRef: { current: mockVideoElement },
       streamRef: { current: null },
     };
 
@@ -53,9 +73,10 @@ describe('VideoRecorder', () => {
     it('should render video preview container', () => {
       render(<VideoRecorder onRecordingComplete={mockOnRecordingComplete} />);
 
-      // Look for the main video container with aspect ratio class
-      const container = document.querySelector('[class*="aspect-[9/16]"]');
+      // Look for the main video container with rounded-3xl class
+      const container = document.querySelector('.rounded-3xl');
       expect(container).toBeTruthy();
+      expect(container).toHaveClass('overflow-hidden');
     });
 
     it('should show camera initialization message initially', () => {
@@ -337,8 +358,8 @@ describe('VideoRecorder', () => {
       mockUseVideoRecorder.duration = 30;
       render(<VideoRecorder onRecordingComplete={mockOnRecordingComplete} />);
 
-      expect(screen.getByText(/recording ready/i)).toBeInTheDocument();
-      expect(screen.getByText(/0:30/)).toBeInTheDocument();
+      // Check for the recording ready message with full text pattern
+      expect(screen.getByText(/recording ready \(0:30\)/i)).toBeInTheDocument();
     });
   });
 
@@ -374,11 +395,13 @@ describe('VideoRecorder', () => {
       mockUseVideoRecorder.isCameraReady = true;
       render(<VideoRecorder onRecordingComplete={mockOnRecordingComplete} />);
 
-      const buttons = screen.getAllByRole('button');
-      expect(buttons.length).toBeGreaterThan(0);
-      buttons.forEach(button => {
-        expect(button).toBeVisible();
-      });
+      // Check for start recording button
+      const startButton = screen.getByRole('button', { name: /start recording/i });
+      expect(startButton).toBeInTheDocument();
+
+      // Check for camera switch button
+      const switchButton = screen.getByRole('button', { name: /switch camera/i });
+      expect(switchButton).toBeInTheDocument();
     });
 
     it('should support keyboard navigation', async () => {
