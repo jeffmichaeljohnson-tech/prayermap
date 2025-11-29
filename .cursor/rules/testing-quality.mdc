@@ -1,0 +1,482 @@
+---
+description: Testing and quality assurance rules for Playwright and code quality
+globs:
+  - "tests/**/*"
+  - "**/*.spec.ts"
+  - "**/*.test.ts"
+  - "playwright.config.ts"
+alwaysApply: false
+---
+
+# Testing and Quality Assurance Rules
+
+## Playwright Setup
+
+### Configuration
+```typescript
+// playwright.config.ts
+import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './tests',
+  fullyParallel: true,
+  forbidOnly: !!process.env.CI,
+  retries: process.env.CI ? 2 : 0,
+  workers: process.env.CI ? 1 : undefined,
+  reporter: 'html',
+  use: {
+    baseURL: 'http://localhost:5173',
+    trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+  },
+  projects: [
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'Mobile Chrome',
+      use: { ...devices['Pixel 5'] },
+    },
+    {
+      name: 'Mobile Safari',
+      use: { ...devices['iPhone 12'] },
+    },
+  ],
+  webServer: {
+    command: 'npm run dev',
+    url: 'http://localhost:5173',
+    reuseExistingServer: !process.env.CI,
+  },
+});
+```
+
+## Test Structure
+
+### File Organization
+```
+tests/
+├── fixtures/
+│   ├── auth.ts          # Authentication helpers
+│   ├── prayers.ts       # Prayer test data
+│   └── index.ts         # Export all fixtures
+├── pages/
+│   ├── MapPage.ts       # Page Object for map
+│   ├── PrayerModal.ts   # Page Object for prayer modal
+│   └── AuthModal.ts     # Page Object for auth
+├── e2e/
+│   ├── prayer-flow.spec.ts
+│   ├── auth-flow.spec.ts
+│   └── map-interaction.spec.ts
+└── unit/
+    ├── services.spec.ts
+    └── hooks.spec.ts
+```
+
+### Page Object Pattern
+```typescript
+// tests/pages/MapPage.ts
+import { Page, Locator } from '@playwright/test';
+
+export class MapPage {
+  readonly page: Page;
+  readonly mapContainer: Locator;
+  readonly prayerMarkers: Locator;
+  readonly createPrayerButton: Locator;
+  readonly notificationBell: Locator;
+
+  constructor(page: Page) {
+    this.page = page;
+    this.mapContainer = page.locator('[data-testid="map-container"]');
+    this.prayerMarkers = page.locator('[data-testid="prayer-marker"]');
+    this.createPrayerButton = page.locator('[data-testid="create-prayer-fab"]');
+    this.notificationBell = page.locator('[data-testid="notification-bell"]');
+  }
+
+  async goto() {
+    await this.page.goto('/');
+    await this.mapContainer.waitFor({ state: 'visible' });
+  }
+
+  async waitForPrayersToLoad() {
+    await this.page.waitForResponse(
+      (response) => response.url().includes('prayers') && response.status() === 200
+    );
+  }
+
+  async clickPrayerMarker(index = 0) {
+    const marker = this.prayerMarkers.nth(index);
+    await marker.click();
+  }
+
+  async openCreatePrayerModal() {
+    await this.createPrayerButton.click();
+  }
+}
+```
+
+## Test Patterns
+
+### E2E Test Template
+```typescript
+// tests/e2e/prayer-flow.spec.ts
+import { test, expect } from '@playwright/test';
+import { MapPage } from '../pages/MapPage';
+import { PrayerModal } from '../pages/PrayerModal';
+
+test.describe('Prayer Creation Flow', () => {
+  let mapPage: MapPage;
+
+  test.beforeEach(async ({ page }) => {
+    mapPage = new MapPage(page);
+    await mapPage.goto();
+  });
+
+  test('user can create a text prayer', async ({ page }) => {
+    // Arrange
+    const prayerModal = new PrayerModal(page);
+
+    // Act
+    await mapPage.openCreatePrayerModal();
+    await prayerModal.selectTextType();
+    await prayerModal.fillPrayerText('Please pray for my family');
+    await prayerModal.submit();
+
+    // Assert
+    await expect(page.locator('.toast-success')).toBeVisible();
+    await expect(prayerModal.modal).not.toBeVisible();
+  });
+
+  test('prayer appears on map after creation', async ({ page }) => {
+    // Create prayer
+    await createPrayer(page, 'Test prayer content');
+
+    // Verify marker appears
+    await mapPage.waitForPrayersToLoad();
+    const markers = await mapPage.prayerMarkers.count();
+    expect(markers).toBeGreaterThan(0);
+  });
+});
+```
+
+### Testing with Authentication
+```typescript
+// tests/fixtures/auth.ts
+import { test as base, Page } from '@playwright/test';
+
+type AuthFixtures = {
+  authenticatedPage: Page;
+};
+
+export const test = base.extend<AuthFixtures>({
+  authenticatedPage: async ({ page }, use) => {
+    // Login before test
+    await page.goto('/');
+    await page.click('[data-testid="login-button"]');
+    await page.fill('[data-testid="email-input"]', 'test@example.com');
+    await page.fill('[data-testid="password-input"]', 'testpassword');
+    await page.click('[data-testid="submit-login"]');
+
+    // Wait for auth
+    await page.waitForSelector('[data-testid="user-avatar"]');
+
+    await use(page);
+  },
+});
+
+// Usage
+test('authenticated user can send prayer support', async ({ authenticatedPage }) => {
+  const page = authenticatedPage;
+  // ... test with authenticated user
+});
+```
+
+### Testing Geolocation
+```typescript
+test('shows nearby prayers based on location', async ({ page, context }) => {
+  // Mock geolocation
+  await context.grantPermissions(['geolocation']);
+  await context.setGeolocation({
+    latitude: 37.7749,
+    longitude: -122.4194
+  });
+
+  await page.goto('/');
+
+  // Verify location-based prayers load
+  await page.waitForResponse(
+    (response) => response.url().includes('nearby_prayers')
+  );
+});
+```
+
+### Testing Mobile Viewport
+```typescript
+test.describe('Mobile Experience', () => {
+  test.use({
+    viewport: { width: 390, height: 844 }, // iPhone 14 Pro
+    isMobile: true,
+    hasTouch: true,
+  });
+
+  test('FAB is visible and tappable on mobile', async ({ page }) => {
+    await page.goto('/');
+
+    const fab = page.locator('[data-testid="create-prayer-fab"]');
+    await expect(fab).toBeVisible();
+
+    // Verify touch interaction
+    await fab.tap();
+    await expect(page.locator('[data-testid="prayer-modal"]')).toBeVisible();
+  });
+});
+```
+
+## Data-testid Conventions
+
+### Required Test IDs
+```typescript
+// Map components
+data-testid="map-container"
+data-testid="prayer-marker"
+data-testid="prayer-cluster"
+data-testid="create-prayer-fab"
+
+// Auth components
+data-testid="login-button"
+data-testid="logout-button"
+data-testid="email-input"
+data-testid="password-input"
+data-testid="submit-login"
+data-testid="user-avatar"
+
+// Prayer components
+data-testid="prayer-modal"
+data-testid="prayer-title-input"
+data-testid="prayer-text-input"
+data-testid="prayer-submit-button"
+data-testid="prayer-type-text"
+data-testid="prayer-type-audio"
+data-testid="prayer-type-video"
+data-testid="send-prayer-button"
+
+// Notifications
+data-testid="notification-bell"
+data-testid="notification-count"
+data-testid="notification-panel"
+```
+
+### Adding Test IDs
+```typescript
+// In component
+<button
+  data-testid="send-prayer-button"
+  onClick={handleSendPrayer}
+  className="glass-button"
+>
+  Send Prayer
+</button>
+```
+
+## Assertions
+
+### Common Assertions
+```typescript
+// Visibility
+await expect(element).toBeVisible();
+await expect(element).not.toBeVisible();
+await expect(element).toBeHidden();
+
+// Text content
+await expect(element).toHaveText('Expected text');
+await expect(element).toContainText('partial');
+
+// Count
+await expect(locator).toHaveCount(5);
+
+// Attribute
+await expect(element).toHaveAttribute('aria-pressed', 'true');
+
+// CSS
+await expect(element).toHaveClass(/glass/);
+await expect(element).toHaveCSS('opacity', '1');
+
+// Input values
+await expect(input).toHaveValue('expected value');
+await expect(input).toBeEmpty();
+
+// URL
+await expect(page).toHaveURL(/prayer\/[\w-]+/);
+```
+
+## Mocking API Responses
+
+```typescript
+test('handles API error gracefully', async ({ page }) => {
+  // Mock failed API response
+  await page.route('**/prayers**', (route) => {
+    route.fulfill({
+      status: 500,
+      body: JSON.stringify({ error: 'Server error' }),
+    });
+  });
+
+  await page.goto('/');
+
+  // Verify error handling
+  await expect(page.locator('[data-testid="error-message"]')).toBeVisible();
+});
+
+test('displays prayers from API', async ({ page }) => {
+  // Mock successful response
+  await page.route('**/rpc/get_nearby_prayers**', (route) => {
+    route.fulfill({
+      status: 200,
+      body: JSON.stringify([
+        {
+          id: '123',
+          title: 'Test Prayer',
+          text_body: 'Please pray for...',
+          latitude: 37.7749,
+          longitude: -122.4194,
+        },
+      ]),
+    });
+  });
+
+  await page.goto('/');
+  await expect(page.locator('[data-testid="prayer-marker"]')).toHaveCount(1);
+});
+```
+
+## Visual Testing
+
+```typescript
+test('prayer card matches snapshot', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-testid="prayer-marker"]');
+
+  const prayerCard = page.locator('[data-testid="prayer-detail-card"]');
+  await expect(prayerCard).toHaveScreenshot('prayer-card.png');
+});
+
+test('map renders correctly', async ({ page }) => {
+  await page.goto('/');
+  await page.waitForLoadState('networkidle');
+
+  // Wait for map tiles to load
+  await page.waitForTimeout(2000);
+
+  await expect(page).toHaveScreenshot('map-view.png', {
+    maxDiffPixels: 100, // Allow small differences for map tiles
+  });
+});
+```
+
+## Performance Testing
+
+```typescript
+test('page loads within performance budget', async ({ page }) => {
+  const startTime = Date.now();
+
+  await page.goto('/');
+  await page.waitForLoadState('domcontentloaded');
+
+  const loadTime = Date.now() - startTime;
+  expect(loadTime).toBeLessThan(2000); // 2 seconds
+});
+
+test('map interaction is responsive', async ({ page }) => {
+  await page.goto('/');
+
+  // Measure time to open prayer modal
+  const startTime = Date.now();
+  await page.click('[data-testid="create-prayer-fab"]');
+  await page.waitForSelector('[data-testid="prayer-modal"]');
+  const responseTime = Date.now() - startTime;
+
+  expect(responseTime).toBeLessThan(300); // 300ms
+});
+```
+
+## Running Tests
+
+```bash
+# Run all tests
+npx playwright test
+
+# Run specific test file
+npx playwright test tests/e2e/prayer-flow.spec.ts
+
+# Run with UI
+npx playwright test --ui
+
+# Run in headed mode
+npx playwright test --headed
+
+# Run specific browser
+npx playwright test --project=chromium
+
+# Debug mode
+npx playwright test --debug
+
+# Generate report
+npx playwright show-report
+```
+
+## CI/CD Integration
+
+```yaml
+# .github/workflows/test.yml
+name: Playwright Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright tests
+        run: npx playwright test
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+```
+
+## Test Coverage Goals
+
+### Minimum Coverage
+- **E2E Tests**: All critical user flows
+  - [ ] User registration/login
+  - [ ] Prayer creation (text, audio, video)
+  - [ ] Sending prayer support
+  - [ ] Viewing prayer details
+  - [ ] Notifications
+
+- **Component Tests**: Major interactive components
+  - [ ] Map interactions
+  - [ ] Modal behaviors
+  - [ ] Form validation
+
+- **Mobile Tests**: Core mobile experience
+  - [ ] Touch interactions
+  - [ ] Responsive layouts
+  - [ ] Native feature fallbacks

@@ -1,0 +1,307 @@
+---
+description: Multi-agent orchestration patterns for AI-assisted development
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+# Multi-Agent Orchestration Rules
+
+## Agent Role Definitions
+
+### Available Agents
+1. **Planner** - Breaks down tasks, creates implementation plans, coordinates work
+2. **Frontend** - React components, UI/UX, styling, animations
+3. **Backend** - Supabase queries, RPC functions, data layer, storage
+4. **Mobile** - Capacitor integration, native features, iOS/Android specifics
+5. **Testing** - Playwright tests, quality assurance, edge cases
+6. **Reviewer** - Code review, security audit, best practices enforcement
+7. **Docs** - Documentation updates, README, API specs
+
+## Task Decomposition
+
+### Breaking Down Work
+When receiving a complex task, decompose it into agent-specific subtasks:
+
+```markdown
+## Task: Add audio prayer recording feature
+
+### Planner Tasks
+- [ ] Define component structure
+- [ ] Identify affected files
+- [ ] Create implementation sequence
+
+### Frontend Tasks
+- [ ] Create AudioRecorder component
+- [ ] Add recording UI with timer
+- [ ] Handle recording states (idle, recording, playback)
+- [ ] Add waveform visualization
+
+### Backend Tasks
+- [ ] Create storage bucket policy for audio
+- [ ] Add audio_url column to prayers table
+- [ ] Create upload service function
+
+### Mobile Tasks
+- [ ] Add microphone permissions
+- [ ] Test native audio recording
+- [ ] Handle iOS/Android differences
+
+### Testing Tasks
+- [ ] Write Playwright tests for recording flow
+- [ ] Test upload failure scenarios
+- [ ] Test playback functionality
+```
+
+## Agent Handoff Protocol
+
+### Standard Handoff Format
+```markdown
+## Agent Handoff
+
+**From**: [Current Agent Role]
+**To**: [Next Agent Role]
+**Task**: [Brief description]
+
+### Completed Work
+- [x] Specific item completed
+- [x] Another completed item
+- Files modified: `path/to/file.tsx`, `path/to/another.ts`
+
+### Decisions Made
+- Decision 1: Chose X because Y
+- Decision 2: Used pattern Z for consistency
+
+### Open Questions
+1. Question needing clarification
+2. Design decision pending
+
+### Next Steps for Receiving Agent
+1. First thing to do
+2. Second thing to do
+3. Dependencies or blockers to note
+
+### Context Files
+- Read: `path/to/relevant/file.tsx`
+- Reference: `docs/relevant-doc.md`
+```
+
+## Code Annotations
+
+### Mark Agent-Specific Code
+```typescript
+// AGENT: Frontend - Component structure for AudioRecorder
+// This component handles the UI for recording audio prayers
+
+// AGENT: Backend - RPC call pattern
+// Uses supabase.rpc for atomic operations
+
+// TODO(agent): Mobile - Test on iOS device
+// Verify microphone permissions work correctly
+
+// DECISION(agent): Using WebAudio API for browser, native for Capacitor
+// Reasoning: Better cross-platform support
+```
+
+## Parallel Work Patterns
+
+### Independent Streams
+Agents can work in parallel when tasks don't have dependencies:
+
+```
+Stream 1: Frontend (UI components)
+├── Create component shell
+├── Add styling
+└── Connect to props
+
+Stream 2: Backend (Data layer)
+├── Create database function
+├── Add service method
+└── Add types
+
+Stream 3: Testing (QA)
+├── Write test stubs
+├── Define test cases
+└── Prepare fixtures
+
+→ Merge Point: Integration
+├── Connect frontend to backend
+├── Run tests
+└── Fix issues
+```
+
+### Sequential Dependencies
+Some work must be done in order:
+
+```
+1. Backend: Create database schema
+   ↓
+2. Backend: Generate TypeScript types
+   ↓
+3. Frontend: Import and use types
+   ↓
+4. Frontend: Build components
+   ↓
+5. Testing: Write integration tests
+```
+
+## Conflict Resolution
+
+### When Agents Disagree
+1. **Check existing patterns** - Follow established codebase conventions
+2. **Refer to AGENTS.md** - Use documented guidelines
+3. **Defer to domain expert** - Backend agent for DB, Frontend for UI
+4. **Document the decision** - Add comment explaining choice
+
+### Merge Conflicts
+```markdown
+## Conflict: Both agents modified the same file
+
+### Agent A Changes (Frontend)
+- Added new component import
+- Modified JSX structure
+
+### Agent B Changes (Backend)
+- Added new service import
+- Modified data fetching
+
+### Resolution
+1. Keep both imports (no conflict)
+2. Merge JSX changes with data fetching
+3. Test combined functionality
+```
+
+## Quality Gates
+
+### Before Handoff Checklist
+- [ ] Code compiles without errors
+- [ ] No TypeScript errors
+- [ ] ESLint passes
+- [ ] Component renders correctly
+- [ ] Basic functionality works
+- [ ] No console errors
+- [ ] Mobile responsive (if UI)
+
+### Before Merge Checklist
+- [ ] All agent work integrated
+- [ ] Tests pass
+- [ ] No regressions
+- [ ] Documentation updated
+- [ ] Commit messages clear
+- [ ] PR description complete
+
+## Communication Patterns
+
+### Status Updates
+```markdown
+## Agent Status: Frontend
+
+**Current Task**: Building PrayerCard component
+**Progress**: 70%
+**Blockers**: None
+**ETA**: Next response
+
+### What's Done
+- Component structure complete
+- Basic styling applied
+
+### What's Remaining
+- Add loading states
+- Connect to real data
+```
+
+### Asking for Help
+```markdown
+## Help Needed: Backend
+
+**Problem**: Unsure how to structure PostGIS query
+**Context**: Need to find prayers within radius
+**Attempted**: Simple ST_Distance query (too slow)
+**Question**: Should I use spatial index or materialized view?
+
+**Files to Review**:
+- `prayermap_schema_v2.sql` - Current schema
+- `prayerService.ts` - Existing queries
+```
+
+## Error Handling Across Agents
+
+### When Something Breaks
+1. **Identify the layer** - Frontend, Backend, or Mobile?
+2. **Check recent changes** - What agent last modified it?
+3. **Rollback if needed** - Git revert to working state
+4. **Fix in correct layer** - Route to appropriate agent
+
+### Error Reporting Format
+```markdown
+## Error Report
+
+**Type**: Runtime Error
+**Location**: `src/services/prayerService.ts:45`
+**Message**: `Cannot read property 'data' of undefined`
+
+**Reproduction**:
+1. Open app
+2. Click on prayer marker
+3. Error occurs
+
+**Suspected Cause**: API response shape changed
+**Suggested Fix**: Add null check before accessing data
+
+**Assigned To**: Backend Agent
+```
+
+## Session Continuity
+
+### Starting a New Session
+1. Read `AGENTS.md` for project context
+2. Check recent git commits for current state
+3. Review any open TODOs or incomplete work
+4. Check `.cursor/rules/` for any updates
+
+### Ending a Session
+1. Commit all changes with clear messages
+2. Document incomplete work with TODOs
+3. Update handoff notes if applicable
+4. Push to feature branch
+
+## Performance Expectations
+
+### Response Quality
+- Each agent response should make meaningful progress
+- Avoid partial implementations that break the build
+- Complete one logical unit of work per response
+
+### Iteration Limits
+- Complex features: 5-10 agent iterations
+- Bug fixes: 1-3 iterations
+- Refactoring: 2-5 iterations
+- Documentation: 1-2 iterations
+
+## Tools Each Agent Should Use
+
+### All Agents
+- Read files before modifying
+- Check AGENTS.md for guidelines
+- Use TodoWrite for task tracking
+- Commit incrementally
+
+### Frontend Agent
+- Check existing component patterns
+- Use Tailwind classes consistently
+- Test in multiple viewport sizes
+
+### Backend Agent
+- Verify RLS policies
+- Test queries in Supabase dashboard
+- Generate types after schema changes
+
+### Mobile Agent
+- Test on both iOS and Android
+- Check permissions handling
+- Verify native plugin behavior
+
+### Testing Agent
+- Cover happy path and edge cases
+- Test error scenarios
+- Verify responsive behavior

@@ -1,0 +1,537 @@
+---
+description: Mobile development rules for iOS and Android using Capacitor
+globs:
+  - "capacitor.config.ts"
+  - "ios/**/*"
+  - "android/**/*"
+  - "**/capacitor*.ts"
+  - "**/*native*.ts"
+  - "**/*mobile*.ts"
+alwaysApply: false
+---
+
+# Mobile Development with Capacitor
+
+## Project Setup
+
+### Initial Capacitor Setup
+```bash
+# Install Capacitor
+npm install @capacitor/core @capacitor/cli
+
+# Initialize (already done if capacitor.config.ts exists)
+npx cap init "PrayerMap" "net.prayermap.app" --web-dir dist
+
+# Add platforms
+npm install @capacitor/ios @capacitor/android
+npx cap add ios
+npx cap add android
+```
+
+### capacitor.config.ts
+```typescript
+import type { CapacitorConfig } from '@capacitor/core';
+
+const config: CapacitorConfig = {
+  appId: 'net.prayermap.app',
+  appName: 'PrayerMap',
+  webDir: 'dist',
+  server: {
+    androidScheme: 'https',
+    iosScheme: 'https',
+  },
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 2000,
+      launchAutoHide: true,
+      backgroundColor: '#E8F4F8', // heavenly-blue
+      showSpinner: false,
+    },
+    PushNotifications: {
+      presentationOptions: ['badge', 'sound', 'alert'],
+    },
+    Keyboard: {
+      resize: 'body',
+      resizeOnFullScreen: true,
+    },
+  },
+  ios: {
+    contentInset: 'automatic',
+  },
+  android: {
+    allowMixedContent: false,
+  },
+};
+
+export default config;
+```
+
+## Essential Plugins
+
+### Core Plugins
+```bash
+# Geolocation (required for prayer posting)
+npm install @capacitor/geolocation
+
+# Camera (for video prayers)
+npm install @capacitor/camera
+
+# Push Notifications
+npm install @capacitor/push-notifications
+
+# Haptics (tactile feedback)
+npm install @capacitor/haptics
+
+# App (lifecycle, URLs)
+npm install @capacitor/app
+
+# Splash Screen
+npm install @capacitor/splash-screen
+
+# Status Bar
+npm install @capacitor/status-bar
+
+# Keyboard
+npm install @capacitor/keyboard
+
+# Share (share prayers)
+npm install @capacitor/share
+
+# Local Notifications (offline support)
+npm install @capacitor/local-notifications
+```
+
+## Development Workflow
+
+### Build and Sync
+```bash
+# Build web assets
+npm run build
+
+# Sync to native projects
+npx cap sync
+
+# Or do both
+npm run build && npx cap sync
+```
+
+### Open in IDE
+```bash
+# iOS (requires Mac + Xcode)
+npx cap open ios
+
+# Android (requires Android Studio)
+npx cap open android
+```
+
+### Live Reload Development
+```bash
+# Start dev server
+npm run dev
+
+# In capacitor.config.ts, add:
+server: {
+  url: 'http://YOUR_LOCAL_IP:5173',
+  cleartext: true, // Android only
+}
+
+# Sync and run on device
+npx cap sync
+npx cap run ios # or android
+```
+
+## Platform Detection
+
+```typescript
+import { Capacitor } from '@capacitor/core';
+
+// Check platform
+const platform = Capacitor.getPlatform(); // 'web', 'ios', 'android'
+
+// Check if native
+const isNative = Capacitor.isNativePlatform();
+
+// Conditional code
+if (Capacitor.isNativePlatform()) {
+  // Native-specific code
+  await Haptics.impact({ style: ImpactStyle.Medium });
+} else {
+  // Web fallback
+  console.log('Haptics not available on web');
+}
+```
+
+## Geolocation Implementation
+
+```typescript
+import { Geolocation, Position } from '@capacitor/geolocation';
+import { Capacitor } from '@capacitor/core';
+
+export async function getCurrentPosition(): Promise<{ lat: number; lng: number } | null> {
+  try {
+    // Check permissions on native
+    if (Capacitor.isNativePlatform()) {
+      const permission = await Geolocation.checkPermissions();
+
+      if (permission.location !== 'granted') {
+        const request = await Geolocation.requestPermissions();
+        if (request.location !== 'granted') {
+          throw new Error('Location permission denied');
+        }
+      }
+    }
+
+    const position: Position = await Geolocation.getCurrentPosition({
+      enableHighAccuracy: true,
+      timeout: 10000,
+    });
+
+    return {
+      lat: position.coords.latitude,
+      lng: position.coords.longitude,
+    };
+  } catch (error) {
+    console.error('Geolocation error:', error);
+    return null;
+  }
+}
+
+// Watch position for map updates
+export function watchPosition(callback: (pos: { lat: number; lng: number }) => void) {
+  return Geolocation.watchPosition(
+    { enableHighAccuracy: true },
+    (position, error) => {
+      if (position) {
+        callback({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+      }
+    }
+  );
+}
+```
+
+## Push Notifications
+
+```typescript
+import { PushNotifications, Token, PushNotificationSchema } from '@capacitor/push-notifications';
+import { Capacitor } from '@capacitor/core';
+
+export async function initPushNotifications() {
+  if (!Capacitor.isNativePlatform()) {
+    console.log('Push notifications not available on web');
+    return;
+  }
+
+  // Request permission
+  const permission = await PushNotifications.requestPermissions();
+
+  if (permission.receive === 'granted') {
+    // Register for push
+    await PushNotifications.register();
+  }
+
+  // Handle registration success
+  PushNotifications.addListener('registration', (token: Token) => {
+    console.log('Push registration token:', token.value);
+    // Send token to your server
+    savePushToken(token.value);
+  });
+
+  // Handle registration error
+  PushNotifications.addListener('registrationError', (error) => {
+    console.error('Push registration error:', error);
+  });
+
+  // Handle push received while app is open
+  PushNotifications.addListener('pushNotificationReceived', (notification: PushNotificationSchema) => {
+    console.log('Push received:', notification);
+    // Show in-app notification
+  });
+
+  // Handle push action (user tapped notification)
+  PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
+    console.log('Push action:', action);
+    // Navigate to relevant screen
+    const prayerId = action.notification.data?.prayerId;
+    if (prayerId) {
+      navigateToPrayer(prayerId);
+    }
+  });
+}
+```
+
+## Camera for Video Prayers
+
+```typescript
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+
+export async function recordVideoPrayer(): Promise<string | null> {
+  try {
+    const video = await Camera.getPhoto({
+      quality: 80,
+      allowEditing: false,
+      resultType: CameraResultType.Uri,
+      source: CameraSource.Camera,
+      // For video, you may need to use a different plugin
+      // or native implementation
+    });
+
+    return video.webPath ?? null;
+  } catch (error) {
+    console.error('Camera error:', error);
+    return null;
+  }
+}
+```
+
+## Haptic Feedback
+
+```typescript
+import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
+import { Capacitor } from '@capacitor/core';
+
+export async function hapticFeedback(type: 'light' | 'medium' | 'heavy' | 'success' | 'error') {
+  if (!Capacitor.isNativePlatform()) return;
+
+  switch (type) {
+    case 'light':
+      await Haptics.impact({ style: ImpactStyle.Light });
+      break;
+    case 'medium':
+      await Haptics.impact({ style: ImpactStyle.Medium });
+      break;
+    case 'heavy':
+      await Haptics.impact({ style: ImpactStyle.Heavy });
+      break;
+    case 'success':
+      await Haptics.notification({ type: NotificationType.Success });
+      break;
+    case 'error':
+      await Haptics.notification({ type: NotificationType.Error });
+      break;
+  }
+}
+
+// Use in prayer sent action
+async function onPrayerSent() {
+  await hapticFeedback('success');
+  // ... rest of logic
+}
+```
+
+## Status Bar Styling
+
+```typescript
+import { StatusBar, Style } from '@capacitor/status-bar';
+import { Capacitor } from '@capacitor/core';
+
+export async function configureStatusBar() {
+  if (!Capacitor.isNativePlatform()) return;
+
+  // Light content (for dark backgrounds)
+  await StatusBar.setStyle({ style: Style.Light });
+
+  // Or dark content (for light backgrounds)
+  await StatusBar.setStyle({ style: Style.Dark });
+
+  // Set background color (Android only)
+  if (Capacitor.getPlatform() === 'android') {
+    await StatusBar.setBackgroundColor({ color: '#E8F4F8' });
+  }
+}
+```
+
+## Keyboard Handling
+
+```typescript
+import { Keyboard } from '@capacitor/keyboard';
+import { Capacitor } from '@capacitor/core';
+
+export function setupKeyboardListeners() {
+  if (!Capacitor.isNativePlatform()) return;
+
+  Keyboard.addListener('keyboardWillShow', (info) => {
+    // Adjust UI for keyboard
+    document.body.style.paddingBottom = `${info.keyboardHeight}px`;
+  });
+
+  Keyboard.addListener('keyboardWillHide', () => {
+    document.body.style.paddingBottom = '0';
+  });
+}
+
+// Hide keyboard programmatically
+export async function hideKeyboard() {
+  if (Capacitor.isNativePlatform()) {
+    await Keyboard.hide();
+  }
+}
+```
+
+## App Lifecycle
+
+```typescript
+import { App } from '@capacitor/app';
+import { Capacitor } from '@capacitor/core';
+
+export function setupAppListeners() {
+  if (!Capacitor.isNativePlatform()) return;
+
+  // Handle app state changes
+  App.addListener('appStateChange', ({ isActive }) => {
+    if (isActive) {
+      // App came to foreground
+      refreshPrayers();
+    } else {
+      // App went to background
+      saveState();
+    }
+  });
+
+  // Handle deep links
+  App.addListener('appUrlOpen', (data) => {
+    const url = new URL(data.url);
+    // Handle prayer deep links: prayermap://prayer/123
+    if (url.pathname.startsWith('/prayer/')) {
+      const prayerId = url.pathname.split('/')[2];
+      navigateToPrayer(prayerId);
+    }
+  });
+
+  // Handle back button (Android)
+  App.addListener('backButton', ({ canGoBack }) => {
+    if (canGoBack) {
+      window.history.back();
+    } else {
+      App.exitApp();
+    }
+  });
+}
+```
+
+## Share Functionality
+
+```typescript
+import { Share } from '@capacitor/share';
+
+export async function sharePrayer(prayer: Prayer) {
+  await Share.share({
+    title: prayer.title || 'Prayer Request',
+    text: `Please pray for: ${prayer.text_body.substring(0, 100)}...`,
+    url: `https://prayermap.net/prayer/${prayer.id}`,
+    dialogTitle: 'Share this prayer',
+  });
+}
+```
+
+## iOS-Specific Configurations
+
+### Info.plist (ios/App/App/Info.plist)
+```xml
+<!-- Location permission -->
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>PrayerMap needs your location to show nearby prayers and post prayers in your area.</string>
+
+<!-- Camera permission -->
+<key>NSCameraUsageDescription</key>
+<string>PrayerMap needs camera access to record video prayers.</string>
+
+<!-- Microphone permission -->
+<key>NSMicrophoneUsageDescription</key>
+<string>PrayerMap needs microphone access to record audio prayers.</string>
+
+<!-- Photo library permission -->
+<key>NSPhotoLibraryUsageDescription</key>
+<string>PrayerMap needs photo library access to attach images to prayers.</string>
+```
+
+## Android-Specific Configurations
+
+### AndroidManifest.xml permissions
+```xml
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+<uses-permission android:name="android.permission.CAMERA" />
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
+<uses-permission android:name="android.permission.INTERNET" />
+<uses-permission android:name="android.permission.VIBRATE" />
+```
+
+## Building for Production
+
+### iOS
+```bash
+# Build web assets
+npm run build
+
+# Sync
+npx cap sync ios
+
+# Open Xcode
+npx cap open ios
+
+# In Xcode:
+# 1. Select your target device/simulator
+# 2. Product > Archive (for App Store)
+# 3. Distribute App > App Store Connect
+```
+
+### Android
+```bash
+# Build web assets
+npm run build
+
+# Sync
+npx cap sync android
+
+# Open Android Studio
+npx cap open android
+
+# In Android Studio:
+# 1. Build > Generate Signed Bundle/APK
+# 2. Choose Android App Bundle for Play Store
+# 3. Sign with your keystore
+```
+
+## Safe Area Handling
+
+```css
+/* In your CSS/Tailwind */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-all {
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+```
+
+```typescript
+// In Tailwind config, add safe area utilities
+// Or use inline styles
+<div style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+  {/* Bottom navigation */}
+</div>
+```
+
+## Testing on Devices
+
+```bash
+# List connected iOS devices
+xcrun xctrace list devices
+
+# Run on specific iOS device
+npx cap run ios --target="iPhone 15 Pro"
+
+# List connected Android devices
+adb devices
+
+# Run on specific Android device
+npx cap run android --target=DEVICE_ID
+```

@@ -1,0 +1,99 @@
+# PrayerMap Cursor Rules (Legacy Format)
+# For full modular rules, see .cursor/rules/*.mdc
+
+## Project Context
+PrayerMap is a location-based spiritual platform built with React 19, TypeScript, Vite, TailwindCSS, and Supabase. The project includes a main web app and admin dashboard, with upcoming iOS/Android deployment via Capacitor.
+
+Live: https://prayermap.net
+
+## Core Principles
+1. Sacred First: Every interaction honors the spiritual nature of prayer
+2. Beauty Through Simplicity: Elegant glassmorphic design
+3. Privacy as Default: Anonymous options, location privacy
+4. Mobile-First: Responsive design for all devices
+5. Type Safety: Strict TypeScript, no `any` types
+
+## Tech Stack
+- Frontend: React 19 + TypeScript 5.9 + Vite 7
+- Styling: TailwindCSS 4 + Radix UI + Framer Motion
+- State: Zustand (global) + React Query (server)
+- Backend: Supabase (PostgreSQL + PostGIS + Auth + Storage)
+- Maps: MapBox GL JS v3
+- Mobile: Capacitor for iOS/Android
+- Testing: Playwright
+
+## Code Style
+- Use functional components with TypeScript interfaces
+- Prefer `interface` over `type` for object shapes
+- Use named exports for components
+- Follow file structure: imports, types, component, helpers, export
+- Use descriptive names: isLoading, hasError, canSubmit
+
+## Naming Conventions
+- Components: PascalCase.tsx (PrayerCard.tsx)
+- Hooks: use prefix camelCase.ts (usePrayers.ts)
+- Services: camelCase with Service suffix (prayerService.ts)
+- Variables: camelCase with auxiliary verbs (isAuthenticated, hasPermission)
+
+## Design System: "Ethereal Glass"
+Colors:
+- heavenly-blue: #E8F4F8 (background)
+- dawn-gold: #F7E7CE (accents)
+- prayer-purple: #D4C5F9 (spiritual accent)
+- text-primary: #2C3E50
+- text-secondary: #7F8C8D
+
+Glassmorphic classes: .glass, .glass-strong, .glass-subtle
+
+## Never Do
+- Commit .env files or secrets
+- Bypass Row Level Security (RLS)
+- Use `any` type
+- Create inline styles (use Tailwind)
+- Push directly to main branch
+- Skip error handling
+
+## Always Do
+- Validate input with Zod
+- Handle loading and error states
+- Use React Query for data fetching
+- Write meaningful commits
+- Test on mobile viewports
+- Consider accessibility
+
+## Supabase Patterns
+- Use RPC functions for complex queries
+- Always respect RLS policies
+- Handle all error cases
+- Use generated types from database
+
+## Mobile Development
+- Use Capacitor for native features
+- Check platform before using native APIs
+- Handle permissions gracefully
+- Test on both iOS and Android
+
+## Multi-Agent Development
+- Follow AGENTS.md for guidelines
+- Use handoff protocol for agent coordination
+- Document decisions with // AGENT: comments
+- Mark incomplete work with // TODO(agent):
+
+## File Organization
+src/
+├── components/     # React components
+│   └── ui/        # Base UI components
+├── contexts/      # React contexts
+├── hooks/         # Custom hooks
+├── services/      # API services
+├── lib/           # Utilities
+└── types/         # TypeScript types
+
+## For Detailed Rules
+See .cursor/rules/ directory:
+- core-rules.mdc: Always-applied fundamentals
+- react-typescript.mdc: React/TS patterns
+- supabase-backend.mdc: Database rules
+- mobile-capacitor.mdc: iOS/Android development
+- agent-orchestration.mdc: Multi-agent coordination
+- testing-quality.mdc: Playwright testing

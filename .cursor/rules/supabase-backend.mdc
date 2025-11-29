@@ -1,0 +1,423 @@
+---
+description: Supabase backend patterns for database, auth, and storage
+globs:
+  - "**/lib/supabase*.ts"
+  - "**/services/*.ts"
+  - "**/*Service.ts"
+  - "supabase/**/*"
+  - "**/*.sql"
+alwaysApply: false
+---
+
+# Supabase Backend Development Rules
+
+## Supabase Client Usage
+
+### Initialization
+```typescript
+// lib/supabase.ts - Already configured
+import { createClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database';
+
+export const supabase = createClient<Database>(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
+```
+
+### Basic Queries
+```typescript
+// Select with filters
+const { data, error } = await supabase
+  .from('prayers')
+  .select('*')
+  .eq('status', 'ACTIVE')
+  .order('created_at', { ascending: false })
+  .limit(50);
+
+// Select with joins
+const { data, error } = await supabase
+  .from('prayers')
+  .select(`
+    *,
+    user:users(id, display_name, avatar_url),
+    responses:prayer_responses(count)
+  `)
+  .eq('id', prayerId)
+  .single();
+
+// Insert
+const { data, error } = await supabase
+  .from('prayers')
+  .insert({
+    title,
+    text_body,
+    location: `POINT(${lng} ${lat})`,
+    user_id: user.id,
+    is_anonymous,
+  })
+  .select()
+  .single();
+
+// Update
+const { data, error } = await supabase
+  .from('prayers')
+  .update({ status: 'ANSWERED' })
+  .eq('id', prayerId)
+  .eq('user_id', user.id) // RLS additional check
+  .select()
+  .single();
+
+// Delete (soft delete preferred)
+const { error } = await supabase
+  .from('prayers')
+  .update({ status: 'DELETED', deleted_at: new Date().toISOString() })
+  .eq('id', prayerId);
+```
+
+## RPC Functions (Preferred for Complex Queries)
+
+### Using RPC
+```typescript
+// Geospatial query - use RPC for PostGIS functions
+const { data, error } = await supabase.rpc('get_nearby_prayers', {
+  user_lat: 37.7749,
+  user_lng: -122.4194,
+  radius_km: 48, // 30 miles
+  limit_count: 50,
+});
+
+// Send prayer support with counter update
+const { data, error } = await supabase.rpc('send_prayer_support', {
+  prayer_id: prayerId,
+});
+
+// Create prayer with location handling
+const { data, error } = await supabase.rpc('create_prayer', {
+  p_title: title,
+  p_text_body: textBody,
+  p_latitude: location.lat,
+  p_longitude: location.lng,
+  p_is_anonymous: isAnonymous,
+  p_media_url: mediaUrl,
+  p_media_type: mediaType,
+});
+```
+
+### RPC Function Template (SQL)
+```sql
+-- Example RPC function in supabase/migrations/
+CREATE OR REPLACE FUNCTION get_nearby_prayers(
+  user_lat DOUBLE PRECISION,
+  user_lng DOUBLE PRECISION,
+  radius_km DOUBLE PRECISION DEFAULT 48,
+  limit_count INTEGER DEFAULT 50
+)
+RETURNS TABLE (
+  id UUID,
+  title TEXT,
+  text_body TEXT,
+  latitude DOUBLE PRECISION,
+  longitude DOUBLE PRECISION,
+  distance_km DOUBLE PRECISION,
+  support_count INTEGER,
+  created_at TIMESTAMPTZ,
+  user_display_name TEXT,
+  is_anonymous BOOLEAN
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    p.id,
+    p.title,
+    p.text_body,
+    ST_Y(p.location::geometry) as latitude,
+    ST_X(p.location::geometry) as longitude,
+    ST_Distance(
+      p.location::geography,
+      ST_SetSRID(ST_MakePoint(user_lng, user_lat), 4326)::geography
+    ) / 1000.0 as distance_km,
+    p.support_count,
+    p.created_at,
+    CASE WHEN p.is_anonymous THEN 'Anonymous' ELSE u.display_name END,
+    p.is_anonymous
+  FROM prayers p
+  LEFT JOIN users u ON p.user_id = u.id
+  WHERE
+    p.status = 'ACTIVE'
+    AND ST_DWithin(
+      p.location::geography,
+      ST_SetSRID(ST_MakePoint(user_lng, user_lat), 4326)::geography,
+      radius_km * 1000
+    )
+  ORDER BY p.created_at DESC
+  LIMIT limit_count;
+END;
+$$;
+```
+
+## Authentication
+
+### Auth State
+```typescript
+// Get current user
+const { data: { user } } = await supabase.auth.getUser();
+
+// Listen to auth changes
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN') {
+    // Handle sign in
+  } else if (event === 'SIGNED_OUT') {
+    // Handle sign out
+  }
+});
+```
+
+### Sign In Methods
+```typescript
+// Email/Password
+const { data, error } = await supabase.auth.signInWithPassword({
+  email,
+  password,
+});
+
+// OAuth (Google)
+const { data, error } = await supabase.auth.signInWithOAuth({
+  provider: 'google',
+  options: {
+    redirectTo: `${window.location.origin}/auth/callback`,
+  },
+});
+
+// Magic Link
+const { data, error } = await supabase.auth.signInWithOtp({
+  email,
+  options: {
+    emailRedirectTo: `${window.location.origin}/auth/callback`,
+  },
+});
+```
+
+### Sign Out
+```typescript
+const { error } = await supabase.auth.signOut();
+```
+
+## Storage
+
+### Upload Files
+```typescript
+// Upload audio prayer
+async function uploadAudio(file: Blob, userId: string): Promise<string | null> {
+  const filename = `${userId}/${Date.now()}.webm`;
+
+  const { data, error } = await supabase.storage
+    .from('prayers')
+    .upload(filename, file, {
+      contentType: 'audio/webm',
+      upsert: false,
+    });
+
+  if (error) {
+    console.error('Upload failed:', error);
+    return null;
+  }
+
+  // Get public URL
+  const { data: { publicUrl } } = supabase.storage
+    .from('prayers')
+    .getPublicUrl(filename);
+
+  return publicUrl;
+}
+```
+
+### Delete Files
+```typescript
+const { error } = await supabase.storage
+  .from('prayers')
+  .remove([`${userId}/${filename}`]);
+```
+
+## Realtime Subscriptions
+
+### Subscribe to Changes
+```typescript
+// Subscribe to new prayers in area
+useEffect(() => {
+  const channel = supabase
+    .channel('nearby-prayers')
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'prayers',
+      },
+      (payload) => {
+        const newPrayer = payload.new as Prayer;
+        // Check if in range and add to local state
+        if (isInRange(newPrayer.location, userLocation)) {
+          addPrayer(newPrayer);
+        }
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [userLocation]);
+```
+
+### Presence (for live users)
+```typescript
+const channel = supabase.channel('prayer-room', {
+  config: {
+    presence: { key: 'users' },
+  },
+});
+
+channel
+  .on('presence', { event: 'sync' }, () => {
+    const state = channel.presenceState();
+    setOnlineUsers(Object.keys(state).length);
+  })
+  .subscribe(async (status) => {
+    if (status === 'SUBSCRIBED') {
+      await channel.track({
+        user_id: user.id,
+        online_at: new Date().toISOString(),
+      });
+    }
+  });
+```
+
+## Error Handling Patterns
+
+```typescript
+// Service function pattern
+export async function getPrayer(id: string): Promise<Prayer | null> {
+  const { data, error } = await supabase
+    .from('prayers')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) {
+    // Log for debugging
+    console.error('getPrayer error:', error);
+
+    // Handle specific errors
+    if (error.code === 'PGRST116') {
+      // Row not found
+      return null;
+    }
+
+    // Throw for unexpected errors
+    throw new Error(`Failed to fetch prayer: ${error.message}`);
+  }
+
+  return data;
+}
+```
+
+## Row Level Security (RLS)
+
+### RLS Policy Examples
+```sql
+-- Users can read all active prayers
+CREATE POLICY "Anyone can view active prayers"
+ON prayers FOR SELECT
+USING (status = 'ACTIVE');
+
+-- Users can only insert their own prayers
+CREATE POLICY "Users can create own prayers"
+ON prayers FOR INSERT
+WITH CHECK (auth.uid() = user_id);
+
+-- Users can only update their own prayers
+CREATE POLICY "Users can update own prayers"
+ON prayers FOR UPDATE
+USING (auth.uid() = user_id);
+
+-- Users can only delete (soft) their own prayers
+CREATE POLICY "Users can delete own prayers"
+ON prayers FOR DELETE
+USING (auth.uid() = user_id);
+```
+
+### Never Bypass RLS
+```typescript
+// BAD: Using service role key in frontend
+const supabase = createClient(url, SERVICE_ROLE_KEY);
+
+// GOOD: Always use anon key, let RLS handle permissions
+const supabase = createClient(url, ANON_KEY);
+```
+
+## Database Schema Guidelines
+
+### Table Conventions
+- Use snake_case for table and column names
+- Always include `id UUID DEFAULT gen_random_uuid() PRIMARY KEY`
+- Always include `created_at TIMESTAMPTZ DEFAULT NOW()`
+- Include `updated_at` for mutable records
+- Use soft deletes with `deleted_at` column
+
+### PostGIS Location Column
+```sql
+-- Create location column
+ALTER TABLE prayers ADD COLUMN location GEOGRAPHY(Point, 4326);
+
+-- Create spatial index
+CREATE INDEX prayers_location_idx ON prayers USING GIST (location);
+
+-- Insert with coordinates
+INSERT INTO prayers (title, location)
+VALUES ('Prayer', ST_SetSRID(ST_MakePoint(-122.4194, 37.7749), 4326));
+```
+
+## Type Generation
+
+```bash
+# Generate TypeScript types from database schema
+npx supabase gen types typescript --project-id YOUR_PROJECT_ID > src/types/database.ts
+```
+
+### Using Generated Types
+```typescript
+import type { Database } from '@/types/database';
+
+type Prayer = Database['public']['Tables']['prayers']['Row'];
+type InsertPrayer = Database['public']['Tables']['prayers']['Insert'];
+type UpdatePrayer = Database['public']['Tables']['prayers']['Update'];
+```
+
+## Migration Best Practices
+
+1. **Never modify existing migrations** - Create new ones
+2. **Test migrations locally first** with `supabase db reset`
+3. **Include down migration** when possible
+4. **Document breaking changes** in migration comments
+5. **Use transactions** for multi-statement migrations
+
+```sql
+-- supabase/migrations/20241129_add_prayer_category.sql
+BEGIN;
+
+-- Add category column
+ALTER TABLE prayers ADD COLUMN category TEXT;
+
+-- Create enum-like constraint
+ALTER TABLE prayers ADD CONSTRAINT prayers_category_check
+  CHECK (category IN ('healing', 'guidance', 'gratitude', 'other'));
+
+-- Backfill existing data
+UPDATE prayers SET category = 'other' WHERE category IS NULL;
+
+COMMIT;
+```
