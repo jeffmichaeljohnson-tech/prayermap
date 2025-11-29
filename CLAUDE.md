@@ -996,8 +996,27 @@ If you can answer "yes" to all five, you're on the right track.
 
 ---
 
+## 🆕 Recent Features (2025)
+
+### Video Prayer Responses
+- Social media-style video prayers
+- Video recording and playback support
+- Video moderation in admin dashboard
+
+### Prayer Response System
+- Users can respond to prayers with text, audio, or video
+- Notification system for prayer responses
+- Admin moderation for prayer responses
+
+### Admin Moderation Dashboard
+- Review and moderate prayer content
+- Manage user reports
+- Content approval workflows
+
+---
+
 *This is a sacred project. Code accordingly.*
 
-**Last Updated:** 2024-11-29
+**Last Updated:** 2025-11-29
 **Maintained for:** Claude Code (Anthropic CLI)
-**Version:** 1.0
+**Version:** 1.1
