@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import type { Map as MapboxMap } from 'mapbox-gl';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 
 interface PrayerCreationAnimationProps {
   targetLocation: { lat: number; lng: number };
@@ -13,6 +14,7 @@ export function PrayerCreationAnimation({
   map,
   onComplete
 }: PrayerCreationAnimationProps) {
+  const reducedMotion = useReducedMotion();
   const [targetPosition, setTargetPosition] = useState<{ x: number; y: number } | null>(null);
   const hasStarted = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -41,10 +43,10 @@ export function PrayerCreationAnimation({
       });
     }
 
-    // Complete after animation
+    // Complete after animation (instant if reduced motion)
     timerRef.current = setTimeout(() => {
       onComplete();
-    }, 3000);
+    }, reducedMotion ? 300 : 3000);
 
     return () => {
       if (timerRef.current) {
@@ -67,6 +69,27 @@ export function PrayerCreationAnimation({
   const startX = window.innerWidth / 2;
   const startY = window.innerHeight - 100;
 
+  // Reduced motion: Simple static visual feedback
+  if (reducedMotion) {
+    return (
+      <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 100 }}>
+        {/* Simple static indicator at target location */}
+        <motion.div
+          className="absolute text-5xl"
+          style={{
+            transform: `translate(calc(${targetPosition.x}px - 50%), calc(${targetPosition.y}px - 50%))`
+          }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: [0, 1, 0], scale: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          🙏
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Full animation for users without reduced motion preference
   return (
     <div className="fixed inset-0 pointer-events-none" style={{ zIndex: 100 }}>
       {/* Ethereal trail effect */}
@@ -126,9 +149,8 @@ export function PrayerCreationAnimation({
       <motion.div
         className="absolute text-5xl"
         style={{
-          left: startX,
-          top: startY,
-          transform: 'translate(-50%, -50%)'
+          transform: `translate(calc(${startX}px - 50%), calc(${startY}px - 50%))`,
+          willChange: 'transform, opacity'
         }}
         initial={{
           x: 0,
@@ -150,7 +172,7 @@ export function PrayerCreationAnimation({
       >
         {/* Glow behind emoji */}
         <motion.div
-          className="absolute inset-0 rounded-full bg-gradient-to-br from-yellow-300 via-pink-300 to-purple-400 blur-xl"
+          className="absolute rounded-full bg-gradient-to-br from-yellow-300 via-pink-300 to-purple-400 w-20 h-20"
           animate={{
             scale: [1, 1.5, 1, 1.5],
             opacity: [0.6, 0.8, 0.6, 0]
@@ -159,7 +181,10 @@ export function PrayerCreationAnimation({
             duration: 2.5,
             ease: "easeInOut"
           }}
-          style={{ width: '80px', height: '80px', left: '-15px', top: '-15px' }}
+          style={{
+            transform: 'translate(-15px, -15px)',
+            willChange: 'transform, opacity'
+          }}
         />
         <span className="relative z-10">🙏</span>
       </motion.div>
@@ -168,9 +193,8 @@ export function PrayerCreationAnimation({
       <motion.div
         className="absolute"
         style={{
-          left: targetPosition.x,
-          top: targetPosition.y,
-          transform: 'translate(-50%, -50%)'
+          transform: `translate(calc(${targetPosition.x}px - 50%), calc(${targetPosition.y}px - 50%))`,
+          willChange: 'transform, opacity'
         }}
         initial={{ scale: 0, opacity: 0 }}
         animate={{
@@ -183,7 +207,7 @@ export function PrayerCreationAnimation({
           ease: "easeOut"
         }}
       >
-        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-yellow-200 via-pink-200 to-purple-200 blur-md" />
+        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-yellow-200 via-pink-200 to-purple-200" />
       </motion.div>
 
       {/* Sparkle burst at landing */}
@@ -192,9 +216,9 @@ export function PrayerCreationAnimation({
           key={i}
           className="absolute w-2 h-2 rounded-full bg-white"
           style={{
-            left: targetPosition.x,
-            top: targetPosition.y,
-            filter: 'drop-shadow(0 0 4px rgba(255, 215, 0, 0.8))'
+            transform: `translate(${targetPosition.x}px, ${targetPosition.y}px)`,
+            filter: 'drop-shadow(0 0 4px rgba(255, 215, 0, 0.8))',
+            willChange: 'transform, opacity'
           }}
           initial={{ scale: 0, opacity: 0, x: 0, y: 0 }}
           animate={{

@@ -3,6 +3,7 @@
  * Fast retrieval and context gathering
  */
 
+import OpenAI from 'openai';
 import { pineconeClient } from './pinecone-client';
 import type {
   AgentMemoryEntry,
@@ -17,25 +18,57 @@ import type {
 } from './types';
 
 /**
- * Generate embedding for query text
- * TODO: Replace with actual OpenAI API call
+ * Initialize OpenAI client
+ */
+let openaiClient: OpenAI | null = null;
+
+function getOpenAIClient(): OpenAI {
+  if (!openaiClient) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error(
+        'OPENAI_API_KEY environment variable is not set. Please add it to your .env file.'
+      );
+    }
+    openaiClient = new OpenAI({ apiKey });
+  }
+  return openaiClient;
+}
+
+/**
+ * Generate embedding for query text using OpenAI's text-embedding-3-small model
+ *
+ * Uses the same model as logger.ts to ensure embedding consistency for semantic search.
+ * The text-embedding-3-small model:
+ * - Produces 1536-dimensional vectors (matches Pinecone index)
+ * - More cost-effective than ada-002
+ * - Better performance on benchmarks
+ * - Optimized for latency and storage
+ *
+ * @see https://platform.openai.com/docs/guides/embeddings
+ * @see https://platform.openai.com/docs/models/text-embedding-3-small
  */
 async function generateQueryEmbedding(text: string): Promise<number[]> {
-  // Placeholder implementation - should use OpenAI in production
-  console.warn('Using placeholder embedding for query. Integrate OpenAI API for production.');
+  try {
+    const client = getOpenAIClient();
 
-  const seed = text.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const random = (s: number) => {
-    const x = Math.sin(s) * 10000;
-    return x - Math.floor(x);
-  };
+    // Truncate text if too long (OpenAI has token limits)
+    // ~8000 chars ≈ 2000 tokens (conservative estimate)
+    const maxChars = 8000;
+    const truncatedText = text.length > maxChars ? text.slice(0, maxChars) + '...' : text;
 
-  const embedding: number[] = [];
-  for (let i = 0; i < 1536; i++) {
-    embedding.push(random(seed + i) * 2 - 1);
+    const response = await client.embeddings.create({
+      model: 'text-embedding-3-small',
+      input: truncatedText,
+    });
+
+    return response.data[0].embedding;
+  } catch (error) {
+    console.error('Error generating query embedding:', error);
+    throw new Error(
+      `Failed to generate query embedding: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
-
-  return embedding;
 }
 
 /**

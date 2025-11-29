@@ -4,6 +4,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
+import OpenAI from 'openai';
 import { pineconeClient } from './pinecone-client';
 import type {
   AgentMemoryEntry,
@@ -16,36 +17,56 @@ import type {
 } from './types';
 
 /**
- * Generate a placeholder embedding for content
- * TODO: Replace with actual OpenAI API call
+ * Initialize OpenAI client
+ */
+let openaiClient: OpenAI | null = null;
+
+function getOpenAIClient(): OpenAI {
+  if (!openaiClient) {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error(
+        'OPENAI_API_KEY environment variable is not set. Please add it to your .env file.'
+      );
+    }
+    openaiClient = new OpenAI({ apiKey });
+  }
+  return openaiClient;
+}
+
+/**
+ * Generate embedding for content using OpenAI's text-embedding-3-small model
+ *
+ * Uses the latest OpenAI embedding model (text-embedding-3-small) which:
+ * - Produces 1536-dimensional vectors (matches Pinecone index)
+ * - More cost-effective than ada-002
+ * - Better performance on benchmarks
+ * - Optimized for latency and storage
+ *
+ * @see https://platform.openai.com/docs/guides/embeddings
+ * @see https://platform.openai.com/docs/models/text-embedding-3-small
  */
 async function generateEmbedding(text: string): Promise<number[]> {
-  // Placeholder: Returns a random vector of correct dimension
-  // In production, this should call OpenAI's embedding API:
-  //
-  // import OpenAI from 'openai';
-  // const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  // const response = await openai.embeddings.create({
-  //   model: 'text-embedding-ada-002',
-  //   input: text,
-  // });
-  // return response.data[0].embedding;
+  try {
+    const client = getOpenAIClient();
 
-  console.warn('Using placeholder embedding. Integrate OpenAI API for production.');
+    // Truncate text if too long (OpenAI has token limits)
+    // ~8000 chars ≈ 2000 tokens (conservative estimate)
+    const maxChars = 8000;
+    const truncatedText = text.length > maxChars ? text.slice(0, maxChars) + '...' : text;
 
-  // Generate consistent pseudo-random embedding based on text
-  const seed = text.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const random = (s: number) => {
-    const x = Math.sin(s) * 10000;
-    return x - Math.floor(x);
-  };
+    const response = await client.embeddings.create({
+      model: 'text-embedding-3-small',
+      input: truncatedText,
+    });
 
-  const embedding: number[] = [];
-  for (let i = 0; i < 1536; i++) {
-    embedding.push(random(seed + i) * 2 - 1); // Values between -1 and 1
+    return response.data[0].embedding;
+  } catch (error) {
+    console.error('Error generating embedding:', error);
+    throw new Error(
+      `Failed to generate embedding: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
-
-  return embedding;
 }
 
 /**
