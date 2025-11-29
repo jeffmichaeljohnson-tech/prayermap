@@ -212,7 +212,9 @@ export async function fetchAllPrayers(limit: number = 500): Promise<Prayer[]> {
  * These connections represent the living web of faith and support
  * spanning across the globe.
  *
- * PERFORMANCE: Limited to 200 connections for mobile performance.
+ * PERFORMANCE: Server-side limiting via RPC function for optimal mobile performance.
+ * The limit is enforced at the database level, reducing data transfer and improving
+ * battery life on mobile devices.
  *
  * @param limit - Maximum connections to return (default: 200, max: 500)
  * @returns Promise<PrayerConnection[]> - Array of active prayer connections worldwide
@@ -224,12 +226,14 @@ export async function fetchAllConnections(limit: number = 200): Promise<PrayerCo
   }
 
   // Enforce hard limit for mobile performance
-  const safeLimit = Math.min(limit, 500);
+  const safeLimit = Math.min(Math.max(1, limit), 500);
 
   try {
     // Call the Supabase RPC function to get all prayer connections globally
-    // Note: RPC function doesn't support limit yet, applying client-side
-    const { data, error } = await supabase.rpc('get_all_connections');
+    // Pass limit_count parameter for server-side limiting (better mobile performance)
+    const { data, error } = await supabase.rpc('get_all_connections', {
+      limit_count: safeLimit
+    });
 
     if (error) {
       console.error('Error fetching all connections:', error);
@@ -240,10 +244,7 @@ export async function fetchAllConnections(limit: number = 200): Promise<PrayerCo
       return [];
     }
 
-    // Apply client-side limit for mobile performance
-    const limitedData = (data as PrayerConnectionRow[]).slice(0, safeLimit);
-
-    return limitedData.map(rowToPrayerConnection);
+    return (data as PrayerConnectionRow[]).map(rowToPrayerConnection);
   } catch (error) {
     console.error('Failed to fetch all connections:', error);
     return [];

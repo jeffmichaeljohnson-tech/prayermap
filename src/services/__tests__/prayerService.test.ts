@@ -260,13 +260,13 @@ describe('prayerService', () => {
   });
 
   describe('fetchAllConnections', () => {
-    it('should fetch all connections using RPC', async () => {
+    it('should fetch all connections using RPC with default limit', async () => {
       const mockData = [createMockConnectionRow()];
       vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
 
       const result = await prayerService.fetchAllConnections();
 
-      expect(supabase.rpc).toHaveBeenCalledWith('get_all_connections');
+      expect(supabase.rpc).toHaveBeenCalledWith('get_all_connections', { limit_count: 200 });
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('connection-123');
     });
@@ -314,6 +314,33 @@ describe('prayerService', () => {
 
       expect(result).toEqual([]);
       expect(console.error).toHaveBeenCalled();
+    });
+
+    it('should pass custom limit to RPC function', async () => {
+      const mockData = [createMockConnectionRow()];
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
+
+      await prayerService.fetchAllConnections(100);
+
+      expect(supabase.rpc).toHaveBeenCalledWith('get_all_connections', { limit_count: 100 });
+    });
+
+    it('should enforce maximum limit of 500', async () => {
+      const mockData = [createMockConnectionRow()];
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
+
+      await prayerService.fetchAllConnections(1000);
+
+      expect(supabase.rpc).toHaveBeenCalledWith('get_all_connections', { limit_count: 500 });
+    });
+
+    it('should enforce minimum limit of 1', async () => {
+      const mockData = [createMockConnectionRow()];
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
+
+      await prayerService.fetchAllConnections(0);
+
+      expect(supabase.rpc).toHaveBeenCalledWith('get_all_connections', { limit_count: 1 });
     });
   });
 
