@@ -1,0 +1,228 @@
+---
+description: Ora task file formats and agent communication protocols
+globs:
+  - ".ora/**/*"
+alwaysApply: false
+---
+
+# Ora Task Protocols
+
+## Task File Format
+
+### Task Assignment (Director → Agent)
+Location: `.ora/projects/prayermap/agents/{agent-type}/inbox/task-{id}.json`
+
+```json
+{
+  "id": "task-20241129-001",
+  "version": "1.0",
+  "type": "implementation",
+  "priority": "high",
+  "title": "Add loading skeleton to PrayerCard",
+  "description": "Implement a skeleton loading state for the PrayerCard component that shows while prayer data is being fetched. Should match the glassmorphic design system.",
+  "context": {
+    "files": [
+      "src/components/PrayerCard.tsx",
+      "src/styles/globals.css"
+    ],
+    "references": [
+      "Design system: glassmorphic utilities",
+      "Pattern: Loading states in react-components.mdc"
+    ],
+    "dependencies": [],
+    "related_tasks": []
+  },
+  "acceptance_criteria": [
+    "Skeleton appears during loading state",
+    "Matches existing glassmorphic design",
+    "Smooth transition to loaded state",
+    "No layout shift when content loads",
+    "TypeScript compiles without errors"
+  ],
+  "constraints": {
+    "no_new_dependencies": true,
+    "must_pass_lint": true,
+    "preserve_existing_tests": true
+  },
+  "assigned_to": "implementation-agent-01",
+  "assigned_by": "director",
+  "assigned_at": "2024-11-29T12:00:00Z",
+  "due_by": "2024-11-29T14:00:00Z",
+  "status": "assigned",
+  "metadata": {
+    "project": "prayermap",
+    "sprint": "ios-prep",
+    "tags": ["ui", "performance", "loading-states"]
+  }
+}
+```
+
+## Task Types
+
+| Type | Agent | Description |
+|------|-------|-------------|
+| `implementation` | Implementation Agent | Write/modify code |
+| `bugfix` | Implementation Agent | Fix reported bugs |
+| `research` | Research Agent | Investigate solutions |
+| `testing` | QA Agent | Write/run tests |
+| `documentation` | Documentation Agent | Write docs |
+| `infrastructure` | Infrastructure Agent | DevOps tasks |
+| `review` | QA Agent | Code review |
+
+## Priority Levels
+
+| Priority | Response Time | Use Case |
+|----------|--------------|----------|
+| `critical` | Immediate | Production issues, blockers |
+| `high` | < 2 hours | Sprint commitments |
+| `medium` | < 8 hours | Standard work |
+| `low` | < 24 hours | Nice-to-have, backlog |
+
+## Task Status Flow
+
+```
+assigned → in_progress → completed
+              ↓
+           blocked → escalated
+              ↓
+           reassigned
+```
+
+### Status Definitions
+- `assigned` - Task created, waiting for agent pickup
+- `in_progress` - Agent actively working
+- `blocked` - Agent hit a blocker
+- `escalated` - Returned to director for decision
+- `completed` - Work done, awaiting review
+- `approved` - Director approved, task closed
+- `rejected` - Failed acceptance criteria
+
+## Agent Response Format
+
+### Progress Update (Agent → Director)
+Location: `.ora/projects/prayermap/agents/{agent-type}/outbox/msg-{id}.json`
+
+```json
+{
+  "id": "msg-20241129-042",
+  "type": "progress_update",
+  "task_id": "task-20241129-001",
+  "agent": "implementation-agent-01",
+  "timestamp": "2024-11-29T12:30:00Z",
+  "status": "in_progress",
+  "progress_percent": 60,
+  "summary": "Created skeleton component, working on animation transitions",
+  "files_modified": [
+    "src/components/PrayerCard.tsx",
+    "src/components/PrayerCardSkeleton.tsx"
+  ],
+  "blockers": [],
+  "next_steps": [
+    "Add fade transition",
+    "Test responsive behavior"
+  ],
+  "estimated_completion": "2024-11-29T13:30:00Z"
+}
+```
+
+### Completion Report
+```json
+{
+  "id": "msg-20241129-043",
+  "type": "task_complete",
+  "task_id": "task-20241129-001",
+  "agent": "implementation-agent-01",
+  "timestamp": "2024-11-29T13:25:00Z",
+  "status": "completed",
+  "summary": "Implemented skeleton loading state for PrayerCard",
+  "deliverables": {
+    "files_created": ["src/components/PrayerCardSkeleton.tsx"],
+    "files_modified": ["src/components/PrayerCard.tsx"],
+    "files_deleted": []
+  },
+  "acceptance_criteria_met": {
+    "Skeleton appears during loading state": true,
+    "Matches existing glassmorphic design": true,
+    "Smooth transition to loaded state": true,
+    "No layout shift when content loads": true,
+    "TypeScript compiles without errors": true
+  },
+  "testing_performed": [
+    "Manual testing in Chrome/Safari",
+    "Checked responsive behavior",
+    "Verified TypeScript compilation"
+  ],
+  "notes": "Used existing glass utility classes. Consider adding to design system docs.",
+  "ready_for_review": true
+}
+```
+
+### Blocker Report
+```json
+{
+  "id": "msg-20241129-044",
+  "type": "blocker",
+  "task_id": "task-20241129-001",
+  "agent": "implementation-agent-01",
+  "timestamp": "2024-11-29T12:45:00Z",
+  "status": "blocked",
+  "blocker": {
+    "type": "technical",
+    "description": "Cannot access Supabase types - database.ts is out of date",
+    "attempted_solutions": [
+      "Regenerated types with supabase gen types",
+      "Checked supabase dashboard for schema changes"
+    ],
+    "help_needed": "Need updated database types or guidance on manual type definition"
+  },
+  "can_continue_partial": false,
+  "escalation_required": true
+}
+```
+
+## Heartbeat Messages
+Agents send heartbeat every 5 minutes while working:
+
+```json
+{
+  "id": "heartbeat-20241129-123",
+  "type": "heartbeat",
+  "agent": "implementation-agent-01",
+  "timestamp": "2024-11-29T12:35:00Z",
+  "status": "active",
+  "current_task": "task-20241129-001",
+  "cpu_usage": "low",
+  "memory_usage": "normal"
+}
+```
+
+## File Naming Conventions
+
+| File Type | Pattern | Example |
+|-----------|---------|---------|
+| Task | `task-{YYYYMMDD}-{sequence}.json` | `task-20241129-001.json` |
+| Message | `msg-{YYYYMMDD}-{sequence}.json` | `msg-20241129-042.json` |
+| Heartbeat | `heartbeat-{YYYYMMDD}-{sequence}.json` | `heartbeat-20241129-123.json` |
+
+## Directory Structure
+```
+.ora/projects/prayermap/
+├── agents/
+│   ├── implementation-agent-01/
+│   │   ├── inbox/           # Tasks from director
+│   │   ├── outbox/          # Messages to director
+│   │   └── processed/       # Completed tasks (archived)
+│   ├── qa-agent-01/
+│   │   ├── inbox/
+│   │   ├── outbox/
+│   │   └── processed/
+│   └── research-agent-01/
+│       └── ...
+├── director/
+│   ├── decisions/           # Decision log
+│   ├── reviews/             # 15-min review summaries
+│   └── escalations/         # Blocker resolutions
+└── shared/
+    ├── context/             # Shared project context
+    └── artifacts/           # Shared deliverables
+```

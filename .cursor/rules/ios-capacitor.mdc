@@ -1,0 +1,361 @@
+---
+description: iOS deployment patterns using Capacitor
+globs:
+  - "ios/**/*"
+  - "capacitor.config.ts"
+  - "capacitor.config.json"
+alwaysApply: false
+---
+
+# iOS Deployment with Capacitor
+
+## Overview
+PrayerMap uses **Capacitor** to wrap the existing React web app for iOS deployment. This preserves the existing codebase while enabling native iOS features.
+
+## Project Structure
+```
+prayermap/
+├── src/                    # React web app (unchanged)
+├── ios/                    # Native iOS project (generated)
+│   ├── App/
+│   │   ├── App/
+│   │   │   ├── AppDelegate.swift
+│   │   │   ├── Info.plist
+│   │   │   └── capacitor.config.json
+│   │   └── Podfile
+│   └── ...
+├── capacitor.config.ts     # Capacitor configuration
+├── package.json            # Updated with Capacitor deps
+└── ...
+```
+
+## Initial Setup
+
+### 1. Install Capacitor
+```bash
+npm install @capacitor/core @capacitor/cli
+npm install @capacitor/ios
+npx cap init PrayerMap com.jjtech.prayermap
+npx cap add ios
+```
+
+### 2. Capacitor Configuration
+```typescript
+// capacitor.config.ts
+import type { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: 'com.jjtech.prayermap',
+  appName: 'PrayerMap',
+  webDir: 'dist',
+  server: {
+    // For development with live reload
+    // url: 'http://192.168.1.x:5173',
+    // cleartext: true,
+  },
+  ios: {
+    contentInset: 'automatic',
+    preferredContentMode: 'mobile',
+    scheme: 'PrayerMap',
+  },
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 2000,
+      backgroundColor: '#E8F4F8',
+      showSpinner: false,
+    },
+    Keyboard: {
+      resize: 'body',
+      resizeOnFullScreen: true,
+    },
+    StatusBar: {
+      style: 'dark',
+      backgroundColor: '#E8F4F8',
+    },
+  },
+};
+
+export default config;
+```
+
+## Build & Sync Workflow
+
+### Development
+```bash
+# Build web app
+npm run build
+
+# Sync to iOS project
+npx cap sync ios
+
+# Open in Xcode
+npx cap open ios
+```
+
+### Live Reload (Development)
+```bash
+# Get your local IP
+ipconfig getifaddr en0
+
+# Update capacitor.config.ts server.url
+# Then sync and run
+npx cap sync ios
+npx cap run ios
+```
+
+## Native Plugins
+
+### Required Plugins
+```bash
+# Geolocation (for map)
+npm install @capacitor/geolocation
+npx cap sync
+
+# Camera (for future video prayers)
+npm install @capacitor/camera
+npx cap sync
+
+# Haptics (for feedback)
+npm install @capacitor/haptics
+npx cap sync
+
+# Push Notifications
+npm install @capacitor/push-notifications
+npx cap sync
+
+# App (lifecycle events)
+npm install @capacitor/app
+npx cap sync
+```
+
+### Plugin Usage Patterns
+
+#### Geolocation
+```typescript
+import { Geolocation } from '@capacitor/geolocation';
+
+// Check permissions
+const checkPermissions = async () => {
+  const status = await Geolocation.checkPermissions();
+  if (status.location !== 'granted') {
+    const request = await Geolocation.requestPermissions();
+    return request.location === 'granted';
+  }
+  return true;
+};
+
+// Get current position
+const getCurrentPosition = async () => {
+  const position = await Geolocation.getCurrentPosition({
+    enableHighAccuracy: true,
+    timeout: 10000,
+  });
+  return {
+    lat: position.coords.latitude,
+    lng: position.coords.longitude,
+  };
+};
+
+// Watch position
+const watchId = await Geolocation.watchPosition(
+  { enableHighAccuracy: true },
+  (position, err) => {
+    if (position) {
+      updateLocation({
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      });
+    }
+  }
+);
+
+// Stop watching
+Geolocation.clearWatch({ id: watchId });
+```
+
+#### Push Notifications
+```typescript
+import { PushNotifications } from '@capacitor/push-notifications';
+
+// Register for push
+const registerPush = async () => {
+  let permStatus = await PushNotifications.checkPermissions();
+
+  if (permStatus.receive === 'prompt') {
+    permStatus = await PushNotifications.requestPermissions();
+  }
+
+  if (permStatus.receive !== 'granted') {
+    throw new Error('Push notification permission denied');
+  }
+
+  await PushNotifications.register();
+};
+
+// Listen for token
+PushNotifications.addListener('registration', (token) => {
+  // Send token to server for prayer response notifications
+  saveDeviceToken(token.value);
+});
+
+// Handle received notification
+PushNotifications.addListener('pushNotificationReceived', (notification) => {
+  // Show in-app notification for new prayer response
+  showNotification(notification);
+});
+```
+
+#### App Lifecycle
+```typescript
+import { App } from '@capacitor/app';
+
+// Handle app state changes
+App.addListener('appStateChange', ({ isActive }) => {
+  if (isActive) {
+    // App came to foreground - refresh data
+    refetchPrayers();
+  } else {
+    // App went to background - cleanup subscriptions
+    pauseSubscriptions();
+  }
+});
+
+// Handle back button (Android, but good practice)
+App.addListener('backButton', ({ canGoBack }) => {
+  if (canGoBack) {
+    window.history.back();
+  } else {
+    App.exitApp();
+  }
+});
+```
+
+## Platform Detection
+
+```typescript
+import { Capacitor } from '@capacitor/core';
+
+// Check if running natively
+const isNative = Capacitor.isNativePlatform();
+const platform = Capacitor.getPlatform(); // 'ios', 'android', 'web'
+
+// Conditional features
+if (isNative) {
+  // Use native geolocation
+  const position = await Geolocation.getCurrentPosition();
+} else {
+  // Use browser geolocation
+  navigator.geolocation.getCurrentPosition(callback);
+}
+```
+
+## iOS-Specific Considerations
+
+### Safe Area Handling
+```css
+/* In globals.css */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* For full-screen map */
+.full-screen-map {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+```
+
+### Keyboard Handling
+```typescript
+import { Keyboard } from '@capacitor/keyboard';
+
+// Show keyboard
+Keyboard.addListener('keyboardWillShow', (info) => {
+  // Adjust layout for keyboard height
+  document.body.style.paddingBottom = `${info.keyboardHeight}px`;
+});
+
+// Hide keyboard
+Keyboard.addListener('keyboardWillHide', () => {
+  document.body.style.paddingBottom = '0';
+});
+```
+
+### Status Bar
+```typescript
+import { StatusBar, Style } from '@capacitor/status-bar';
+
+// Set status bar style
+await StatusBar.setStyle({ style: Style.Dark });
+
+// Show/hide
+await StatusBar.show();
+await StatusBar.hide();
+```
+
+## App Store Preparation
+
+### Required Assets
+- App Icon (1024x1024 PNG, no transparency)
+- Launch Screen images (various sizes)
+- Screenshots (6.5", 5.5" iPhone sizes minimum)
+
+### Info.plist Keys
+```xml
+<!-- Location usage -->
+<key>NSLocationWhenInUseUsageDescription</key>
+<string>PrayerMap needs your location to show prayers near you and let others see where your prayers come from.</string>
+
+<!-- Camera (if adding video) -->
+<key>NSCameraUsageDescription</key>
+<string>PrayerMap uses your camera to record video prayers.</string>
+
+<!-- Microphone for audio prayers -->
+<key>NSMicrophoneUsageDescription</key>
+<string>PrayerMap uses your microphone to record audio prayers.</string>
+
+<!-- Photo library -->
+<key>NSPhotoLibraryUsageDescription</key>
+<string>PrayerMap needs photo library access to attach images to prayers.</string>
+```
+
+### Build Settings
+- Deployment Target: iOS 14.0+
+- Signing: Automatic or Manual with provisioning profile
+- Build Configuration: Release for App Store
+
+## Testing Checklist
+
+### Functionality
+- [ ] Map loads and shows prayers
+- [ ] Location permission flow works
+- [ ] Can create text prayer
+- [ ] Can record audio prayer
+- [ ] Real-time updates work
+- [ ] Push notifications received
+- [ ] Inbox shows responses
+- [ ] Authentication flow works
+
+### UI/UX
+- [ ] Safe areas respected
+- [ ] Keyboard doesn't cover inputs
+- [ ] Glassmorphic effects render correctly
+- [ ] Animations are smooth (60fps)
+- [ ] Touch targets are 44pt minimum
+- [ ] Text is readable (minimum 16pt)
+
+### Performance
+- [ ] App launches in < 3 seconds
+- [ ] Map pans smoothly
+- [ ] Memory usage stays stable
+- [ ] Battery usage is reasonable
+- [ ] Network requests are efficient

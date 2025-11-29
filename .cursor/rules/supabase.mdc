@@ -1,0 +1,344 @@
+---
+description: Supabase and database patterns for PrayerMap
+globs:
+  - "src/lib/supabase.ts"
+  - "src/services/**/*.ts"
+  - "supabase/**/*"
+alwaysApply: false
+---
+
+# Supabase Patterns
+
+## Client Initialization
+```typescript
+// src/lib/supabase.ts
+import { createClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+export const supabase = supabaseUrl && supabaseAnonKey
+  ? createClient<Database>(supabaseUrl, supabaseAnonKey)
+  : null;
+```
+
+## Database Schema
+
+### Core Tables
+```sql
+-- profiles (user data)
+CREATE TABLE profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id),
+  display_name VARCHAR,
+  avatar_url VARCHAR,
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- prayers (main content)
+CREATE TABLE prayers (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES profiles(id),
+  title VARCHAR,
+  content TEXT NOT NULL,
+  content_type VARCHAR CHECK (content_type IN ('text', 'audio', 'video')),
+  media_url VARCHAR,
+  location GEOGRAPHY(POINT, 4326),  -- PostGIS
+  is_anonymous BOOLEAN DEFAULT false,
+  status VARCHAR DEFAULT 'active' CHECK (status IN ('pending', 'approved', 'active', 'hidden', 'removed')),
+  created_at TIMESTAMP DEFAULT NOW(),
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
+-- prayer_responses
+CREATE TABLE prayer_responses (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  prayer_id UUID REFERENCES prayers(id) ON DELETE CASCADE,
+  responder_id UUID REFERENCES profiles(id),
+  responder_name VARCHAR,
+  is_anonymous BOOLEAN DEFAULT false,
+  message TEXT,
+  content_type VARCHAR CHECK (content_type IN ('text', 'audio', 'video')),
+  content_url VARCHAR,
+  created_at TIMESTAMP DEFAULT NOW(),
+  read_at TIMESTAMP
+);
+
+-- prayer_connections (visual lines on map)
+CREATE TABLE prayer_connections (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  prayer_id UUID REFERENCES prayers(id) ON DELETE CASCADE,
+  prayer_response_id UUID REFERENCES prayer_responses(id),
+  from_location GEOGRAPHY(POINT, 4326),
+  to_location GEOGRAPHY(POINT, 4326),
+  requester_name VARCHAR,
+  replier_name VARCHAR,
+  created_at TIMESTAMP DEFAULT NOW(),
+  expires_at TIMESTAMP DEFAULT (NOW() + INTERVAL '1 year')
+);
+```
+
+## Query Patterns
+
+### Basic Select
+```typescript
+const { data, error } = await supabase
+  .from('prayers')
+  .select('*')
+  .eq('user_id', userId)
+  .order('created_at', { ascending: false });
+```
+
+### Select with Relationships
+```typescript
+const { data, error } = await supabase
+  .from('prayers')
+  .select(`
+    *,
+    profiles (display_name, avatar_url),
+    prayer_responses (*)
+  `)
+  .eq('id', prayerId)
+  .single();
+```
+
+### Geospatial Query (via RPC)
+```typescript
+// Use RPC for PostGIS operations
+const { data, error } = await supabase.rpc('get_nearby_prayers', {
+  p_latitude: lat,
+  p_longitude: lng,
+  p_radius_km: radiusKm,
+});
+```
+
+### Insert
+```typescript
+const { data, error } = await supabase
+  .from('prayers')
+  .insert({
+    user_id: userId,
+    content: content,
+    content_type: 'text',
+    is_anonymous: false,
+  })
+  .select()
+  .single();
+```
+
+### Update
+```typescript
+const { data, error } = await supabase
+  .from('prayers')
+  .update({ content: newContent, updated_at: new Date().toISOString() })
+  .eq('id', prayerId)
+  .eq('user_id', userId)  // RLS check
+  .select()
+  .single();
+```
+
+### Delete
+```typescript
+const { error } = await supabase
+  .from('prayers')
+  .delete()
+  .eq('id', prayerId)
+  .eq('user_id', userId);  // RLS check
+```
+
+## RPC Functions
+
+### Creating PostGIS Data
+```sql
+-- create_prayer function (handles geography type)
+CREATE OR REPLACE FUNCTION create_prayer(
+  p_user_id UUID,
+  p_title VARCHAR,
+  p_content TEXT,
+  p_content_type VARCHAR,
+  p_media_url VARCHAR,
+  p_latitude DOUBLE PRECISION,
+  p_longitude DOUBLE PRECISION,
+  p_is_anonymous BOOLEAN
+) RETURNS prayers AS $$
+DECLARE
+  v_prayer prayers;
+BEGIN
+  INSERT INTO prayers (
+    user_id, title, content, content_type, media_url,
+    location, is_anonymous
+  ) VALUES (
+    p_user_id, p_title, p_content, p_content_type, p_media_url,
+    ST_SetSRID(ST_MakePoint(p_longitude, p_latitude), 4326)::geography,
+    p_is_anonymous
+  )
+  RETURNING * INTO v_prayer;
+
+  RETURN v_prayer;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+### Geospatial Search
+```sql
+-- get_nearby_prayers function
+CREATE OR REPLACE FUNCTION get_nearby_prayers(
+  p_latitude DOUBLE PRECISION,
+  p_longitude DOUBLE PRECISION,
+  p_radius_km INTEGER DEFAULT 50
+) RETURNS SETOF prayers AS $$
+BEGIN
+  RETURN QUERY
+  SELECT *
+  FROM prayers
+  WHERE ST_DWithin(
+    location,
+    ST_SetSRID(ST_MakePoint(p_longitude, p_latitude), 4326)::geography,
+    p_radius_km * 1000  -- Convert km to meters
+  )
+  AND status = 'active'
+  ORDER BY created_at DESC;
+END;
+$$ LANGUAGE plpgsql STABLE;
+```
+
+## Real-Time Subscriptions
+
+### Subscribe to Table Changes
+```typescript
+const channel = supabase
+  .channel('prayers_realtime')
+  .on(
+    'postgres_changes',
+    {
+      event: '*',        // INSERT, UPDATE, DELETE, or *
+      schema: 'public',
+      table: 'prayers',
+      filter: `user_id=eq.${userId}`,  // Optional filter
+    },
+    async (payload) => {
+      console.log('Change received:', payload);
+      // Refetch data or update state
+      const prayers = await fetchAllPrayers();
+      callback(prayers);
+    }
+  )
+  .subscribe();
+
+// Cleanup
+supabase.removeChannel(channel);
+```
+
+### Multiple Table Subscriptions
+```typescript
+const channel = supabase
+  .channel('multi_table')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'prayers' }, handlePrayers)
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'prayer_responses' }, handleResponses)
+  .subscribe();
+```
+
+## Storage Operations
+
+### Upload File
+```typescript
+const { data, error } = await supabase.storage
+  .from('prayer-media')
+  .upload(`${userId}/${filename}`, blob, {
+    contentType: 'audio/webm',
+    upsert: false,
+  });
+
+// Get public URL
+const { data: urlData } = supabase.storage
+  .from('prayer-media')
+  .getPublicUrl(`${userId}/${filename}`);
+
+const publicUrl = urlData.publicUrl;
+```
+
+### Delete File
+```typescript
+const { error } = await supabase.storage
+  .from('prayer-media')
+  .remove([filePath]);
+```
+
+## Authentication
+
+### Sign In
+```typescript
+const { data, error } = await supabase.auth.signInWithPassword({
+  email,
+  password,
+});
+```
+
+### Sign Up
+```typescript
+const { data, error } = await supabase.auth.signUp({
+  email,
+  password,
+  options: {
+    data: { display_name: name },
+  },
+});
+```
+
+### Listen to Auth Changes
+```typescript
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN') {
+    setUser(session?.user ?? null);
+  } else if (event === 'SIGNED_OUT') {
+    setUser(null);
+  }
+});
+```
+
+## Row Level Security (RLS)
+All tables should have RLS enabled:
+
+```sql
+-- Enable RLS
+ALTER TABLE prayers ENABLE ROW LEVEL SECURITY;
+
+-- Users can read all active prayers
+CREATE POLICY "Anyone can read active prayers"
+  ON prayers FOR SELECT
+  USING (status = 'active');
+
+-- Users can only insert their own prayers
+CREATE POLICY "Users can insert own prayers"
+  ON prayers FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+-- Users can only update their own prayers
+CREATE POLICY "Users can update own prayers"
+  ON prayers FOR UPDATE
+  USING (auth.uid() = user_id);
+
+-- Users can only delete their own prayers
+CREATE POLICY "Users can delete own prayers"
+  ON prayers FOR DELETE
+  USING (auth.uid() = user_id);
+```
+
+## Error Handling
+```typescript
+const { data, error } = await supabase.from('table').select();
+
+if (error) {
+  // error.message - Human readable message
+  // error.code - Postgres error code
+  // error.details - Additional details
+  // error.hint - Suggestion for fixing
+  console.error('Supabase error:', {
+    message: error.message,
+    code: error.code,
+    details: error.details,
+  });
+  throw error;
+}
+```
