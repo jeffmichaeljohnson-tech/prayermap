@@ -27,3 +27,5 @@ dist-ssr
 # MCP config with secrets
 .mcp.json
 .vercel
+.env
+.ora/

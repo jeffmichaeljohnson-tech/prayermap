@@ -1,0 +1,29 @@
+{
+  "name": "prayermap-workspace",
+  "version": "1.0.0",
+  "description": "MCP server for PrayerMap workspace - exposes workspace to Claude Code and Claude Desktop",
+  "workspace": "/Users/computer/jeffmichaeljohnson-tech/projects/prayermap",
+  "capabilities": {
+    "filesystem": {
+      "enabled": true,
+      "readOnly": false,
+      "allowedPaths": [
+        "/Users/computer/jeffmichaeljohnson-tech/projects/prayermap"
+      ]
+    },
+    "codebase": {
+      "enabled": true,
+      "indexing": true
+    },
+    "context": {
+      "enabled": true,
+      "maxContextSize": 100000
+    }
+  },
+  "server": {
+    "port": 3001,
+    "host": "localhost"
+  }
+}
+
+
