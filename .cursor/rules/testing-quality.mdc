@@ -10,6 +10,38 @@ alwaysApply: false
 
 # Testing and Quality Assurance Rules
 
+## Core Principles for Testing & Quality
+
+**THESE PRINCIPLES MUST GUIDE ALL TESTING WORK:**
+
+### Test Animations Don't Break on Mobile
+- Always test animated components on mobile viewports (Pixel 5, iPhone 12)
+- Verify animations run smoothly at 60fps on mobile devices
+- Test that animations don't cause layout shifts or jank
+- Check that gesture-based animations work with touch events
+- Use Playwright's mobile device emulation for testing
+- Verify animations respect `prefers-reduced-motion` for accessibility
+- Example test configuration: `use: { ...devices['Pixel 5'] }`
+
+### Test UX Flow Step Counts
+- Count and document the number of steps required for each user flow
+- Write tests that verify minimal step count goals
+- Example: Prayer creation should be ≤ 3 steps (open modal, type, submit)
+- Flag any flow that requires > 5 steps as needing UX review
+- Test that smart defaults reduce required inputs
+- Verify auto-focus reduces manual navigation
+- Document step count in test descriptions: `test('prayer creation in 3 steps', ...)`
+
+### Performance Testing for Animation Smoothness
+- Measure time to interactive for animated page loads
+- Set performance budgets in tests: `expect(loadTime).toBeLessThan(2000)`
+- Test that modal animations complete within 300ms
+- Verify list animations don't block main thread
+- Monitor frame rate during animations (target: 60fps)
+- Test on throttled CPU/network to simulate mid-range mobile devices
+- Use Playwright's tracing to identify performance bottlenecks
+- Example: `expect(animationTime).toBeLessThan(300)` for modal opening
+
 ## Playwright Setup
 
 ### Configuration

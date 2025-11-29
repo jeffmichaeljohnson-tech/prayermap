@@ -11,6 +11,38 @@ alwaysApply: false
 
 # Supabase Backend Development Rules
 
+## Core Principles for Supabase Backend
+
+**THESE PRINCIPLES MUST GUIDE ALL BACKEND/DATABASE WORK:**
+
+### Query Performance for Mobile
+- Mobile users often have slower connections and less powerful devices
+- ALWAYS optimize queries for minimal data transfer
+- Use `.select()` to specify only needed columns, not `SELECT *`
+- Implement pagination with `.range()` or `.limit()` (never load all records)
+- Use appropriate indexes on frequently queried columns
+- Leverage PostGIS spatial indexes for location queries
+- Monitor query performance in Supabase dashboard (target: < 100ms p95)
+- Example: `select('id, title, text_body')` instead of `select('*')`
+
+### Real-Time Subscriptions for "Living" Feel
+- Use Supabase Realtime to make the app feel alive and connected
+- Subscribe to new prayers in user's area for instant updates
+- Implement presence channels to show active users
+- Use broadcast for real-time prayer support notifications
+- Handle subscription cleanup in useEffect return
+- Gracefully handle offline/reconnection scenarios
+- Example: New prayers appear on map without refresh, creating sense of living community
+
+### Minimal API Calls (Fewer Steps)
+- Reduce round trips by using RPC functions for complex operations
+- Combine related operations into single RPC calls
+- Use Supabase triggers for automatic updates (e.g., increment counters)
+- Cache frequently accessed data with React Query
+- Implement optimistic updates for instant UI feedback
+- Batch operations when possible
+- Example: `send_prayer_support` RPC does insert + counter update + notification in one call
+
 ## Supabase Client Usage
 
 ### Initialization

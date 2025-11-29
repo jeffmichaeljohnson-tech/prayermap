@@ -14,6 +14,39 @@ PrayerMap is a sacred digital sanctuary for prayer. Every line of code serves th
 **Live Site**: https://prayermap.net
 **Core Value**: "See where prayer is needed. Send prayer where you are."
 
+## Core Project Principles
+
+**THESE PRINCIPLES MUST GUIDE EVERY DECISION:**
+
+### 1. Research-Driven Decisions
+- ALWAYS check the most recent official documentation before deciding on implementation approaches
+- ONLY use credible sources: official documentation, industry leaders, world-class experts
+- Verify information is current and applicable to our stack (React 19, Vite 7, TailwindCSS 4, etc.)
+- Never implement based on outdated or unverified patterns
+
+### 2. iOS/Android Deployment Goal
+- Every decision MUST support mobile deployment via Capacitor
+- Web-only solutions that break mobile functionality are REJECTED
+- Test on mobile viewports and consider native behavior patterns
+- Use platform detection when needed: `Capacitor.isNativePlatform()`
+- This is not optional - mobile is a primary target, not an afterthought
+
+### 3. Living, Breathing App
+- Must be FAST + HIGHLY ANIMATED + INTERACTIVE
+- Tasteful motion throughout the entire experience
+- This differentiates us from ALL other prayer apps
+- Use Framer Motion for page transitions, list animations, modal states
+- Performance budget: animations must run at 60fps
+- Every interaction should feel responsive and alive
+
+### 4. Minimal Steps UX
+- REDUCE user steps at every opportunity
+- Fewer taps/clicks = better user experience
+- Friction is the enemy of engagement
+- Question every form field, every confirmation, every extra screen
+- Default to smart defaults and progressive disclosure
+- Example: Don't ask for prayer title if user just wants to type a quick prayer
+
 ## Technology Stack
 
 - **Frontend**: React 19 + TypeScript 5.9 + Vite 7

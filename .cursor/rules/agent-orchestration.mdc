@@ -7,6 +7,44 @@ alwaysApply: true
 
 # Multi-Agent Orchestration Rules
 
+## Core Principles for Agent Orchestration
+
+**THESE PRINCIPLES MUST GUIDE ALL AGENT COLLABORATION:**
+
+### All Agents Must Query Memory Before Acting
+- Before implementing a solution, review existing patterns in the codebase
+- Check AGENTS.md for established guidelines and architectural decisions
+- Read related files to understand current implementation approaches
+- Search for similar existing features before building from scratch
+- Use Grep/Glob tools to find existing patterns and conventions
+- Example: Before adding a new service, search for existing service patterns with `Grep`
+
+### Research-Driven Decision Making
+- ALWAYS consult official documentation before choosing an implementation approach
+- For React patterns: Check React 19 official docs (our version)
+- For Framer Motion: Check latest Framer Motion documentation
+- For Capacitor: Check Capacitor official docs for native features
+- For Supabase: Check Supabase official documentation and best practices
+- Never rely on outdated blog posts or unverified Stack Overflow answers
+- Document which official sources were consulted in code comments
+
+### Verify Sources Before Implementing
+- Cross-reference multiple official sources when uncertain
+- Prefer official documentation over tutorials or blog posts
+- Check that the solution applies to our specific versions:
+  - React 19 (not React 18 or earlier)
+  - TailwindCSS 4 (not v3)
+  - Vite 7 (not Vite 4 or 5)
+  - Capacitor 6+ (not Cordova or old Capacitor versions)
+- If using community solutions, verify they're from industry leaders or maintainers
+
+### Document Decisions with Reasoning
+- Use code comments to explain WHY a decision was made
+- Format: `// DECISION: Chose X because Y (source: official docs)`
+- Include agent handoff notes with decision rationale
+- Document trade-offs considered
+- Example: `// DECISION: Using RPC instead of direct query for complex PostGIS operations (source: Supabase Performance Best Practices)`
+
 ## Agent Role Definitions
 
 ### Available Agents

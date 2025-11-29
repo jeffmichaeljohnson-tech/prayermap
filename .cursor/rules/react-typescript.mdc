@@ -10,6 +10,42 @@ alwaysApply: false
 
 # React & TypeScript Development Rules
 
+## Core Principles for React Development
+
+**THESE PRINCIPLES MUST GUIDE ALL REACT/TYPESCRIPT WORK:**
+
+### Animation-First Component Design
+- Every component should consider animation from the start, not as an afterthought
+- Use Framer Motion for all transitions, page changes, and interactive states
+- Default to animating components when they mount/unmount
+- Stagger list items for delightful loading experiences
+- Ensure animations work smoothly on mobile devices (60fps target)
+- Example patterns: fade-in on mount, slide-up modals, staggered lists, gesture-based interactions
+
+### Mobile-Responsive from the Start
+- Build for mobile viewports FIRST (mobile-first design)
+- Every component must work beautifully on iOS and Android via Capacitor
+- Use responsive Tailwind classes: `sm:`, `md:`, `lg:`
+- Test touch interactions, not just clicks
+- Consider thumb-friendly tap targets (min 44x44px)
+- Avoid hover-only interactions (mobile has no hover state)
+
+### Performance Optimization for Animations
+- Use `transform` and `opacity` for animations (GPU-accelerated)
+- Avoid animating `width`, `height`, `top`, `left` (causes layout thrashing)
+- Implement `React.memo()` for components with complex animations
+- Use `useCallback()` for animation callbacks
+- Lazy load heavy components with `React.lazy()`
+- Monitor performance with React DevTools Profiler
+
+### Reducing Component Complexity for Fewer User Steps
+- Design components to minimize user interactions
+- Use smart defaults instead of asking for input
+- Implement progressive disclosure (show advanced options only when needed)
+- Combine related fields into single-step inputs
+- Auto-focus appropriate fields to reduce taps
+- Example: Prayer creation should be one textarea and one button, not a multi-step form
+
 ## Component Structure
 
 ```typescript

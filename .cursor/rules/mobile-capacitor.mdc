@@ -12,6 +12,46 @@ alwaysApply: false
 
 # Mobile Development with Capacitor
 
+## Core Principles for Mobile Development
+
+**THESE PRINCIPLES MUST GUIDE ALL CAPACITOR/MOBILE WORK:**
+
+### This is Our Deployment Target - Decisions Must Support This
+- Mobile deployment via Capacitor is a PRIMARY goal, not a secondary feature
+- Every architectural decision must be validated against mobile constraints
+- Web-first is fine, but web-only is REJECTED
+- Test features on actual iOS and Android devices, not just simulators
+- If a feature works on web but breaks on mobile, it's a blocker that must be fixed
+- Use `Capacitor.isNativePlatform()` to provide platform-specific implementations when necessary
+
+### Native Feel with Smooth Animations
+- Mobile users expect native app performance and feel
+- All animations must run at 60fps on mid-range mobile devices
+- Use hardware-accelerated properties: `transform`, `opacity`
+- Implement pull-to-refresh, swipe gestures, and other native patterns
+- Respect platform conventions (iOS vs Android navigation patterns)
+- Test animation performance on real devices (simulators can be misleading)
+
+### Haptic Feedback for Interactivity
+- Use haptic feedback to acknowledge user interactions
+- Import: `import { Haptics, ImpactStyle } from '@capacitor/haptics';`
+- Light haptics for button taps and selections
+- Medium haptics for successful actions (prayer sent)
+- Heavy haptics for important confirmations
+- Success/Error notification haptics for outcomes
+- Example: `await Haptics.impact({ style: ImpactStyle.Medium });` when user sends prayer
+
+### Performance Budgets for Mobile
+- Initial load: < 3 seconds on 3G connection
+- Time to Interactive: < 4 seconds
+- Map tiles load: < 2 seconds
+- Prayer list load: < 1 second
+- Bundle size: < 500KB gzipped JavaScript
+- Minimize main thread blocking (< 50ms)
+- Lazy load non-critical features
+- Use code splitting for route-based loading
+- Monitor with Lighthouse mobile audits (target score: > 90)
+
 ## Project Setup
 
 ### Initial Capacitor Setup
