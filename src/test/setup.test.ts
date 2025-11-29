@@ -3,6 +3,7 @@
  * Validates that all testing utilities and mocks are working correctly
  */
 
+import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { createMockPrayer, createMockUser, createMockAudioBlob } from './factories';
@@ -243,12 +244,6 @@ describe('Test Infrastructure Setup', () => {
     });
   });
 });
-
-// ============================================================================
-// Import React for component tests
-// ============================================================================
-
-import React from 'react';
 
 // ============================================================================
 // Success Message

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * Custom render utilities for testing React components
  * Provides components with all necessary providers and context
@@ -6,10 +7,8 @@
 import { ReactElement, ReactNode } from 'react';
 import { render, RenderOptions, RenderResult } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider } from '@/contexts/AuthContext';
 import userEvent from '@testing-library/user-event';
 import type { User, Session } from '@supabase/supabase-js';
-import { vi } from 'vitest';
 
 // ============================================================================
 // Type Definitions
@@ -70,21 +69,6 @@ export function createTestQueryClient(): QueryClient {
       },
     },
   });
-}
-
-/**
- * Mock AuthContext for testing
- */
-function createMockAuthContext(options: CustomRenderOptions = {}) {
-  return {
-    user: options.user ?? null,
-    session: options.session ?? null,
-    loading: options.authLoading ?? false,
-    signIn: vi.fn(async () => ({ error: null })),
-    signUp: vi.fn(async () => ({ error: null })),
-    signOut: vi.fn(async () => ({ error: null })),
-    signInWithApple: vi.fn(async () => ({ error: null })),
-  };
 }
 
 /**

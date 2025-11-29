@@ -107,13 +107,13 @@ class MockMediaStreamTrack implements MediaStreamTrack {
     };
   }
 
-  applyConstraints(_constraints?: MediaTrackConstraints): Promise<void> {
+  applyConstraints(): Promise<void> {
     return Promise.resolve();
   }
 
-  addEventListener(_type: string, _listener: EventListenerOrEventListenerObject): void {}
-  removeEventListener(_type: string, _listener: EventListenerOrEventListenerObject): void {}
-  dispatchEvent(_event: Event): boolean {
+  addEventListener(): void {}
+  removeEventListener(): void {}
+  dispatchEvent(): boolean {
     return true;
   }
 }
@@ -309,9 +309,9 @@ class MockMediaRecorder implements MediaRecorder {
     );
   }
 
-  addEventListener(_type: string, _listener: EventListenerOrEventListenerObject): void {}
-  removeEventListener(_type: string, _listener: EventListenerOrEventListenerObject): void {}
-  dispatchEvent(_event: Event): boolean {
+  addEventListener(): void {}
+  removeEventListener(): void {}
+  dispatchEvent(): boolean {
     return true;
   }
 }
@@ -340,7 +340,7 @@ global.URL.revokeObjectURL = vi.fn((url: string): void => {
 // ============================================================================
 
 const mockGeolocation = {
-  getCurrentPosition: vi.fn((success: PositionCallback, _error?: PositionErrorCallback) => {
+  getCurrentPosition: vi.fn((success: PositionCallback) => {
     const position: GeolocationPosition = {
       coords: {
         latitude: 40.7128,
@@ -413,9 +413,9 @@ class MockIntersectionObserver implements IntersectionObserver {
     public options?: IntersectionObserverInit
   ) {}
 
-  observe(_target: Element): void {}
+  observe(): void {}
 
-  unobserve(_target: Element): void {}
+  unobserve(): void {}
 
   disconnect(): void {}
 
@@ -433,9 +433,9 @@ global.IntersectionObserver = MockIntersectionObserver as unknown as typeof Inte
 class MockResizeObserver implements ResizeObserver {
   constructor(public callback: ResizeObserverCallback) {}
 
-  observe(_target: Element): void {}
+  observe(): void {}
 
-  unobserve(_target: Element): void {}
+  unobserve(): void {}
 
   disconnect(): void {}
 }
