@@ -99,12 +99,12 @@ export function PrayerDetailModal({ prayer, userLocation, onClose, onPray }: Pra
     setAudioFinished(true);
   }, []);
 
-  const handleReplyAudioComplete = useCallback((blob: Blob, _duration: number) => {
+  const handleReplyAudioComplete = useCallback((blob: Blob) => {
     setReplyAudioBlob(blob);
     setReplyContent('Audio response recorded');
   }, []);
 
-  const handleReplyVideoComplete = useCallback((blob: Blob, _duration: number) => {
+  const handleReplyVideoComplete = useCallback((blob: Blob) => {
     setReplyVideoBlob(blob);
     setReplyContent('Video response recorded');
   }, []);

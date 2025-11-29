@@ -36,7 +36,7 @@ export function AuthModal() {
           setSuccessMessage('Check your email to confirm your account!');
         }
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
@@ -52,7 +52,7 @@ export function AuthModal() {
       if (error) {
         setError(error.message);
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);

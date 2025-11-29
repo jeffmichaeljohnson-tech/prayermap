@@ -206,6 +206,9 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
       clearTimeout(timeout)
       subscription.unsubscribe()
     }
+    // Dependencies intentionally omitted: this effect should only run once on mount to set up the auth listener.
+    // Adding initializeAdminUser or loading would cause infinite loops or duplicate listeners.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const value: AdminAuthContextType = {
@@ -228,6 +231,7 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
 /**
  * Hook to use admin auth context
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAdminAuth() {
   const context = useContext(AdminAuthContext)
 

@@ -31,6 +31,7 @@ export function useAuth(): UseAuthReturn {
 
   useEffect(() => {
     if (!supabase) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setState({ user: null, loading: false });
       return;
     }

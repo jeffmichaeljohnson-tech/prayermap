@@ -144,7 +144,7 @@ export function useUpdateUser() {
  */
 export function useDeleteUser() {
   return useMutation({
-    mutationFn: async (_id: string) => {
+    mutationFn: async () => {
       // Note: This deletes from auth.users which cascades to profiles and prayers
       // This requires service role access, which we don't have in the frontend
       // Instead, we'll just soft-delete by removing admin roles or implement via Edge Function

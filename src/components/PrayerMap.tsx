@@ -103,7 +103,6 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
   // This creates a living tapestry of prayer connecting people across the globe
   const {
     prayers,
-    loading: prayersLoading,
     createPrayer,
     respondToPrayer
   } = usePrayers({
@@ -342,6 +341,7 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
 
       {/* Custom Markers Overlay */}
       <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 10 }}>
+        {/* eslint-disable-next-line react-hooks/refs */}
         {prayerGroups.map(group => (
           <PrayerMarker
             key={group.primaryPrayer.id}
@@ -375,7 +375,8 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
             <stop offset="100%" stopColor="hsl(270, 60%, 85%)" />
           </linearGradient>
         </defs>
-        
+
+        {/* eslint-disable-next-line react-hooks/refs */}
         {mapLoaded && map.current && connections.map(conn => {
           console.log('Rendering connection in map:', conn.id, 'mapLoaded:', mapLoaded);
           return (
@@ -392,6 +393,7 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
       </svg>
 
       {/* Animation Layer - for responding to prayers */}
+      {/* eslint-disable react-hooks/refs */}
       <AnimatePresence>
         {animatingPrayer && (
           <PrayerAnimationLayer
@@ -413,6 +415,7 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
           />
         )}
       </AnimatePresence>
+      {/* eslint-enable react-hooks/refs */}
 
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 p-4 pointer-events-none" style={{ zIndex: 30 }}>

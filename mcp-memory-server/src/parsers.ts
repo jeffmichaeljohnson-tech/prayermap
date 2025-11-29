@@ -88,7 +88,7 @@ export function parseClaudeCodeSession(filePath: string): ConversationSession | 
             });
           }
         }
-      } catch (parseError) {
+      } catch {
         // Skip malformed lines
         continue;
       }
@@ -113,7 +113,7 @@ export function parseClaudeCodeSession(filePath: string): ConversationSession | 
 /**
  * Extract text content from message content array
  */
-function extractTextContent(content: any): string {
+function extractTextContent(content: unknown): string {
   if (typeof content === "string") return content;
 
   if (Array.isArray(content)) {
@@ -121,7 +121,7 @@ function extractTextContent(content: any): string {
     for (const item of content) {
       if (typeof item === "string") {
         textParts.push(item);
-      } else if (item.type === "text" && item.text) {
+      } else if (item && typeof item === "object" && "type" in item && item.type === "text" && "text" in item && typeof item.text === "string") {
         textParts.push(item.text);
       }
     }

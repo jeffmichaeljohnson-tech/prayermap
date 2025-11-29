@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { X, Type, Mic, Video, Loader2 } from 'lucide-react';
+import { X, Type, Mic, Video, Loader2, AlertCircle } from 'lucide-react';
 import type { Prayer } from '../types/prayer';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -12,6 +12,7 @@ import { uploadAudio, uploadVideo } from '../services/storageService';
 import { useAuth } from '../hooks/useAuth';
 import { formatDuration } from '../hooks/useAudioRecorder';
 import { formatVideoDuration } from '../hooks/useVideoRecorder';
+import { validators } from '../lib/security';
 
 interface RequestPrayerModalProps {
   userLocation: { lat: number; lng: number };
@@ -47,9 +48,34 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
   };
 
   const handleSubmit = async () => {
+    setUploadError(null);
+
+    // Validate title if provided
+    if (title.trim() && title.length > 200) {
+      setUploadError('Title must be less than 200 characters');
+      return;
+    }
+
     // For text prayers
     if (contentType === 'text') {
-      if (!content.trim()) return;
+      if (!content.trim()) {
+        setUploadError('Please enter your prayer request');
+        return;
+      }
+
+      // Validate content
+      const contentValidation = validators.prayerContent(content.trim());
+      if (!contentValidation.valid) {
+        setUploadError(contentValidation.errors[0]);
+        return;
+      }
+
+      // Validate location
+      if (!validators.coordinates(userLocation.lat, userLocation.lng)) {
+        setUploadError('Invalid location. Please try again.');
+        return;
+      }
+
       onSubmit({
         title: title.trim() || undefined,
         content: content.trim(),
@@ -85,7 +111,8 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
         });
       } catch (error) {
         console.error('Error uploading audio:', error);
-        setUploadError('Failed to upload audio. Please try again.');
+        const errorMessage = error instanceof Error ? error.message : 'Failed to upload audio';
+        setUploadError(errorMessage);
       } finally {
         setIsUploading(false);
       }
@@ -117,7 +144,8 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
         });
       } catch (error) {
         console.error('Error uploading video:', error);
-        setUploadError('Failed to upload video. Please try again.');
+        const errorMessage = error instanceof Error ? error.message : 'Failed to upload video';
+        setUploadError(errorMessage);
       } finally {
         setIsUploading(false);
       }
@@ -301,10 +329,11 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
 
           {contentType === 'text' && (
             <div>
-              <label className="block text-sm text-gray-700 mb-2">
+              <label htmlFor="prayer-request-textarea" className="block text-sm text-gray-700 mb-2">
                 Prayer Request
               </label>
               <Textarea
+                id="prayer-request-textarea"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Share what's on your heart..."
@@ -362,6 +391,21 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
           </div>
 
         </div>
+
+        {/* Error Display */}
+        {uploadError && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3"
+          >
+            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-red-800">Error</p>
+              <p className="text-sm text-red-700">{uploadError}</p>
+            </div>
+          </motion.div>
+        )}
 
         {/* Submit */}
         <Button

@@ -387,6 +387,7 @@ function EditUserDialog({ user, onClose, onSave, isLoading }: EditUserDialogProp
   // Reset form when user changes
   useEffect(() => {
     if (user) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDisplayName(user.display_name || '')
       setAvatarUrl(user.avatar_url || '')
     } else {
