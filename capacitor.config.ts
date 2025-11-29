@@ -11,11 +11,22 @@ const config: CapacitorConfig = {
     contentInset: 'automatic',
     limitsNavigationsToAppBoundDomains: false
   },
+  android: {
+    // Use gradle wrapper for consistent builds
+    buildOptions: {
+      keystorePath: undefined, // Set in CI/CD or keystore.properties
+      keystorePassword: undefined,
+      keystoreAlias: undefined,
+      keystoreAliasPassword: undefined,
+    }
+  },
   plugins: {
     SplashScreen: {
       launchShowDuration: 2000,
       backgroundColor: '#E8F4F8',
-      showSpinner: false
+      showSpinner: false,
+      androidSplashResourceName: 'splash',
+      androidScaleType: 'CENTER_CROP'
     },
     StatusBar: {
       style: 'dark',
@@ -24,6 +35,9 @@ const config: CapacitorConfig = {
     Keyboard: {
       resize: 'native',
       style: 'dark'
+    },
+    PushNotifications: {
+      presentationOptions: ['badge', 'sound', 'alert']
     }
   }
 };
