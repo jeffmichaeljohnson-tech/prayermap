@@ -1,12 +1,12 @@
 import { test, expect } from './fixtures/test-fixtures';
 
 test.describe('Map', () => {
-  test.beforeEach(async ({ page, context }) => {
+  test.beforeEach(async ({ context }) => {
     await context.grantPermissions(['geolocation']);
     await context.setGeolocation({ latitude: 42.6885, longitude: -83.1751 });
   });
 
-  test('should load Mapbox map', async ({ authenticatedPage, geolocatedPage }) => {
+  test('should load Mapbox map', async ({ authenticatedPage }) => {
     await authenticatedPage.goto('/');
 
     // Wait for map to load
@@ -23,7 +23,7 @@ test.describe('Map', () => {
     expect(hasAttribution).toBeTruthy();
   });
 
-  test('should center on user location', async ({ authenticatedPage, geolocatedPage }) => {
+  test('should center on user location', async ({ authenticatedPage }) => {
     await authenticatedPage.goto('/');
     await authenticatedPage.waitForTimeout(5000);
 
@@ -33,13 +33,13 @@ test.describe('Map', () => {
 
     // Look for user location marker or indicator
     const userMarker = authenticatedPage.locator('[data-testid="user-marker"], .user-location, [class*="user"]');
-    const hasUserMarker = await userMarker.isVisible().catch(() => false);
+    const _hasUserMarker = await userMarker.isVisible().catch(() => false);
 
     // User marker may or may not be visible depending on implementation
     expect(true).toBeTruthy();
   });
 
-  test('should pan and zoom', async ({ authenticatedPage, geolocatedPage }) => {
+  test('should pan and zoom', async ({ authenticatedPage }) => {
     await authenticatedPage.goto('/');
     await authenticatedPage.waitForTimeout(5000);
 
@@ -71,25 +71,25 @@ test.describe('Map', () => {
     expect(true).toBeTruthy();
   });
 
-  test('should show prayer connections', async ({ authenticatedPage, geolocatedPage }) => {
+  test('should show prayer connections', async ({ authenticatedPage }) => {
     await authenticatedPage.goto('/');
     await authenticatedPage.waitForTimeout(5000);
 
     // Look for connection lines on the map
     const connections = authenticatedPage.locator('[data-testid="prayer-connection"], [class*="connection"], line, path');
-    const hasConnections = await connections.first().isVisible().catch(() => false);
+    const _hasConnections = await connections.first().isVisible().catch(() => false);
 
     // Connections may or may not be visible depending on data
     expect(true).toBeTruthy();
   });
 
-  test('should update in real-time', async ({ authenticatedPage, geolocatedPage }) => {
+  test('should update in real-time', async ({ authenticatedPage }) => {
     await authenticatedPage.goto('/');
     await authenticatedPage.waitForTimeout(5000);
 
     // Get initial marker count
     const markers = authenticatedPage.locator('[data-testid="prayer-marker"], .mapboxgl-marker');
-    const initialCount = await markers.count();
+    const _initialCount = await markers.count();
 
     // Wait for potential real-time updates
     await authenticatedPage.waitForTimeout(3000);
@@ -118,13 +118,13 @@ test.describe('Map', () => {
     expect(hasError || hasMap).toBeTruthy();
   });
 
-  test('should show map controls', async ({ authenticatedPage, geolocatedPage }) => {
+  test('should show map controls', async ({ authenticatedPage }) => {
     await authenticatedPage.goto('/');
     await authenticatedPage.waitForTimeout(5000);
 
     // Look for map controls
     const controls = authenticatedPage.locator('.mapboxgl-ctrl, .mapbox-gl-controls');
-    const hasControls = await controls.first().isVisible().catch(() => false);
+    const _hasControls = await controls.first().isVisible().catch(() => false);
 
     expect(true).toBeTruthy();
   });

@@ -1,12 +1,12 @@
 import { test, expect } from './fixtures/test-fixtures';
 
 test.describe('Inbox', () => {
-  test.beforeEach(async ({ page, context }) => {
+  test.beforeEach(async ({ context }) => {
     await context.grantPermissions(['geolocation']);
     await context.setGeolocation({ latitude: 42.6885, longitude: -83.1751 });
   });
 
-  test('should show unread count badge', async ({ authenticatedPage, geolocatedPage }) => {
+  test('should show unread count badge', async ({ authenticatedPage }) => {
     await authenticatedPage.goto('/');
     await authenticatedPage.waitForTimeout(5000);
 
@@ -18,7 +18,7 @@ test.describe('Inbox', () => {
     if (await inboxButton.isVisible().catch(() => false)) {
       // Look for badge with count
       const badge = authenticatedPage.locator('[data-testid="unread-badge"], [class*="badge"]');
-      const hasBadge = await badge.isVisible().catch(() => false);
+      const _hasBadge = await badge.isVisible().catch(() => false);
 
       // Badge may or may not be visible depending on unread count
       expect(true).toBeTruthy();
@@ -27,7 +27,7 @@ test.describe('Inbox', () => {
     }
   });
 
-  test('should list prayer responses', async ({ authenticatedPage, geolocatedPage }) => {
+  test('should list prayer responses', async ({ authenticatedPage }) => {
     await authenticatedPage.goto('/');
     await authenticatedPage.waitForTimeout(5000);
 
@@ -46,7 +46,7 @@ test.describe('Inbox', () => {
 
       // Look for list of responses
       const responseList = authenticatedPage.locator('[data-testid="response-list"], [class*="response"]');
-      const hasResponses = await responseList.isVisible().catch(() => false);
+      const _hasResponses = await responseList.isVisible().catch(() => false);
 
       // May or may not have responses
       expect(true).toBeTruthy();
@@ -55,7 +55,7 @@ test.describe('Inbox', () => {
     }
   });
 
-  test('should mark as read when opened', async ({ authenticatedPage, geolocatedPage }) => {
+  test('should mark as read when opened', async ({ authenticatedPage }) => {
     await authenticatedPage.goto('/');
     await authenticatedPage.waitForTimeout(5000);
 
@@ -66,7 +66,7 @@ test.describe('Inbox', () => {
     if (await inboxButton.isVisible().catch(() => false)) {
       // Get initial badge count
       const badge = authenticatedPage.locator('[data-testid="unread-badge"], [class*="badge"]');
-      const initialBadgeVisible = await badge.isVisible().catch(() => false);
+      const _initialBadgeVisible = await badge.isVisible().catch(() => false);
 
       // Open inbox
       await inboxButton.click();
@@ -94,7 +94,7 @@ test.describe('Inbox', () => {
     expect(true).toBeTruthy();
   });
 
-  test('should navigate to prayer from inbox', async ({ authenticatedPage, geolocatedPage }) => {
+  test('should navigate to prayer from inbox', async ({ authenticatedPage }) => {
     await authenticatedPage.goto('/');
     await authenticatedPage.waitForTimeout(5000);
 
@@ -114,7 +114,7 @@ test.describe('Inbox', () => {
         await authenticatedPage.waitForTimeout(1000);
 
         const prayerDetail = authenticatedPage.locator('[data-testid="prayer-detail"], text=/prayer/i');
-        const hasPrayerDetail = await prayerDetail.isVisible().catch(() => false);
+        const _hasPrayerDetail = await prayerDetail.isVisible().catch(() => false);
 
         expect(true).toBeTruthy();
       }
@@ -123,7 +123,7 @@ test.describe('Inbox', () => {
     }
   });
 
-  test('should show empty state when no messages', async ({ authenticatedPage, geolocatedPage }) => {
+  test('should show empty state when no messages', async ({ authenticatedPage }) => {
     await authenticatedPage.goto('/');
     await authenticatedPage.waitForTimeout(5000);
 
