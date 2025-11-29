@@ -3,6 +3,8 @@
  * Provides comprehensive simulation of getUserMedia, enumerateDevices, and related APIs
  */
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { vi } from 'vitest';
 
 // ============================================================================

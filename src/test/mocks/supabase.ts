@@ -3,6 +3,8 @@
  * Provides full mock coverage for auth, database, storage, and realtime features
  */
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { vi } from 'vitest';
 import type { AuthError, User, Session } from '@supabase/supabase-js';
 

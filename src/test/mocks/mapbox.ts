@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { vi } from 'vitest';
 
 // Mock Mapbox GL Map

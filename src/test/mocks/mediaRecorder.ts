@@ -3,6 +3,8 @@
  * Provides full simulation of MediaRecorder API with event handling
  */
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { vi } from 'vitest';
 
 // ============================================================================
