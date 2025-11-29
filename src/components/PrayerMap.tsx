@@ -33,6 +33,7 @@ import { PrayerConnection as PrayerConnectionComponent } from './PrayerConnectio
 import { InboxModal } from './InboxModal';
 import { InfoModal } from './InfoModal';
 import { SunMoonIndicator } from './SunMoonIndicator';
+import { InAppNotification } from './InAppNotification';
 import { Inbox, Settings, Info } from 'lucide-react';
 import { usePrayers } from '../hooks/usePrayers';
 import { useAuth } from '../contexts/AuthContext';
@@ -113,12 +114,17 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
     globalMode: true // Enable GLOBAL LIVING MAP - show all prayers worldwide
   });
 
-  // Use the useInbox hook to get unread count
-  const { totalUnread } = useInbox({
+  // Use the useInbox hook to get unread count and track changes
+  const { totalUnread, inbox } = useInbox({
     userId: user?.id || '',
     autoFetch: !!user,
     enableRealtime: true
   });
+
+  // Track previous unread count to detect new messages
+  const [prevUnreadCount, setPrevUnreadCount] = useState(0);
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
 
   const [connections, setConnections] = useState<PrayerConnection[]>([]);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -162,6 +168,24 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
       unsubscribe();
     };
   }, []); // Empty dependency array - only run once on mount
+
+  // Detect when new messages arrive and show notification
+  useEffect(() => {
+    if (totalUnread > prevUnreadCount && prevUnreadCount > 0) {
+      // New message(s) arrived!
+      const newMessageCount = totalUnread - prevUnreadCount;
+      const latestResponse = inbox[0]?.responses[0]; // Most recent response
+      
+      let message = `You have ${newMessageCount} new prayer response${newMessageCount > 1 ? 's' : ''}`;
+      if (latestResponse && !latestResponse.is_anonymous && latestResponse.responder_name) {
+        message = `${latestResponse.responder_name} responded to your prayer`;
+      }
+      
+      setNotificationMessage(message);
+      setShowNotification(true);
+    }
+    setPrevUnreadCount(totalUnread);
+  }, [totalUnread, prevUnreadCount, inbox]);
 
   // Initialize map with ethereal style
   // GLOBAL LIVING MAP: Starts centered on user's location but allows zooming out to see the entire world
@@ -428,9 +452,14 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
             <Inbox className="w-6 h-6 text-gray-700" />
             {/* Notification badge - only show if there are unread messages */}
             {totalUnread > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-pink-500 text-white text-xs rounded-full flex items-center justify-center">
-                {totalUnread}
-              </span>
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 0.3, type: "spring" }}
+                className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg animate-pulse border-2 border-white"
+              >
+                {totalUnread > 9 ? '9+' : totalUnread}
+              </motion.span>
             )}
           </button>
           
@@ -509,6 +538,17 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
           <InfoModal onClose={() => setShowInfo(false)} />
         )}
       </AnimatePresence>
+
+      {/* In-App Notification for new prayer responses */}
+      <InAppNotification
+        message={notificationMessage}
+        show={showNotification}
+        onClose={() => setShowNotification(false)}
+        onClick={() => {
+          setShowNotification(false);
+          setShowInbox(true);
+        }}
+      />
     </div>
   );
 }
