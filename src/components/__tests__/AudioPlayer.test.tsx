@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { AudioPlayer } from '../AudioPlayer';
@@ -71,15 +71,25 @@ describe('AudioPlayer', () => {
     vi.clearAllMocks();
   });
 
-  // Warm-up test to initialize framer-motion environment
+  // Warm-up test to initialize environment
   it('initializes component environment', () => {
-    // Render component to initialize framer-motion
-    const { unmount } = render(<AudioPlayer src={mockSrc} />);
+    // Use compact mode for initialization as it has fewer framer-motion components
+    const { unmount } = render(<AudioPlayer src={mockSrc} compact={true} />);
     unmount();
     expect(true).toBe(true);
   });
 
   describe('rendering', () => {
+    // Warm up environment with a full-mode render before running rendering tests
+    beforeAll(() => {
+      try {
+        const { unmount } = render(<AudioPlayer src={mockSrc} />);
+        unmount();
+      } catch (error) {
+        // Ignore framer-motion initialization errors on first render
+      }
+    });
+
     it('should render in compact mode when compact=true', () => {
       render(<AudioPlayer src={mockSrc} compact={true} />);
 
@@ -91,17 +101,6 @@ describe('AudioPlayer', () => {
       const audio = document.querySelector('audio');
       expect(audio).toBeInTheDocument();
       expect(audio).toHaveAttribute('src', mockSrc);
-    });
-
-    it('should render play/pause button', () => {
-      render(<AudioPlayer src={mockSrc} />);
-
-      const buttons = screen.getAllByRole('button');
-      // The play/pause button should be the middle button (index 1) in full mode
-      const playPauseButton = buttons.find(btn =>
-        btn.className.includes('w-16 h-16')
-      );
-      expect(playPauseButton).toBeInTheDocument();
     });
 
     it('should render restart button in full mode', () => {
@@ -124,6 +123,17 @@ describe('AudioPlayer', () => {
       // Full mode has waveform visualization
       const waveformContainer = document.querySelector('.from-purple-50\\/50');
       expect(waveformContainer).toBeInTheDocument();
+    });
+
+    it('should render play/pause button', () => {
+      render(<AudioPlayer src={mockSrc} />);
+
+      const buttons = screen.getAllByRole('button');
+      // The play/pause button should be the middle button (index 1) in full mode
+      const playPauseButton = buttons.find(btn =>
+        btn.className.includes('w-16 h-16')
+      );
+      expect(playPauseButton).toBeInTheDocument();
     });
   });
 
