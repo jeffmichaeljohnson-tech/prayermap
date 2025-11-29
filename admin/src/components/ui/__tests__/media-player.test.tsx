@@ -9,7 +9,15 @@ import { AudioPlayer, VideoPlayer, MediaPlayer } from '../media-player'
 import React from 'react'
 
 describe('AudioPlayer', () => {
-  let mockAudioElement: any
+  let mockAudioElement: {
+    play: ReturnType<typeof vi.fn>
+    pause: ReturnType<typeof vi.fn>
+    addEventListener: ReturnType<typeof vi.fn>
+    removeEventListener: ReturnType<typeof vi.fn>
+    duration: number
+    currentTime: number
+    muted: boolean
+  }
 
   beforeEach(() => {
     vi.clearAllMocks()

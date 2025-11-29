@@ -137,7 +137,7 @@ describe('AdminAuthContext', () => {
       const mockUser = createMockAuthUser()
       const mockSession = createMockSession(mockUser)
 
-      let authStateCallback: any
+      let authStateCallback: ((event: string, session: unknown) => void) | undefined
 
       mockSupabaseClient.auth.onAuthStateChange.mockImplementation((callback) => {
         authStateCallback = callback
@@ -159,7 +159,7 @@ describe('AdminAuthContext', () => {
       })
 
       // Trigger auth state change
-      await authStateCallback('SIGNED_IN', mockSession)
+      await authStateCallback?.('SIGNED_IN', mockSession)
 
       await waitFor(() => {
         expect(screen.getByTestId('session').textContent).toBe('has-session')
@@ -172,7 +172,7 @@ describe('AdminAuthContext', () => {
       const mockUser = createMockAuthUser()
       const mockSession = createMockSession(mockUser)
 
-      let authStateCallback: any
+      let authStateCallback: ((event: string, session: unknown) => void) | undefined
 
       mockSupabaseClient.auth.onAuthStateChange.mockImplementation((callback) => {
         authStateCallback = callback
@@ -192,7 +192,7 @@ describe('AdminAuthContext', () => {
         </AdminAuthProvider>
       )
 
-      await authStateCallback('SIGNED_IN', mockSession)
+      await authStateCallback?.('SIGNED_IN', mockSession)
 
       await waitFor(() => {
         expect(screen.getByTestId('isAdmin').textContent).toBe('admin')
@@ -214,7 +214,7 @@ describe('AdminAuthContext', () => {
     })
 
     it('should handle session expiry', async () => {
-      let authStateCallback: any
+      let authStateCallback: ((event: string, session: unknown) => void) | undefined
 
       mockSupabaseClient.auth.onAuthStateChange.mockImplementation((callback) => {
         authStateCallback = callback
@@ -230,7 +230,7 @@ describe('AdminAuthContext', () => {
       )
 
       // Trigger sign out (session expiry)
-      await authStateCallback('SIGNED_OUT', null)
+      await authStateCallback?.('SIGNED_OUT', null)
 
       await waitFor(() => {
         expect(screen.getByTestId('session').textContent).toBe('no-session')
@@ -253,7 +253,7 @@ describe('AdminAuthContext', () => {
     })
 
     it('should redirect to login', async () => {
-      let authStateCallback: any
+      let authStateCallback: ((event: string, session: unknown) => void) | undefined
 
       mockSupabaseClient.auth.onAuthStateChange.mockImplementation((callback) => {
         authStateCallback = callback
@@ -277,7 +277,7 @@ describe('AdminAuthContext', () => {
       await result.signOut()
 
       // Trigger auth state change
-      await authStateCallback('SIGNED_OUT', null)
+      await authStateCallback?.('SIGNED_OUT', null)
 
       await waitFor(() => {
         expect(screen.getByTestId('user').textContent).toBe('no-user')
@@ -289,7 +289,7 @@ describe('AdminAuthContext', () => {
 
 // Helper to get auth context methods
 function useAuthSetup() {
-  let contextValue: any
+  let contextValue: ReturnType<typeof useAdminAuth>
 
   function TestWrapper() {
     contextValue = useAdminAuth()
