@@ -330,10 +330,11 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
 
           {contentType === 'text' && (
             <div>
-              <label className="block text-sm text-gray-700 mb-2">
+              <label htmlFor="prayer-request-textarea" className="block text-sm text-gray-700 mb-2">
                 Prayer Request
               </label>
               <Textarea
+                id="prayer-request-textarea"
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Share what's on your heart..."

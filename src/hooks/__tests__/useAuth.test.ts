@@ -22,16 +22,58 @@ const mockSession = {
   token_type: 'bearer',
 };
 
+// Mock Supabase module - must be at top level before any imports that use it
+vi.mock('../../lib/supabase', () => {
+  const mockAuthStateChangeCallback = vi.fn();
+  let authStateChangeSubscription: (() => void) | null = null;
+
+  const mockGetSession = vi.fn(async () => ({
+    data: { session: null },
+    error: null,
+  }));
+
+  const mockSignInWithPassword = vi.fn();
+  const mockSignUp = vi.fn();
+  const mockSignOut = vi.fn();
+  const mockOnAuthStateChange = vi.fn();
+
+  return {
+    supabase: {
+      auth: {
+        getSession: mockGetSession,
+        signInWithPassword: mockSignInWithPassword,
+        signUp: mockSignUp,
+        signOut: mockSignOut,
+        onAuthStateChange: mockOnAuthStateChange,
+      },
+    },
+  };
+});
+
+// Import the mocked module to get references to the mock functions
+const { supabase: mockSupabase } = await import('../../lib/supabase');
+
 const mockAuthStateChangeCallback = vi.fn();
 let authStateChangeSubscription: (() => void) | null = null;
 
-const mockSupabase = {
-  auth: {
-    getSession: vi.fn(async () => ({
+const mockGetSession = mockSupabase.auth.getSession as ReturnType<typeof vi.fn>;
+const mockSignInWithPassword = mockSupabase.auth.signInWithPassword as ReturnType<typeof vi.fn>;
+const mockSignUp = mockSupabase.auth.signUp as ReturnType<typeof vi.fn>;
+const mockSignOut = mockSupabase.auth.signOut as ReturnType<typeof vi.fn>;
+const mockOnAuthStateChange = mockSupabase.auth.onAuthStateChange as ReturnType<typeof vi.fn>;
+
+describe('useAuth', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    authStateChangeSubscription = null;
+
+    // Setup default mock implementations
+    mockGetSession.mockResolvedValue({
       data: { session: null },
       error: null,
-    })),
-    signInWithPassword: vi.fn(async ({ email, password }) => {
+    });
+
+    mockSignInWithPassword.mockImplementation(async ({ email, password }) => {
       if (email === 'test@example.com' && password === 'password') {
         return {
           data: { user: mockUser, session: mockSession },
@@ -42,8 +84,9 @@ const mockSupabase = {
         data: { user: null, session: null },
         error: { message: 'Invalid credentials', name: 'AuthError' },
       };
-    }),
-    signUp: vi.fn(async ({ email, password }) => {
+    });
+
+    mockSignUp.mockImplementation(async ({ email, password }) => {
       if (email && password) {
         return {
           data: { user: mockUser, session: mockSession },
@@ -54,11 +97,13 @@ const mockSupabase = {
         data: { user: null, session: null },
         error: { message: 'Invalid input', name: 'AuthError' },
       };
-    }),
-    signOut: vi.fn(async () => ({
+    });
+
+    mockSignOut.mockResolvedValue({
       error: null,
-    })),
-    onAuthStateChange: vi.fn((callback) => {
+    });
+
+    mockOnAuthStateChange.mockImplementation((callback) => {
       mockAuthStateChangeCallback.mockImplementation(callback);
       authStateChangeSubscription = vi.fn();
       return {
@@ -68,21 +113,6 @@ const mockSupabase = {
           },
         },
       };
-    }),
-  },
-};
-
-vi.mock('../../lib/supabase', () => ({
-  supabase: mockSupabase,
-}));
-
-describe('useAuth', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    authStateChangeSubscription = null;
-    mockSupabase.auth.getSession.mockResolvedValue({
-      data: { session: null },
-      error: null,
     });
   });
 
@@ -98,12 +128,12 @@ describe('useAuth', () => {
       renderHook(() => useAuth());
 
       await waitFor(() => {
-        expect(mockSupabase.auth.getSession).toHaveBeenCalled();
+        expect(mockGetSession).toHaveBeenCalled();
       });
     });
 
     it('should set user from initial session', async () => {
-      mockSupabase.auth.getSession.mockResolvedValueOnce({
+      mockGetSession.mockResolvedValueOnce({
         data: { session: mockSession },
         error: null,
       });
@@ -131,7 +161,7 @@ describe('useAuth', () => {
       renderHook(() => useAuth());
 
       await waitFor(() => {
-        expect(mockSupabase.auth.onAuthStateChange).toHaveBeenCalled();
+        expect(mockOnAuthStateChange).toHaveBeenCalled();
       });
     });
   });
@@ -145,7 +175,7 @@ describe('useAuth', () => {
         signInResult = await result.current.signIn('test@example.com', 'password');
       });
 
-      expect(mockSupabase.auth.signInWithPassword).toHaveBeenCalledWith({
+      expect(mockSignInWithPassword).toHaveBeenCalledWith({
         email: 'test@example.com',
         password: 'password',
       });
@@ -198,7 +228,7 @@ describe('useAuth', () => {
         signUpResult = await result.current.signUp('new@example.com', 'password');
       });
 
-      expect(mockSupabase.auth.signUp).toHaveBeenCalledWith({
+      expect(mockSignUp).toHaveBeenCalledWith({
         email: 'new@example.com',
         password: 'password',
         options: {
@@ -221,7 +251,7 @@ describe('useAuth', () => {
         await result.current.signUp('new@example.com', 'password', 'John Doe');
       });
 
-      expect(mockSupabase.auth.signUp).toHaveBeenCalledWith({
+      expect(mockSignUp).toHaveBeenCalledWith({
         email: 'new@example.com',
         password: 'password',
         options: {
@@ -239,7 +269,7 @@ describe('useAuth', () => {
         await result.current.signUp('new@example.com', 'password');
       });
 
-      expect(mockSupabase.auth.signUp).toHaveBeenCalledWith(
+      expect(mockSignUp).toHaveBeenCalledWith(
         expect.objectContaining({
           options: {
             data: {
@@ -251,7 +281,7 @@ describe('useAuth', () => {
     });
 
     it('should return error on invalid input', async () => {
-      mockSupabase.auth.signUp.mockResolvedValueOnce({
+      mockSignUp.mockResolvedValueOnce({
         data: { user: null, session: null },
         error: { message: 'Invalid email', name: 'AuthError' },
       });
@@ -277,12 +307,12 @@ describe('useAuth', () => {
         signOutResult = await result.current.signOut();
       });
 
-      expect(mockSupabase.auth.signOut).toHaveBeenCalled();
+      expect(mockSignOut).toHaveBeenCalled();
       expect(signOutResult).toEqual({ error: null });
     });
 
     it('should return error on sign out failure', async () => {
-      mockSupabase.auth.signOut.mockResolvedValueOnce({
+      mockSignOut.mockResolvedValueOnce({
         error: { message: 'Sign out failed', name: 'AuthError' },
       });
 
@@ -314,7 +344,7 @@ describe('useAuth', () => {
           mockAuthStateChangeCallback.mock.calls[0][0]('SIGNED_IN', mockSession);
         } else {
           // Trigger the callback manually
-          const callback = mockSupabase.auth.onAuthStateChange.mock.calls[0][0];
+          const callback = mockOnAuthStateChange.mock.calls[0][0];
           callback('SIGNED_IN', mockSession);
         }
       });
@@ -325,7 +355,7 @@ describe('useAuth', () => {
     });
 
     it('should clear user on sign out event', async () => {
-      mockSupabase.auth.getSession.mockResolvedValueOnce({
+      mockGetSession.mockResolvedValueOnce({
         data: { session: mockSession },
         error: null,
       });
@@ -338,7 +368,7 @@ describe('useAuth', () => {
 
       // Simulate sign out event
       await act(async () => {
-        const callback = mockSupabase.auth.onAuthStateChange.mock.calls[0][0];
+        const callback = mockOnAuthStateChange.mock.calls[0][0];
         callback('SIGNED_OUT', null);
       });
 
@@ -356,7 +386,7 @@ describe('useAuth', () => {
 
       // Simulate auth state change
       await act(async () => {
-        const callback = mockSupabase.auth.onAuthStateChange.mock.calls[0][0];
+        const callback = mockOnAuthStateChange.mock.calls[0][0];
         callback('SIGNED_IN', mockSession);
       });
 
@@ -371,7 +401,7 @@ describe('useAuth', () => {
       const { unmount } = renderHook(() => useAuth());
 
       await waitFor(() => {
-        expect(mockSupabase.auth.onAuthStateChange).toHaveBeenCalled();
+        expect(mockOnAuthStateChange).toHaveBeenCalled();
       });
 
       unmount();
@@ -391,7 +421,7 @@ describe('useAuth', () => {
 
   describe('error handling', () => {
     it('should handle getSession errors gracefully', async () => {
-      mockSupabase.auth.getSession.mockResolvedValueOnce({
+      mockGetSession.mockResolvedValueOnce({
         data: { session: null },
         error: { message: 'Session error', name: 'AuthError' },
       });
@@ -420,7 +450,7 @@ describe('useAuth', () => {
 
   describe('session management', () => {
     it('should maintain user state across re-renders', async () => {
-      mockSupabase.auth.getSession.mockResolvedValueOnce({
+      mockGetSession.mockResolvedValueOnce({
         data: { session: mockSession },
         error: null,
       });
@@ -446,7 +476,7 @@ describe('useAuth', () => {
 
       // Simulate token refresh
       await act(async () => {
-        const callback = mockSupabase.auth.onAuthStateChange.mock.calls[0][0];
+        const callback = mockOnAuthStateChange.mock.calls[0][0];
         callback('TOKEN_REFRESHED', mockSession);
       });
 
@@ -464,7 +494,7 @@ describe('useAuth', () => {
 
       // Simulate password recovery
       await act(async () => {
-        const callback = mockSupabase.auth.onAuthStateChange.mock.calls[0][0];
+        const callback = mockOnAuthStateChange.mock.calls[0][0];
         callback('PASSWORD_RECOVERY', mockSession);
       });
 
@@ -485,7 +515,7 @@ describe('useAuth', () => {
         await Promise.all([promise1, promise2]);
       });
 
-      expect(mockSupabase.auth.signInWithPassword).toHaveBeenCalledTimes(2);
+      expect(mockSignInWithPassword).toHaveBeenCalledTimes(2);
     });
 
     it('should handle sign in followed by sign out', async () => {
@@ -499,8 +529,8 @@ describe('useAuth', () => {
         await result.current.signOut();
       });
 
-      expect(mockSupabase.auth.signInWithPassword).toHaveBeenCalled();
-      expect(mockSupabase.auth.signOut).toHaveBeenCalled();
+      expect(mockSignInWithPassword).toHaveBeenCalled();
+      expect(mockSignOut).toHaveBeenCalled();
     });
   });
 });

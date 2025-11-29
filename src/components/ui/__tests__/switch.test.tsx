@@ -76,9 +76,13 @@ describe('Switch', () => {
     render(<Switch onCheckedChange={handleChange} />);
 
     const switchElement = screen.getByRole('switch');
-    switchElement.focus();
 
-    await user.keyboard('{Space}');
+    // Tab to focus the switch
+    await user.tab();
+
+    // Press Space to toggle
+    await user.keyboard(' ');
+
     expect(handleChange).toHaveBeenCalledWith(true);
   });
 });
