@@ -17,9 +17,10 @@ import * as path from "path";
 import * as os from "os";
 
 import { initOpenAI, generateEmbedding, generateEmbeddings } from "./embeddings.js";
-import { initPinecone, upsertConversations, queryConversations, getIndexStats } from "./pinecone.js";
+import { initPinecone, upsertConversations, queryConversations, queryWithFilters, getIndexStats } from "./pinecone.js";
 import { loadClaudeCodeSessions, getSessionStats, ConversationMessage } from "./parsers.js";
 import { initTracing, withTrace, isTracingEnabled } from "./tracing.js";
+import { getAvailableTopics, getAvailableMessageTypes } from "./tagging.js";
 
 // Environment variables
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
@@ -104,7 +105,29 @@ async function main() {
               },
               project: {
                 type: "string",
-                description: "Filter by project path (substring match)",
+                description: "Filter by project name",
+              },
+              topics: {
+                type: "array",
+                items: { type: "string" },
+                description: "Filter by topics (e.g., ['react', 'typescript', 'database'])",
+              },
+              messageType: {
+                type: "string",
+                enum: ["question", "code-request", "explanation", "fix-request", "review-request", "refactor-request", "response", "general"],
+                description: "Filter by message type",
+              },
+              hasCode: {
+                type: "boolean",
+                description: "Filter for messages containing code",
+              },
+              dateRange: {
+                type: "object",
+                properties: {
+                  start: { type: "string", description: "Start date (YYYY-MM-DD)" },
+                  end: { type: "string", description: "End date (YYYY-MM-DD)" },
+                },
+                description: "Filter by date range",
               },
             },
             required: ["query"],
@@ -112,7 +135,7 @@ async function main() {
         },
         {
           name: "memory_ingest",
-          description: "Ingest conversation history from Claude Code into the memory database. Run this to update the memory with your latest conversations.",
+          description: "Ingest conversation history from Claude Code into the memory database. Run this to update the memory with your latest conversations. Messages are auto-tagged with topics, types, and metadata.",
           inputSchema: {
             type: "object",
             properties: {
@@ -154,6 +177,14 @@ async function main() {
             required: ["topic"],
           },
         },
+        {
+          name: "memory_topics",
+          description: "List all available topics for filtering searches. Shows the topic taxonomy used for auto-tagging.",
+          inputSchema: {
+            type: "object",
+            properties: {},
+          },
+        },
       ],
     };
   });
@@ -191,6 +222,8 @@ async function main() {
         case "memory_context":
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           return await handleMemoryContext(args as any);
+        case "memory_topics":
+          return await handleMemoryTopics();
         default:
           return {
             content: [{ type: "text", text: `Unknown tool: ${name}` }],
@@ -217,20 +250,40 @@ async function main() {
 }
 
 /**
- * Handle memory search requests
+ * Handle memory search requests with advanced filtering
  */
 async function handleMemorySearch(args: {
   query: string;
   limit?: number;
   source?: string;
   project?: string;
+  topics?: string[];
+  messageType?: string;
+  hasCode?: boolean;
+  dateRange?: { start: string; end: string };
 }) {
-  const { query, limit = 10, source = "all", project } = args;
+  const { query, limit = 10, source = "all", project, topics, messageType, hasCode, dateRange } = args;
 
   const searchFn = async () => {
     // Generate embedding for the query
     const queryEmbedding = await generateEmbedding(query);
 
+    // Use advanced filtering if any filters are specified
+    const hasAdvancedFilters = topics || messageType || hasCode !== undefined || dateRange;
+
+    if (hasAdvancedFilters) {
+      return queryWithFilters(queryEmbedding, {
+        topK: limit,
+        topics,
+        sources: source !== "all" ? [source] : undefined,
+        projects: project ? [project] : undefined,
+        messageTypes: messageType ? [messageType] : undefined,
+        hasCode,
+        dateRange,
+      });
+    }
+
+    // Simple query with basic filters
     // Build filter
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const filter: Record<string, any> = {};
@@ -238,16 +291,13 @@ async function handleMemorySearch(args: {
       filter.source = { $eq: source };
     }
     if (project) {
-      filter.projectPath = { $contains: project };
+      filter.projectName = { $eq: project };
     }
 
-    // Query Pinecone
-    const results = await queryConversations(queryEmbedding, {
+    return queryConversations(queryEmbedding, {
       topK: limit,
       filter: Object.keys(filter).length > 0 ? filter : undefined,
     });
-
-    return results;
   };
 
   // Execute with tracing if enabled
@@ -255,20 +305,24 @@ async function handleMemorySearch(args: {
     ? await withTrace(
         "memory_search",
         "retriever",
-        { query, limit, source, project },
+        { query, limit, source, project, topics, messageType, hasCode, dateRange },
         searchFn,
         { tool: "memory_search" }
       )
     : await searchFn();
 
-  // Format results
+  // Format results with enriched metadata
   const formattedResults = results.map((r, i) => {
     const meta = r.metadata;
+    const topicsStr = meta.topics?.length > 0 ? meta.topics.join(", ") : "none";
+    const tagsStr = meta.tags?.slice(0, 5).join(", ") || "none";
+
     return `### Result ${i + 1} (Score: ${(r.score * 100).toFixed(1)}%)
-**Source:** ${meta.source} | **Session:** ${meta.sessionId.slice(0, 8)}...
-**Project:** ${meta.projectPath || "N/A"}
-**Timestamp:** ${meta.timestamp}
-**Role:** ${meta.role}
+**Source:** ${meta.source} | **Project:** ${meta.projectName || "N/A"} | **Type:** ${meta.messageType || "general"}
+**Date:** ${meta.date || meta.timestamp?.split("T")[0] || "N/A"} | **Role:** ${meta.role} | **Complexity:** ${meta.complexity || "N/A"}
+**Topics:** ${topicsStr}
+**Tags:** ${tagsStr}
+${meta.hasCode ? "📝 Contains code" : ""} ${meta.hasError ? "⚠️ Error-related" : ""}
 
 ${meta.content}
 `;
@@ -436,10 +490,11 @@ async function handleMemoryContext(args: {
     };
   }
 
-  // Format as context
+  // Format as context with enriched metadata
   const contextParts = results.map((r) => {
     const meta = r.metadata;
-    return `[${meta.source}] ${meta.role}: ${meta.content}`;
+    const topicsStr = meta.topics?.length > 0 ? ` [${meta.topics.join(", ")}]` : "";
+    return `[${meta.source}]${topicsStr} ${meta.role}: ${meta.content}`;
   });
 
   return {
@@ -455,6 +510,60 @@ ${contextParts.join("\n\n---\n\n")}
 ---
 *Retrieved ${results.length} relevant snippets from your conversation history.*
 `,
+      },
+    ],
+  };
+}
+
+/**
+ * Handle memory topics request - show available taxonomy
+ */
+async function handleMemoryTopics() {
+  const topics = getAvailableTopics();
+  const messageTypes = getAvailableMessageTypes();
+
+  const topicCategories: Record<string, string[]> = {
+    "Frontend": ["frontend", "react"],
+    "Backend": ["backend", "nodejs", "python"],
+    "Database": ["database", "supabase"],
+    "DevOps": ["devops", "git"],
+    "Security": ["security"],
+    "Testing": ["testing"],
+    "Architecture": ["architecture"],
+    "AI/ML": ["ai-ml"],
+    "Mobile": ["mobile"],
+    "Languages": ["typescript"],
+    "Performance": ["performance"],
+    "Debugging": ["debugging"],
+  };
+
+  let topicList = "## Available Topics for Filtering\n\n";
+  for (const [category, categoryTopics] of Object.entries(topicCategories)) {
+    topicList += `### ${category}\n`;
+    for (const topic of categoryTopics) {
+      topicList += `- \`${topic}\`\n`;
+    }
+    topicList += "\n";
+  }
+
+  topicList += `## Message Types\n\n`;
+  for (const type of messageTypes) {
+    topicList += `- \`${type}\`\n`;
+  }
+
+  topicList += `\n## Usage Examples\n\n`;
+  topicList += "```\n";
+  topicList += 'memory_search(query: "authentication", topics: ["security", "backend"])\n';
+  topicList += 'memory_search(query: "component", topics: ["react"], hasCode: true)\n';
+  topicList += 'memory_search(query: "error", messageType: "fix-request")\n';
+  topicList += 'memory_search(query: "database", dateRange: {start: "2024-01-01", end: "2024-12-31"})\n';
+  topicList += "```";
+
+  return {
+    content: [
+      {
+        type: "text",
+        text: topicList,
       },
     ],
   };
