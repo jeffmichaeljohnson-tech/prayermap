@@ -34,26 +34,23 @@ export function sanitizeInput(input: string): string {
 export function sanitizeHtml(html: string): string {
   if (!html) return '';
 
-  // Create a temporary div to parse HTML
+  let sanitized = html;
+
+  // Remove script tags and their content BEFORE escaping
+  sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+
+  // Remove event handlers - handle both quoted and unquoted attributes
+  sanitized = sanitized.replace(/on\w+\s*=\s*"[^"]*"/gi, '');
+  sanitized = sanitized.replace(/on\w+\s*=\s*'[^']*'/gi, '');
+  sanitized = sanitized.replace(/on\w+\s*=\s*[^\s>]*/gi, ''); // unquoted attributes
+
+  // Remove javascript: URLs
+  sanitized = sanitized.replace(/javascript:/gi, '');
+
+  // Now escape the sanitized HTML
   const div = document.createElement('div');
-  div.textContent = html; // This automatically escapes HTML
-
-  // List of allowed tags (very restrictive)
-  const allowedTags = ['p', 'br', 'strong', 'em', 'u', 'a'];
-  const allowedAttributes: Record<string, string[]> = {
-    a: ['href', 'title'],
-  };
-
-  // For more complex HTML sanitization, consider using DOMPurify library
-  // This is a basic implementation
-  const result = div.innerHTML;
-
-  // Remove script tags and event handlers
-  return result
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/on\w+="[^"]*"/gi, '')
-    .replace(/on\w+='[^']*'/gi, '')
-    .replace(/javascript:/gi, '');
+  div.textContent = sanitized;
+  return div.innerHTML;
 }
 
 /**

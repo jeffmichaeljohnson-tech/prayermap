@@ -103,7 +103,7 @@ test.describe('Performance', () => {
 
     if (imageCount > 0) {
       const firstImage = images.first();
-      const loading = await firstImage.getAttribute('loading');
+      const _loading = await firstImage.getAttribute('loading');
 
       // Images should ideally use lazy loading
       // (May or may not be implemented)

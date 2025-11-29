@@ -2,7 +2,7 @@
  * LangSmith tracing integration for observability
  */
 
-import { Client, Run } from "langsmith";
+import { Client } from "langsmith";
 import { RunTree } from "langsmith/run_trees";
 
 let langsmithClient: Client | null = null;
@@ -47,7 +47,9 @@ export function isTracingEnabled(): boolean {
 export async function startTrace(
   name: string,
   runType: "chain" | "tool" | "retriever" | "embedding",
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   inputs: Record<string, any>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata?: Record<string, any>
 ): Promise<RunTree | null> {
   if (!tracingEnabled || !langsmithClient) {
@@ -75,6 +77,7 @@ export async function startTrace(
  */
 export async function endTrace(
   runTree: RunTree | null,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   outputs: Record<string, any>,
   error?: Error
 ): Promise<void> {
@@ -99,6 +102,7 @@ export async function createChildTrace(
   parent: RunTree | null,
   name: string,
   runType: "chain" | "tool" | "retriever" | "embedding",
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   inputs: Record<string, any>
 ): Promise<RunTree | null> {
   if (!parent) {
@@ -124,8 +128,10 @@ export async function createChildTrace(
 export async function withTrace<T>(
   name: string,
   runType: "chain" | "tool" | "retriever" | "embedding",
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   inputs: Record<string, any>,
   fn: () => Promise<T>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata?: Record<string, any>
 ): Promise<T> {
   const trace = await startTrace(name, runType, inputs, metadata);
