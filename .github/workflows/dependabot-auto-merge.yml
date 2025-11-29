@@ -1,0 +1,222 @@
+# Dependabot Auto-Merge Workflow
+# Automatically merges safe dependency updates after CI passes
+# Aligned with AUTO_MERGE_RULES.md and ARTICLE.md quality gates
+
+name: Dependabot Auto-Merge
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  pull-requests: write
+  contents: write
+  checks: read
+
+jobs:
+  # Metadata extraction from Dependabot PR
+  dependabot-metadata:
+    name: Extract Dependabot Metadata
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    outputs:
+      update-type: ${{ steps.metadata.outputs.update-type }}
+      dependency-type: ${{ steps.metadata.outputs.dependency-type }}
+      dependency-names: ${{ steps.metadata.outputs.dependency-names }}
+      new-version: ${{ steps.metadata.outputs.new-version }}
+      previous-version: ${{ steps.metadata.outputs.previous-version }}
+      package-ecosystem: ${{ steps.metadata.outputs.package-ecosystem }}
+
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: "${{ secrets.GITHUB_TOKEN }}"
+
+      - name: Display metadata
+        run: |
+          echo "Update type: ${{ steps.metadata.outputs.update-type }}"
+          echo "Dependency type: ${{ steps.metadata.outputs.dependency-type }}"
+          echo "Dependency names: ${{ steps.metadata.outputs.dependency-names }}"
+          echo "New version: ${{ steps.metadata.outputs.new-version }}"
+          echo "Previous version: ${{ steps.metadata.outputs.previous-version }}"
+          echo "Package ecosystem: ${{ steps.metadata.outputs.package-ecosystem }}"
+
+  # Auto-approve and enable auto-merge for safe updates
+  auto-merge:
+    name: Auto-Merge Safe Updates
+    runs-on: ubuntu-latest
+    needs: dependabot-metadata
+    if: github.actor == 'dependabot[bot]'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check CI status
+        id: ci-status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: checkRuns } = await github.rest.checks.listForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.payload.pull_request.head.sha,
+            });
+
+            const ciStatus = checkRuns.check_runs
+              .filter(run => run.name !== 'Auto-Merge Safe Updates')
+              .every(run => run.status === 'completed' && run.conclusion === 'success');
+
+            console.log('CI Status:', ciStatus);
+            return ciStatus;
+
+      # Auto-merge PATCH updates (all dependencies)
+      - name: Auto-merge patch updates
+        if: |
+          needs.dependabot-metadata.outputs.update-type == 'version-update:semver-patch'
+        run: |
+          echo "🟢 Auto-merging patch update: ${{ needs.dependabot-metadata.outputs.dependency-names }}"
+          echo "Version: ${{ needs.dependabot-metadata.outputs.previous-version }} → ${{ needs.dependabot-metadata.outputs.new-version }}"
+
+          # Approve the PR
+          gh pr review "$PR_NUMBER" --approve --body "Auto-approved: Patch update is safe to merge after CI passes."
+
+          # Enable auto-merge (squash)
+          gh pr merge "$PR_NUMBER" --auto --squash --delete-branch
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Auto-merge MINOR updates for devDependencies only
+      - name: Auto-merge devDependency minor updates
+        if: |
+          needs.dependabot-metadata.outputs.update-type == 'version-update:semver-minor' &&
+          needs.dependabot-metadata.outputs.dependency-type == 'direct:development'
+        run: |
+          echo "🟡 Auto-merging minor devDependency update: ${{ needs.dependabot-metadata.outputs.dependency-names }}"
+          echo "Version: ${{ needs.dependabot-metadata.outputs.previous-version }} → ${{ needs.dependabot-metadata.outputs.new-version }}"
+
+          # Approve the PR
+          gh pr review "$PR_NUMBER" --approve --body "Auto-approved: Minor devDependency update is safe to merge after CI passes."
+
+          # Enable auto-merge (squash)
+          gh pr merge "$PR_NUMBER" --auto --squash --delete-branch
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Label for manual review (major updates or production dependencies)
+      - name: Label for manual review
+        if: |
+          needs.dependabot-metadata.outputs.update-type == 'version-update:semver-major' ||
+          (needs.dependabot-metadata.outputs.update-type == 'version-update:semver-minor' &&
+           needs.dependabot-metadata.outputs.dependency-type == 'direct:production')
+        run: |
+          echo "🔴 Manual review required for: ${{ needs.dependabot-metadata.outputs.dependency-names }}"
+          echo "Update type: ${{ needs.dependabot-metadata.outputs.update-type }}"
+          echo "Dependency type: ${{ needs.dependabot-metadata.outputs.dependency-type }}"
+
+          # Add label for manual review
+          gh pr edit "$PR_NUMBER" --add-label "needs-manual-review"
+
+          # Add comment with review checklist
+          gh pr comment "$PR_NUMBER" --body "## 🔍 Manual Review Required
+
+          **Dependency:** ${{ needs.dependabot-metadata.outputs.dependency-names }}
+          **Version:** ${{ needs.dependabot-metadata.outputs.previous-version }} → ${{ needs.dependabot-metadata.outputs.new-version }}
+          **Update Type:** ${{ needs.dependabot-metadata.outputs.update-type }}
+
+          ### Review Checklist
+
+          - [ ] Read migration guide / changelog
+          - [ ] Check for breaking changes
+          - [ ] Run full test suite locally
+          - [ ] Test on iOS device (if mobile-related)
+          - [ ] Test on Android device (if mobile-related)
+          - [ ] Verify bundle size impact
+          - [ ] Check performance (Lighthouse)
+          - [ ] Update documentation if needed
+
+          **Reference:** [AUTO_MERGE_RULES.md](.github/AUTO_MERGE_RULES.md)
+          "
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Special handling for security updates
+  security-update:
+    name: Security Update Priority
+    runs-on: ubuntu-latest
+    needs: dependabot-metadata
+    if: |
+      github.actor == 'dependabot[bot]' &&
+      contains(github.event.pull_request.labels.*.name, 'security')
+
+    steps:
+      - name: Prioritize security update
+        run: |
+          echo "🚨 SECURITY UPDATE DETECTED"
+          echo "Dependency: ${{ needs.dependabot-metadata.outputs.dependency-names }}"
+          echo "Version: ${{ needs.dependabot-metadata.outputs.previous-version }} → ${{ needs.dependabot-metadata.outputs.new-version }}"
+
+          # Add high priority label
+          gh pr edit "$PR_NUMBER" --add-label "priority:high" --add-label "security"
+
+          # Add comment
+          gh pr comment "$PR_NUMBER" --body "🚨 **Security Update Detected**
+
+          This PR addresses a security vulnerability and should be reviewed with high priority.
+
+          - Dependency: ${{ needs.dependabot-metadata.outputs.dependency-names }}
+          - Version: ${{ needs.dependabot-metadata.outputs.previous-version }} → ${{ needs.dependabot-metadata.outputs.new-version }}
+
+          **Action Required:** Review and merge as soon as CI passes.
+          "
+
+          # Auto-approve security patches (let them auto-merge after CI)
+          if [[ "${{ needs.dependabot-metadata.outputs.update-type }}" == "version-update:semver-patch" ]]; then
+            gh pr review "$PR_NUMBER" --approve --body "Auto-approved: Security patch update."
+            gh pr merge "$PR_NUMBER" --auto --squash --delete-branch
+          fi
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Summary report
+  summary:
+    name: Auto-Merge Summary
+    runs-on: ubuntu-latest
+    needs: [dependabot-metadata, auto-merge]
+    if: always() && github.actor == 'dependabot[bot]'
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## 🤖 Dependabot Auto-Merge Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**PR:** #${{ github.event.pull_request.number }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Dependency:** ${{ needs.dependabot-metadata.outputs.dependency-names }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ needs.dependabot-metadata.outputs.previous-version }} → ${{ needs.dependabot-metadata.outputs.new-version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Update Type:** ${{ needs.dependabot-metadata.outputs.update-type }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Dependency Type:** ${{ needs.dependabot-metadata.outputs.dependency-type }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Determine action taken
+          if [[ "${{ needs.dependabot-metadata.outputs.update-type }}" == "version-update:semver-patch" ]]; then
+            echo "**Action:** ✅ Auto-merge enabled (patch update)" >> $GITHUB_STEP_SUMMARY
+          elif [[ "${{ needs.dependabot-metadata.outputs.update-type }}" == "version-update:semver-minor" ]] && [[ "${{ needs.dependabot-metadata.outputs.dependency-type }}" == "direct:development" ]]; then
+            echo "**Action:** ✅ Auto-merge enabled (devDependency minor update)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Action:** 🔍 Manual review required" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Quality Gates:** Aligned with [ARTICLE.md](ARTICLE.md)" >> $GITHUB_STEP_SUMMARY
+          echo "- CI must pass before merge" >> $GITHUB_STEP_SUMMARY
+          echo "- Zero critical vulnerabilities required" >> $GITHUB_STEP_SUMMARY
+          echo "- Code quality: 85%+ target" >> $GITHUB_STEP_SUMMARY
