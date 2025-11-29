@@ -157,8 +157,12 @@ function rowToPrayerConnection(row: PrayerConnectionRow): PrayerConnection {
  * making them visible to all users. This is the core of the Living Map concept -
  * a worldwide view of prayers connecting people across all geographic boundaries.
  *
- * PERFORMANCE: Limited to 500 prayers max to prevent mobile performance issues.
- * For future scaling, implement viewport-based loading or add limit param to RPC.
+ * PERFORMANCE: Server-side limiting via RPC function for optimal mobile performance.
+ * The limit is enforced at the database level, reducing data transfer and improving
+ * battery life on mobile devices.
+ *
+ * NOTE: Requires database migration to add limit_count parameter to get_all_prayers RPC.
+ * See MIGRATION_NEEDED_limit_count.md for details.
  *
  * @param limit - Maximum number of prayers to return (default: 500, max: 1000)
  * @returns Promise<Prayer[]> - Array of active prayers worldwide
@@ -174,8 +178,10 @@ export async function fetchAllPrayers(limit: number = 500): Promise<Prayer[]> {
 
   try {
     // Call the Supabase RPC function to get all prayers globally
-    // Note: RPC function doesn't support limit yet, applying client-side
-    const { data, error } = await supabase.rpc('get_all_prayers');
+    // Pass limit_count parameter for server-side limiting (better mobile performance)
+    const { data, error } = await supabase.rpc('get_all_prayers', {
+      limit_count: safeLimit
+    });
 
     if (error) {
       console.error('Error fetching all prayers:', error);
@@ -184,16 +190,14 @@ export async function fetchAllPrayers(limit: number = 500): Promise<Prayer[]> {
 
     // Filter out moderated prayers (hidden or removed)
     // Only include prayers with no status, pending, approved, or active status
+    // Note: This is still needed client-side because RLS policies may return
+    // user's own prayers regardless of status
     const filteredData = (data as PrayerRow[]).filter(row => {
       const status = row.status;
       return !status || status === 'pending' || status === 'approved' || status === 'active';
     });
 
-    // Apply client-side limit for mobile performance
-    // TODO: Add limit_count parameter to get_all_prayers RPC for server-side limiting
-    const limitedData = filteredData.slice(0, safeLimit);
-
-    return limitedData.map(rowToPrayer);
+    return filteredData.map(rowToPrayer);
   } catch (error) {
     console.error('Failed to fetch all prayers:', error);
     return [];
