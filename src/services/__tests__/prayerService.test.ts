@@ -9,7 +9,9 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import type { Prayer, PrayerResponse } from '../../types/prayer';
+
+// Helper type for Supabase responses
+type SupabaseResponse<T> = { data: T; error: { message: string; code?: string } | null };
 
 // Mock Supabase - define mocks inside the factory to avoid hoisting issues
 vi.mock('../../lib/supabase', () => {
@@ -75,7 +77,7 @@ function createMockConnectionRow(overrides = {}) {
   };
 }
 
-function mockQueryBuilder(data: any, error: any = null) {
+function mockQueryBuilder<T>(data: T, error: { message: string; code?: string } | null = null) {
   const builder = {
     select: vi.fn().mockReturnThis(),
     insert: vi.fn().mockReturnThis(),
@@ -112,7 +114,7 @@ describe('prayerService', () => {
   describe('fetchAllPrayers', () => {
     it('should fetch all prayers using RPC', async () => {
       const mockData = [createMockPrayerRow()];
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
 
       const result = await prayerService.fetchAllPrayers();
 
@@ -123,7 +125,7 @@ describe('prayerService', () => {
 
     it('should transform database response to Prayer type', async () => {
       const mockData = [createMockPrayerRow()];
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
 
       const result = await prayerService.fetchAllPrayers();
 
@@ -143,7 +145,7 @@ describe('prayerService', () => {
     });
 
     it('should handle empty response', async () => {
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: [], error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: [], error: null } satisfies SupabaseResponse<never[]>);
 
       const result = await prayerService.fetchAllPrayers();
 
@@ -175,7 +177,7 @@ describe('prayerService', () => {
       const mockData = [createMockPrayerRow({
         location: 'POINT(-74.006 40.7128)'
       })];
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
 
       const result = await prayerService.fetchAllPrayers();
 
@@ -186,7 +188,7 @@ describe('prayerService', () => {
       const mockData = [createMockPrayerRow({
         location: { lat: 40.7128, lng: -74.006 }
       })];
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
 
       const result = await prayerService.fetchAllPrayers();
 
@@ -200,7 +202,7 @@ describe('prayerService', () => {
         createMockPrayerRow({ id: '3', status: 'removed' }),
         createMockPrayerRow({ id: '4', status: 'approved' }),
       ];
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
 
       const result = await prayerService.fetchAllPrayers();
 
@@ -210,7 +212,7 @@ describe('prayerService', () => {
 
     it('should include prayers with no status', async () => {
       const mockData = [createMockPrayerRow({ status: undefined })];
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
 
       const result = await prayerService.fetchAllPrayers();
 
@@ -219,7 +221,7 @@ describe('prayerService', () => {
 
     it('should handle null location gracefully', async () => {
       const mockData = [createMockPrayerRow({ location: null })];
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
 
       const result = await prayerService.fetchAllPrayers();
 
@@ -229,7 +231,7 @@ describe('prayerService', () => {
 
     it('should handle malformed POINT string', async () => {
       const mockData = [createMockPrayerRow({ location: 'INVALID' })];
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
 
       const result = await prayerService.fetchAllPrayers();
 
@@ -241,7 +243,7 @@ describe('prayerService', () => {
   describe('fetchAllConnections', () => {
     it('should fetch all connections using RPC', async () => {
       const mockData = [createMockConnectionRow()];
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
 
       const result = await prayerService.fetchAllConnections();
 
@@ -252,7 +254,7 @@ describe('prayerService', () => {
 
     it('should transform connection rows correctly', async () => {
       const mockData = [createMockConnectionRow()];
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
 
       const result = await prayerService.fetchAllConnections();
 
@@ -268,7 +270,7 @@ describe('prayerService', () => {
     });
 
     it('should handle empty connections', async () => {
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: [], error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: [], error: null } satisfies SupabaseResponse<never[]>);
 
       const result = await prayerService.fetchAllConnections();
 
@@ -276,7 +278,7 @@ describe('prayerService', () => {
     });
 
     it('should handle null data', async () => {
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: null, error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: null, error: null } satisfies SupabaseResponse<null>);
 
       const result = await prayerService.fetchAllConnections();
 
@@ -299,7 +301,7 @@ describe('prayerService', () => {
   describe('fetchNearbyPrayers', () => {
     it('should call RPC with lat, lng, radius', async () => {
       const mockData = [createMockPrayerRow()];
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
 
       await prayerService.fetchNearbyPrayers(40.7128, -74.006, 50);
 
@@ -312,7 +314,7 @@ describe('prayerService', () => {
 
     it('should return prayers within radius', async () => {
       const mockData = [createMockPrayerRow()];
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
 
       const result = await prayerService.fetchNearbyPrayers(40.7128, -74.006, 50);
 
@@ -321,7 +323,7 @@ describe('prayerService', () => {
     });
 
     it('should use default radius of 50km', async () => {
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: [], error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: [], error: null } satisfies SupabaseResponse<never[]>);
 
       await prayerService.fetchNearbyPrayers(40.7128, -74.006);
 
@@ -337,7 +339,7 @@ describe('prayerService', () => {
         createMockPrayerRow({ id: '1', status: 'active' }),
         createMockPrayerRow({ id: '2', status: 'hidden' }),
       ];
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
 
       const result = await prayerService.fetchNearbyPrayers(40.7128, -74.006);
 
@@ -360,7 +362,7 @@ describe('prayerService', () => {
   describe('createPrayer', () => {
     it('should create text prayer with all fields', async () => {
       const mockData = [createMockPrayerRow()];
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
 
       const prayer = {
         user_id: 'user-456',
@@ -391,7 +393,7 @@ describe('prayerService', () => {
 
     it('should handle optional title', async () => {
       const mockData = [createMockPrayerRow({ title: undefined })];
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
 
       const prayer = {
         user_id: 'user-456',
@@ -414,7 +416,7 @@ describe('prayerService', () => {
         content_type: 'audio',
         media_url: 'https://example.com/audio.mp3',
       })];
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
 
       const prayer = {
         user_id: 'user-456',
@@ -440,7 +442,7 @@ describe('prayerService', () => {
         content_type: 'video',
         media_url: 'https://example.com/video.mp4',
       })];
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
 
       const prayer = {
         user_id: 'user-456',
@@ -459,7 +461,7 @@ describe('prayerService', () => {
 
     it('should handle anonymous prayers', async () => {
       const mockData = [createMockPrayerRow({ is_anonymous: true })];
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
 
       const prayer = {
         user_id: 'user-456',
@@ -503,7 +505,7 @@ describe('prayerService', () => {
         content: 'Updated content',
       });
       const builder = mockQueryBuilder(mockData);
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await prayerService.updatePrayer(
         'prayer-123',
@@ -518,7 +520,7 @@ describe('prayerService', () => {
 
     it('should handle prayer not found', async () => {
       const builder = mockQueryBuilder(null, { message: 'Not found' });
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await prayerService.updatePrayer(
         'prayer-123',
@@ -537,7 +539,7 @@ describe('prayerService', () => {
       const builder = {
         delete: vi.fn().mockReturnValue({ eq: mockEq1 }),
       };
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await prayerService.deletePrayer('prayer-123', 'user-456');
 
@@ -553,7 +555,7 @@ describe('prayerService', () => {
       const builder = {
         delete: vi.fn().mockReturnValue({ eq: mockEq1 }),
       };
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await prayerService.deletePrayer('prayer-123', 'user-456');
 
@@ -568,7 +570,7 @@ describe('prayerService', () => {
       const builder = {
         delete: vi.fn().mockReturnValue({ eq: mockEq1 }),
       };
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await prayerService.deletePrayerResponse('response-123', 'responder-456');
 
@@ -581,7 +583,7 @@ describe('prayerService', () => {
     it('should create text response', async () => {
       const mockResponse = createMockPrayerResponseRow();
       const builder = mockQueryBuilder(mockResponse);
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await prayerService.respondToPrayer(
         'prayer-123',
@@ -600,7 +602,7 @@ describe('prayerService', () => {
       const mockResponse = createMockPrayerResponseRow();
       const mockConnection = createMockConnectionRow();
       const builder = mockQueryBuilder(mockResponse);
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
       vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockConnection, error: null } as any);
 
       const result = await prayerService.respondToPrayer(
@@ -626,7 +628,7 @@ describe('prayerService', () => {
     it('should handle anonymous responses', async () => {
       const mockResponse = createMockPrayerResponseRow({ is_anonymous: true, responder_name: null });
       const builder = mockQueryBuilder(mockResponse);
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       await prayerService.respondToPrayer(
         'prayer-123',
@@ -646,7 +648,7 @@ describe('prayerService', () => {
 
     it('should return null on error', async () => {
       const builder = mockQueryBuilder(null, { message: 'Insert failed' });
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await prayerService.respondToPrayer(
         'prayer-123',
@@ -664,7 +666,7 @@ describe('prayerService', () => {
     it('should fetch responses for prayer', async () => {
       const mockData = [createMockPrayerResponseRow()];
       const builder = mockQueryBuilder(mockData);
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await prayerService.fetchPrayerResponses('prayer-123');
 
@@ -675,7 +677,7 @@ describe('prayerService', () => {
 
     it('should handle no responses', async () => {
       const builder = mockQueryBuilder([]);
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await prayerService.fetchPrayerResponses('prayer-123');
 
@@ -691,7 +693,7 @@ describe('prayerService', () => {
       }];
       const builder = mockQueryBuilder(mockData);
       builder.not.mockResolvedValue({ data: mockData, error: null });
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await prayerService.fetchUserInbox('user-456');
 
@@ -711,7 +713,7 @@ describe('prayerService', () => {
       }];
       const builder = mockQueryBuilder(mockData);
       builder.not.mockResolvedValue({ data: mockData, error: null });
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await prayerService.fetchUserInbox('user-456');
 
@@ -817,7 +819,7 @@ describe('prayerService', () => {
         { prayer_id: 'prayer-1', unread_count: 3 },
         { prayer_id: 'prayer-2', unread_count: 5 },
       ];
-      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } as any);
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
 
       const result = await prayerService.getUnreadCountsByPrayer('user-456');
 

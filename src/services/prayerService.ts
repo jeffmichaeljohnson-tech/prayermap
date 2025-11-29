@@ -11,7 +11,7 @@
 
 import { supabase } from '../lib/supabase';
 import type { Prayer, PrayerResponse } from '../types/prayer';
-import { withRetry, CircuitBreaker, createResilientOperation } from '../lib/resilience';
+import { CircuitBreaker, createResilientOperation } from '../lib/resilience';
 import { prayerSchema, prayerResponseSchema } from '../lib/validation';
 import { sanitizeUserContent, validators } from '../lib/security';
 
@@ -76,7 +76,7 @@ export interface PrayerConnection {
 }
 
 // Type guards and converters
-function isPointString(location: any): location is string {
+function isPointString(location: unknown): location is string {
   return typeof location === 'string' && location.startsWith('POINT(');
 }
 
@@ -511,7 +511,7 @@ export async function respondToPrayer(
   contentUrl?: string,
   isAnonymous: boolean = false,
   responderLocation?: { lat: number; lng: number }
-): Promise<{ response: PrayerResponse; connection: any } | null> {
+): Promise<{ response: PrayerResponse; connection: PrayerConnection | null } | null> {
   if (!supabase) {
     console.warn('Supabase client not initialized');
     return null;
@@ -661,12 +661,12 @@ export async function fetchUserInbox(userId: string): Promise<
     }
 
     // Transform the data
-    return (prayers as any[]).map((row) => {
-      const prayer = rowToPrayer(row as PrayerRow);
-      const responses = (row.prayer_responses as PrayerResponseRow[]).map(rowToPrayerResponse);
+    return (prayers as Array<PrayerRow & { prayer_responses: PrayerResponseRow[] }>).map((row) => {
+      const prayer = rowToPrayer(row);
+      const responses = row.prayer_responses.map(rowToPrayerResponse);
 
       // Calculate unread count based on read_at being NULL
-      const unreadCount = responses.filter((r: any) => !r.read_at).length;
+      const unreadCount = responses.filter((r: PrayerResponse) => !r.read_at).length;
 
       return {
         prayer,
@@ -807,7 +807,14 @@ export function subscribeToPrayerResponses(
 /**
  * Subscribe to user's inbox updates
  */
-export function subscribeToUserInbox(userId: string, callback: (inbox: any[]) => void) {
+export function subscribeToUserInbox(
+  userId: string,
+  callback: (inbox: Array<{
+    prayer: Prayer;
+    responses: PrayerResponse[];
+    unreadCount: number;
+  }>) => void
+) {
   if (!supabase) {
     console.warn('Supabase client not initialized');
     return () => {};

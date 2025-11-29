@@ -11,6 +11,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { UserProfile } from '../userService';
 
+// Helper type for Supabase auth responses
+type AuthResponse = { data?: Record<string, unknown>; error: { message: string } | null };
+
 // Mock Supabase - define mocks inside the factory to avoid hoisting issues
 vi.mock('../../lib/supabase', () => {
   return {
@@ -39,7 +42,7 @@ function createMockUserProfile(overrides = {}): UserProfile {
   };
 }
 
-function mockQueryBuilder(data: any, error: any = null) {
+function mockQueryBuilder<T>(data: T, error: { message: string; code?: string } | null = null) {
   const builder = {
     select: vi.fn().mockReturnThis(),
     update: vi.fn().mockReturnThis(),
@@ -73,7 +76,7 @@ describe('userService', () => {
     it('should fetch user profile by id', async () => {
       const mockProfile = createMockUserProfile();
       const builder = mockQueryBuilder(mockProfile);
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await userService.getUserProfile('user-123');
 
@@ -88,7 +91,7 @@ describe('userService', () => {
         avatar_url: 'https://example.com/jane.jpg',
       });
       const builder = mockQueryBuilder(mockProfile);
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await userService.getUserProfile('user-123');
 
@@ -104,7 +107,7 @@ describe('userService', () => {
     it('should handle null display_name', async () => {
       const mockProfile = createMockUserProfile({ display_name: null });
       const builder = mockQueryBuilder(mockProfile);
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await userService.getUserProfile('user-123');
 
@@ -114,7 +117,7 @@ describe('userService', () => {
     it('should handle null avatar_url', async () => {
       const mockProfile = createMockUserProfile({ avatar_url: null });
       const builder = mockQueryBuilder(mockProfile);
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await userService.getUserProfile('user-123');
 
@@ -123,7 +126,7 @@ describe('userService', () => {
 
     it('should return null when profile not found', async () => {
       const builder = mockQueryBuilder(null, { message: 'Profile not found', code: 'PGRST116' });
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await userService.getUserProfile('user-999');
 
@@ -136,7 +139,7 @@ describe('userService', () => {
 
     it('should handle database error', async () => {
       const builder = mockQueryBuilder(null, { message: 'Database connection failed', code: '08006' });
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await userService.getUserProfile('user-123');
 
@@ -150,7 +153,7 @@ describe('userService', () => {
         eq: vi.fn().mockReturnThis(),
         single: vi.fn().mockRejectedValue(new Error('Network timeout')),
       };
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await userService.getUserProfile('user-123');
 
@@ -163,7 +166,7 @@ describe('userService', () => {
 
     it('should handle invalid user ID', async () => {
       const builder = mockQueryBuilder(null, { message: 'Invalid UUID' });
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await userService.getUserProfile('invalid-id');
 
@@ -177,7 +180,7 @@ describe('userService', () => {
         display_name: 'Updated Name',
       });
       const builder = mockQueryBuilder(mockProfile);
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await userService.updateUserProfile('user-123', {
         display_name: 'Updated Name',
@@ -193,7 +196,7 @@ describe('userService', () => {
         display_name: 'New Name',
       });
       const builder = mockQueryBuilder(mockProfile);
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       await userService.updateUserProfile('user-123', {
         display_name: 'New Name',
@@ -212,7 +215,7 @@ describe('userService', () => {
         avatar_url: 'https://example.com/new-avatar.jpg',
       });
       const builder = mockQueryBuilder(mockProfile);
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await userService.updateUserProfile('user-123', {
         avatar_url: 'https://example.com/new-avatar.jpg',
@@ -227,7 +230,7 @@ describe('userService', () => {
         avatar_url: 'https://example.com/new-avatar.jpg',
       });
       const builder = mockQueryBuilder(mockProfile);
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await userService.updateUserProfile('user-123', {
         display_name: 'New Name',
@@ -241,7 +244,7 @@ describe('userService', () => {
     it('should set updated_at timestamp', async () => {
       const mockProfile = createMockUserProfile();
       const builder = mockQueryBuilder(mockProfile);
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       await userService.updateUserProfile('user-123', {
         display_name: 'Test',
@@ -256,7 +259,7 @@ describe('userService', () => {
 
     it('should handle profile not found', async () => {
       const builder = mockQueryBuilder(null, { message: 'Profile not found', code: 'PGRST116' });
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await userService.updateUserProfile('user-999', {
         display_name: 'Test',
@@ -271,7 +274,7 @@ describe('userService', () => {
 
     it('should handle database constraint violation', async () => {
       const builder = mockQueryBuilder(null, { message: 'Constraint violation', code: '23505' });
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await userService.updateUserProfile('user-123', {
         display_name: 'Test',
@@ -287,7 +290,7 @@ describe('userService', () => {
         select: vi.fn().mockReturnThis(),
         single: vi.fn().mockRejectedValue(new Error('Connection lost')),
       };
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await userService.updateUserProfile('user-123', {
         display_name: 'Test',
@@ -303,7 +306,7 @@ describe('userService', () => {
     it('should handle empty updates object', async () => {
       const mockProfile = createMockUserProfile();
       const builder = mockQueryBuilder(mockProfile);
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await userService.updateUserProfile('user-123', {});
 
@@ -317,7 +320,7 @@ describe('userService', () => {
         avatar_url: null,
       });
       const builder = mockQueryBuilder(mockProfile);
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await userService.updateUserProfile('user-123', {
         display_name: null,
@@ -331,7 +334,7 @@ describe('userService', () => {
 
   describe('changePassword', () => {
     it('should change user password', async () => {
-      vi.mocked(supabase.auth.updateUser).mockResolvedValueOnce({ error: null } as any);
+      vi.mocked(supabase.auth.updateUser).mockResolvedValueOnce({ error: null } satisfies AuthResponse);
 
       const result = await userService.changePassword('newSecurePassword123');
 
@@ -342,7 +345,7 @@ describe('userService', () => {
     });
 
     it('should return success true on successful change', async () => {
-      vi.mocked(supabase.auth.updateUser).mockResolvedValueOnce({ error: null, data: {} } as any);
+      vi.mocked(supabase.auth.updateUser).mockResolvedValueOnce({ error: null, data: {} } satisfies AuthResponse);
 
       const result = await userService.changePassword('newPassword456');
 
@@ -413,7 +416,7 @@ describe('userService', () => {
 
   describe('sendPasswordResetEmail', () => {
     it('should send password reset email', async () => {
-      vi.mocked(supabase.auth.resetPasswordForEmail).mockResolvedValueOnce({ error: null } as any);
+      vi.mocked(supabase.auth.resetPasswordForEmail).mockResolvedValueOnce({ error: null } satisfies AuthResponse);
 
       const result = await userService.sendPasswordResetEmail('user@example.com');
 
@@ -425,7 +428,7 @@ describe('userService', () => {
     });
 
     it('should use correct redirect URL', async () => {
-      vi.mocked(supabase.auth.resetPasswordForEmail).mockResolvedValueOnce({ error: null } as any);
+      vi.mocked(supabase.auth.resetPasswordForEmail).mockResolvedValueOnce({ error: null } satisfies AuthResponse);
 
       await userService.sendPasswordResetEmail('user@example.com');
 
@@ -495,7 +498,7 @@ describe('userService', () => {
     });
 
     it('should return success without error field', async () => {
-      vi.mocked(supabase.auth.resetPasswordForEmail).mockResolvedValueOnce({ error: null } as any);
+      vi.mocked(supabase.auth.resetPasswordForEmail).mockResolvedValueOnce({ error: null } satisfies AuthResponse);
 
       const result = await userService.sendPasswordResetEmail('user@example.com');
 
@@ -509,7 +512,7 @@ describe('userService', () => {
       const builder = {
         insert: vi.fn().mockResolvedValue({ error: null }),
       };
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await userService.submitSuggestion(
         'user-123',
@@ -529,7 +532,7 @@ describe('userService', () => {
       const builder = {
         insert: vi.fn().mockResolvedValue({ error: null }),
       };
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       await userService.submitSuggestion(
         'user-123',
@@ -548,7 +551,7 @@ describe('userService', () => {
       const builder = {
         insert: vi.fn().mockResolvedValue({ error: null }),
       };
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       await userService.submitSuggestion('user-123', 'Suggestion text');
 
@@ -567,7 +570,7 @@ describe('userService', () => {
           error: { message: 'relation "suggestions" does not exist', code: '42P01' }
         }),
       };
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await userService.submitSuggestion(
         'user-123',
@@ -587,7 +590,7 @@ describe('userService', () => {
           error: { message: 'Insert failed', code: '23000' }
         }),
       };
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await userService.submitSuggestion(
         'user-123',
@@ -602,7 +605,7 @@ describe('userService', () => {
       const builder = {
         insert: vi.fn().mockRejectedValue(new Error('Connection lost')),
       };
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await userService.submitSuggestion(
         'user-123',
@@ -623,7 +626,7 @@ describe('userService', () => {
           error: { message: 'Content cannot be empty' }
         }),
       };
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await userService.submitSuggestion('user-123', '');
 
@@ -635,7 +638,7 @@ describe('userService', () => {
       const builder = {
         insert: vi.fn().mockResolvedValue({ error: null }),
       };
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await userService.submitSuggestion('user-123', longText);
 
@@ -651,7 +654,7 @@ describe('userService', () => {
       const builder = {
         insert: vi.fn().mockResolvedValue({ error: null }),
       };
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const specialText = 'Test with special chars: <script>alert("xss")</script>';
       await userService.submitSuggestion('user-123', specialText);
@@ -669,7 +672,7 @@ describe('userService', () => {
           error: { message: 'Constraint violation', code: '23505' }
         }),
       };
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as any);
+      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await userService.submitSuggestion(
         'user-123',
