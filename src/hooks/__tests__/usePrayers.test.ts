@@ -270,11 +270,12 @@ describe('usePrayers', () => {
       expect(prayerService.createPrayer).toHaveBeenCalledWith(videoPrayer);
     });
 
-    it('should optimistically add prayer to local state', async () => {
+    it('should not optimistically add prayer to local state (waits for subscription)', async () => {
       const { result } = renderHook(() =>
         usePrayers({
           location: { lat: 40.7128, lng: -74.006 },
           autoFetch: false,
+          enableRealtime: false, // Disable realtime to verify no optimistic update
         })
       );
 
@@ -290,7 +291,9 @@ describe('usePrayers', () => {
         await result.current.createPrayer(newPrayer);
       });
 
-      expect(result.current.prayers).toContainEqual(mockPrayer);
+      // PERFORMANCE FIX: Prayer is NOT added optimistically
+      // The real-time subscription will add it instead to prevent duplicates
+      expect(result.current.prayers).toEqual([]);
     });
 
     it('should handle create prayer errors', async () => {

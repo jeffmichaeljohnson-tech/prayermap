@@ -8,7 +8,6 @@ import {
   subscribeToNearbyPrayers,
   subscribeToAllPrayers,
 } from '../services/prayerService';
-import { realtimeMonitor } from '../services/realtimeMonitor';
 
 interface UsePrayersOptions {
   location: { lat: number; lng: number };
@@ -33,7 +32,7 @@ interface UsePrayersReturn {
     contentUrl?: string,
     isAnonymous?: boolean,
     responderLocation?: { lat: number; lng: number }
-  ) => Promise<{ response: any; connection: any } | null>;
+  ) => Promise<boolean>;
 }
 
 /**
@@ -81,7 +80,7 @@ export function usePrayers({
     }
   }, [autoFetch, fetchPrayers]);
 
-  // Set up real-time subscription with enhanced monitoring
+  // Set up real-time subscription
   useEffect(() => {
     if (!enableRealtime) return;
 
@@ -90,34 +89,20 @@ export function usePrayers({
       unsubscribeRef.current();
     }
 
-    let unsubscribe: (() => void) | null = null;
-
-    if (globalMode) {
-      // GLOBAL LIVING MAP: Use enhanced real-time monitor for better reliability
-      console.log('🔄 Setting up enhanced global prayer monitoring...');
-      
-      // Ensure monitor is running
-      if (!realtimeMonitor.getStatus().isActive) {
-        realtimeMonitor.start();
-      }
-
-      // Subscribe to enhanced monitoring
-      unsubscribe = realtimeMonitor.subscribeToPrayers((updatedPrayers) => {
-        console.log('📥 Enhanced real-time update received:', updatedPrayers.length, 'prayers');
-        setPrayers(updatedPrayers);
-      });
-    } else {
-      // Fallback to original subscription for nearby prayers
-      unsubscribe = subscribeToNearbyPrayers(
-        location.lat,
-        location.lng,
-        radiusKm,
-        (updatedPrayers) => {
-          console.log('📥 Nearby prayers update received:', updatedPrayers.length, 'prayers');
-          setPrayers(updatedPrayers);
-        }
-      );
-    }
+    // GLOBAL LIVING MAP: Subscribe to all prayers globally or nearby prayers based on mode
+    // PERFORMANCE: Uses incremental updates (updater function) instead of full refetches
+    const unsubscribe = globalMode
+      ? subscribeToAllPrayers((updater) => {
+          setPrayers(updater);
+        })
+      : subscribeToNearbyPrayers(
+          location.lat,
+          location.lng,
+          radiusKm,
+          (updater) => {
+            setPrayers(updater);
+          }
+        );
 
     unsubscribeRef.current = unsubscribe;
 
@@ -138,10 +123,10 @@ export function usePrayers({
       try {
         const newPrayer = await createPrayerService(prayer);
 
-        if (newPrayer) {
-          // Optimistically add to local state
-          setPrayers((prev) => [newPrayer, ...prev]);
-        }
+        // PERFORMANCE FIX: Don't add to local state here
+        // The real-time subscription will add it within ~100ms
+        // This prevents duplicates from optimistic updates
+        // The subscription now uses incremental updates with deduplication
 
         return newPrayer;
       } catch (err) {
@@ -165,7 +150,7 @@ export function usePrayers({
       contentUrl?: string,
       isAnonymous: boolean = false,
       responderLocation?: { lat: number; lng: number }
-    ): Promise<{ response: any; connection: any } | null> => {
+    ): Promise<boolean> => {
       setError(null);
 
       try {
@@ -189,15 +174,15 @@ export function usePrayers({
                 : p
             )
           );
-          return result;
+          return true;
         }
 
-        return null;
+        return false;
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'Failed to respond to prayer';
         setError(errorMessage);
         console.error('Error responding to prayer:', err);
-        return null;
+        return false;
       }
     },
     []

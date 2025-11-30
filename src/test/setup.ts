@@ -8,6 +8,18 @@ import { cleanup } from '@testing-library/react';
 import { afterEach, beforeAll, vi } from 'vitest';
 
 // ============================================================================
+// Framer Motion Mock
+// ============================================================================
+
+/**
+ * Mock Framer Motion to work in jsdom environment
+ * This must be done before any components are imported
+ */
+import { framerMotionMock } from './mocks/framer-motion';
+
+vi.mock('framer-motion', () => framerMotionMock);
+
+// ============================================================================
 // Global Test Lifecycle
 // ============================================================================
 

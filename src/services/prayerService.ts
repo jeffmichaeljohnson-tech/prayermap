@@ -10,7 +10,7 @@
  */
 
 import { supabase } from '../lib/supabase';
-import type { Prayer, PrayerResponse } from '../types/prayer';
+import type { Prayer, PrayerResponse, PrayerConnection } from '../types/prayer';
 
 // Database table schemas
 interface PrayerRow {
@@ -31,7 +31,7 @@ interface PrayerRow {
 interface PrayerResponseRow {
   id: string;
   prayer_id: string;
-  responder_id: string; // Database uses responder_id for responses
+  responder_id: string;
   message: string;
   content_type: 'text' | 'audio' | 'video';
   media_url?: string; // Database uses media_url, not content_url
@@ -51,17 +51,8 @@ interface PrayerConnectionRow {
   expires_at: string;
 }
 
-export interface PrayerConnection {
-  id: string;
-  prayer_id: string;
-  prayer_response_id: string;
-  from_location: { lat: number; lng: number };
-  to_location: { lat: number; lng: number };
-  requester_name: string;
-  replier_name: string;
-  created_at: Date;
-  expires_at: Date;
-}
+// Note: PrayerConnection type is imported from types/prayer.ts
+// This service converts database rows (snake_case) to camelCase for components
 
 // Type guards and converters
 function isPointString(location: any): location is string {
@@ -125,7 +116,7 @@ function rowToPrayerResponse(row: PrayerResponseRow & { responder_name?: string;
   return {
     id: row.id,
     prayer_id: row.prayer_id,
-    responder_id: row.responder_id, // Database uses responder_id consistently
+    responder_id: row.responder_id,
     responder_name: row.responder_name || null, // Will be populated when joined with profiles
     is_anonymous: row.is_anonymous || false, // Default to false for now
     message: row.message,
@@ -137,16 +128,17 @@ function rowToPrayerResponse(row: PrayerResponseRow & { responder_name?: string;
 }
 
 function rowToPrayerConnection(row: PrayerConnectionRow): PrayerConnection {
+  // Convert snake_case database columns to camelCase for frontend components
   return {
     id: row.id,
-    prayer_id: row.prayer_id,
-    prayer_response_id: row.prayer_response_id,
-    from_location: convertLocation(row.from_location),
-    to_location: convertLocation(row.to_location),
-    requester_name: row.requester_name,
-    replier_name: row.replier_name,
-    created_at: new Date(row.created_at),
-    expires_at: new Date(row.expires_at),
+    prayerId: row.prayer_id,
+    prayerResponseId: row.prayer_response_id,
+    fromLocation: convertLocation(row.from_location),
+    toLocation: convertLocation(row.to_location),
+    requesterName: row.requester_name,
+    replierName: row.replier_name,
+    createdAt: new Date(row.created_at),
+    expiresAt: new Date(row.expires_at),
   };
 }
 
@@ -212,7 +204,9 @@ export async function fetchAllPrayers(limit: number = 500): Promise<Prayer[]> {
  * These connections represent the living web of faith and support
  * spanning across the globe.
  *
- * PERFORMANCE: Limited to 200 connections for mobile performance.
+ * PERFORMANCE: Server-side limiting via RPC function for optimal mobile performance.
+ * The limit is enforced at the database level, reducing data transfer and improving
+ * battery life on mobile devices.
  *
  * @param limit - Maximum connections to return (default: 200, max: 500)
  * @returns Promise<PrayerConnection[]> - Array of active prayer connections worldwide
@@ -224,12 +218,14 @@ export async function fetchAllConnections(limit: number = 200): Promise<PrayerCo
   }
 
   // Enforce hard limit for mobile performance
-  const safeLimit = Math.min(limit, 500);
+  const safeLimit = Math.min(Math.max(1, limit), 500);
 
   try {
     // Call the Supabase RPC function to get all prayer connections globally
-    // Note: RPC function doesn't support limit yet, applying client-side
-    const { data, error } = await supabase.rpc('get_all_connections');
+    // Pass limit_count parameter for server-side limiting (better mobile performance)
+    const { data, error } = await supabase.rpc('get_all_connections', {
+      limit_count: safeLimit
+    });
 
     if (error) {
       console.error('Error fetching all connections:', error);
@@ -240,10 +236,7 @@ export async function fetchAllConnections(limit: number = 200): Promise<PrayerCo
       return [];
     }
 
-    // Apply client-side limit for mobile performance
-    const limitedData = (data as PrayerConnectionRow[]).slice(0, safeLimit);
-
-    return limitedData.map(rowToPrayerConnection);
+    return (data as PrayerConnectionRow[]).map(rowToPrayerConnection);
   } catch (error) {
     console.error('Failed to fetch all connections:', error);
     return [];
@@ -439,7 +432,7 @@ export async function deletePrayerResponse(
       .from('prayer_responses')
       .delete()
       .eq('id', responseId)
-      .eq('responder_id', responderId); // Database uses responder_id field
+      .eq('responder_id', responderId); // Ensure user owns the response
 
     if (error) {
       console.error('Error deleting prayer response:', error);
@@ -473,32 +466,25 @@ export async function respondToPrayer(
 
   try {
     // Create prayer response
-    console.log('Creating prayer response:', { prayerId, responderId, message, contentType, isAnonymous, contentUrl });
-    console.log('Current auth user:', (await supabase.auth.getUser()).data.user?.id);
-    
-    const insertData = {
-      prayer_id: prayerId,
-      responder_id: responderId, // Fixed: database uses responder_id in schema
-      message,
-      content_type: contentType,
-      media_url: contentUrl, // Changed from content_url to media_url to match schema
-      is_anonymous: isAnonymous, // Include anonymous flag for notifications
-    };
-    console.log('Insert data:', insertData);
-    
+    console.log('Creating prayer response:', { prayerId, responderId, message, contentType, isAnonymous });
     const { data: responseData, error: responseError } = await supabase
       .from('prayer_responses')
-      .insert(insertData)
+      .insert({
+        prayer_id: prayerId,
+        responder_id: responderId,
+        responder_name: isAnonymous ? null : responderName,
+        is_anonymous: isAnonymous,
+        message,
+        content_type: contentType,
+        media_url: contentUrl, // Changed from content_url to media_url to match schema
+      })
       .select()
       .single();
 
     if (responseError) {
       console.error('Error creating prayer response:', responseError);
-      console.error('Full error details:', JSON.stringify(responseError, null, 2));
       throw responseError;
     }
-    
-    console.log('Prayer response created successfully:', responseData);
 
     const response = rowToPrayerResponse(responseData as PrayerResponseRow);
 
@@ -559,12 +545,10 @@ export async function fetchPrayerResponses(prayerId: string): Promise<PrayerResp
 /**
  * Fetch inbox - prayers where the user has received responses
  *
- * OPTIMIZED PERFORMANCE:
- * - Single optimized query with JOIN to reduce roundtrips
- * - Server-side filtering and ordering for better mobile performance
- * - Proper indexing strategy to minimize query time
- * - Only fetch prayers that actually have responses
- * - Efficient unread count calculation
+ * PERFORMANCE: Optimized for mobile with:
+ * - Specific column selection (no SELECT *)
+ * - Limited to 50 prayers with responses
+ * - Responses limited to 20 most recent per prayer
  *
  * @param userId - The user's ID
  * @param limit - Maximum prayers to return (default: 50)
@@ -583,6 +567,7 @@ export async function fetchUserInbox(
     console.warn('Supabase client not initialized');
     return [];
   }
+
   try {
     console.log('Fetching inbox for user:', userId);
     
@@ -607,11 +592,14 @@ export async function fetchUserInbox(
 
     const prayerIds = userPrayers.map(p => p.id);
 
-    // Step 2: Get all responses to those prayers without profile joins
+    // Step 2: Get all responses to those prayers with responder profiles
     const { data: responseData, error: responseError } = await supabase
       .from('prayer_responses')
       .select(`
-        id, prayer_id, responder_id, message, content_type, media_url, created_at, read_at
+        id, prayer_id, responder_id, message, content_type, media_url, created_at, read_at,
+        profiles!prayer_responses_responder_id_fkey (
+          display_name
+        )
       `)
       .in('prayer_id', prayerIds)
       .order('created_at', { ascending: false });
@@ -653,8 +641,8 @@ export async function fetchUserInbox(
           .slice(0, 20)
           .map(response => rowToPrayerResponse({
             ...response,
-            responder_name: 'Anonymous', // Default for now
-            is_anonymous: true
+            responder_name: response.profiles?.display_name || 'Anonymous',
+            is_anonymous: !response.profiles?.display_name
           }));
 
         // Calculate unread count based on read_at being NULL
@@ -675,6 +663,7 @@ export async function fetchUserInbox(
     });
 
     return inboxItems;
+
   } catch (error) {
     console.error('Failed to fetch user inbox:', error);
     return [];
@@ -685,15 +674,20 @@ export async function fetchUserInbox(
  * Subscribe to ALL prayers globally in real-time for the GLOBAL LIVING MAP
  *
  * This subscription listens for any changes to prayers worldwide and
- * automatically fetches the updated global prayer list. This keeps the
- * Living Map dynamic and responsive to new prayers and updates from
- * anywhere in the world.
+ * incrementally updates the prayer list. This keeps the Living Map
+ * dynamic and responsive to new prayers and updates from anywhere in the
+ * world with minimal data transfer.
  *
- * @param callback - Function to call with updated prayer list
+ * PERFORMANCE: Uses incremental updates instead of full refetches.
+ * - INSERT: Adds single prayer to array (500x less data)
+ * - UPDATE: Updates single prayer in array
+ * - DELETE: Removes single prayer from array
+ *
+ * @param callback - Function to call with prayer list updater function
  * @returns Unsubscribe function
  */
 export function subscribeToPrayers(
-  callback: (prayers: Prayer[]) => void
+  callback: (updater: (prev: Prayer[]) => Prayer[]) => void
 ) {
   if (!supabase) {
     console.warn('Supabase client not initialized');
@@ -710,10 +704,50 @@ export function subscribeToPrayers(
         schema: 'public',
         table: 'prayers',
       },
-      async () => {
-        // Fetch all prayers globally when any change occurs
-        const prayers = await fetchAllPrayers();
-        callback(prayers);
+      async (payload) => {
+        console.log('Real-time prayer event:', payload.eventType, payload.new?.id || payload.old?.id);
+
+        // INCREMENTAL UPDATE: Handle each event type separately for efficiency
+        if (payload.eventType === 'INSERT') {
+          const newPrayer = rowToPrayer(payload.new as PrayerRow);
+
+          // Filter out moderated prayers (hidden or removed)
+          if (newPrayer.status && !['pending', 'approved', 'active'].includes(newPrayer.status)) {
+            console.log('Skipping moderated prayer:', newPrayer.id);
+            return;
+          }
+
+          // Add to beginning of array (most recent first)
+          callback((prev) => {
+            // Prevent duplicates
+            if (prev.some(p => p.id === newPrayer.id)) {
+              console.log('Prayer already exists, skipping:', newPrayer.id);
+              return prev;
+            }
+            return [newPrayer, ...prev];
+          });
+        }
+        else if (payload.eventType === 'UPDATE') {
+          const updatedPrayer = rowToPrayer(payload.new as PrayerRow);
+
+          callback((prev) => {
+            // If prayer is now hidden/removed, remove it from the list
+            if (updatedPrayer.status && !['pending', 'approved', 'active'].includes(updatedPrayer.status)) {
+              console.log('Prayer moderated, removing:', updatedPrayer.id);
+              return prev.filter(p => p.id !== updatedPrayer.id);
+            }
+
+            // Update existing prayer in array
+            return prev.map(p => p.id === updatedPrayer.id ? updatedPrayer : p);
+          });
+        }
+        else if (payload.eventType === 'DELETE') {
+          const deletedId = payload.old.id;
+          console.log('Prayer deleted:', deletedId);
+
+          // Remove from array
+          callback((prev) => prev.filter(p => p.id !== deletedId));
+        }
       }
     )
     .subscribe();
@@ -735,17 +769,35 @@ export const subscribeToAllPrayers = subscribeToPrayers;
  *
  * @deprecated Use subscribeToPrayers() instead for the GLOBAL LIVING MAP.
  * The Living Map displays all prayers globally, not just nearby ones.
+ *
+ * PERFORMANCE: Uses incremental updates for efficiency.
  */
 export function subscribeToNearbyPrayers(
   lat: number,
   lng: number,
   radiusKm: number,
-  callback: (prayers: Prayer[]) => void
+  callback: (updater: (prev: Prayer[]) => Prayer[]) => void
 ) {
   if (!supabase) {
     console.warn('Supabase client not initialized');
     return () => {};
   }
+
+  // Helper to check if prayer is within radius
+  const isWithinRadius = (prayer: Prayer): boolean => {
+    const R = 6371; // Earth's radius in km
+    const dLat = ((prayer.location.lat - lat) * Math.PI) / 180;
+    const dLng = ((prayer.location.lng - lng) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat * Math.PI) / 180) *
+        Math.cos((prayer.location.lat * Math.PI) / 180) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c;
+    return distance <= radiusKm;
+  };
 
   // Subscribe to all prayer inserts/updates
   const subscription = supabase
@@ -757,10 +809,55 @@ export function subscribeToNearbyPrayers(
         schema: 'public',
         table: 'prayers',
       },
-      async () => {
-        // Fetch updated nearby prayers
-        const prayers = await fetchNearbyPrayers(lat, lng, radiusKm);
-        callback(prayers);
+      async (payload) => {
+        console.log('Real-time nearby prayer event:', payload.eventType);
+
+        // INCREMENTAL UPDATE: Handle each event type separately
+        if (payload.eventType === 'INSERT') {
+          const newPrayer = rowToPrayer(payload.new as PrayerRow);
+
+          // Filter by moderation status
+          if (newPrayer.status && !['pending', 'approved', 'active'].includes(newPrayer.status)) {
+            return;
+          }
+
+          // Filter by radius
+          if (!isWithinRadius(newPrayer)) {
+            return;
+          }
+
+          callback((prev) => {
+            if (prev.some(p => p.id === newPrayer.id)) {
+              return prev;
+            }
+            return [newPrayer, ...prev];
+          });
+        }
+        else if (payload.eventType === 'UPDATE') {
+          const updatedPrayer = rowToPrayer(payload.new as PrayerRow);
+
+          callback((prev) => {
+            // Remove if moderated or moved out of radius
+            if (
+              (updatedPrayer.status && !['pending', 'approved', 'active'].includes(updatedPrayer.status)) ||
+              !isWithinRadius(updatedPrayer)
+            ) {
+              return prev.filter(p => p.id !== updatedPrayer.id);
+            }
+
+            // Update or add if moved into radius
+            const exists = prev.some(p => p.id === updatedPrayer.id);
+            if (exists) {
+              return prev.map(p => p.id === updatedPrayer.id ? updatedPrayer : p);
+            } else {
+              return [updatedPrayer, ...prev];
+            }
+          });
+        }
+        else if (payload.eventType === 'DELETE') {
+          const deletedId = payload.old.id;
+          callback((prev) => prev.filter(p => p.id !== deletedId));
+        }
       }
     )
     .subscribe();
@@ -806,13 +903,7 @@ export function subscribeToPrayerResponses(
 }
 
 /**
- * Subscribe to user's inbox updates with proper filtering
- * 
- * This subscription listens for prayer responses and validates them
- * client-side to ensure they belong to the user's prayers.
- * 
- * Since Supabase real-time filters don't support complex joins,
- * we filter on the client side after receiving the event.
+ * Subscribe to user's inbox updates
  */
 export function subscribeToUserInbox(userId: string, callback: (inbox: any[]) => void) {
   if (!supabase) {
@@ -820,136 +911,24 @@ export function subscribeToUserInbox(userId: string, callback: (inbox: any[]) =>
     return () => {};
   }
 
-  console.log('Setting up real-time subscription for user:', userId);
-
-  // First, get the user's prayer IDs to filter against
-  let userPrayerIds: string[] = [];
-
-  // Debounced inbox refetch to prevent excessive API calls
-  let debounceTimer: NodeJS.Timeout | null = null;
-  const DEBOUNCE_MS = 300; // 300ms debounce
-
-  const debounceInboxRefetch = () => {
-    if (debounceTimer) {
-      clearTimeout(debounceTimer);
-    }
-    
-    debounceTimer = setTimeout(async () => {
-      try {
-        console.log('Fetching updated inbox after debounced real-time event...');
-        const inbox = await fetchUserInbox(userId);
-        console.log('Fetched updated inbox:', inbox.length, 'items');
-        callback(inbox);
-      } catch (error) {
-        console.error('Error fetching updated inbox after real-time event:', error);
-      }
-    }, DEBOUNCE_MS);
-  };
-
-  const setupSubscription = async () => {
-    try {
-      // Get all prayer IDs for this user
-      const { data: userPrayers, error } = await supabase
-        .from('prayers')
-        .select('id')
-        .eq('user_id', userId);
-
-      if (error) {
-        console.error('Error fetching user prayers for subscription:', error);
-        return;
-      }
-
-      userPrayerIds = userPrayers?.map(p => p.id) || [];
-      console.log('User has', userPrayerIds.length, 'prayers to monitor for responses');
-
-      // Set up subscription for all prayer responses
-      const subscription = supabase
-        .channel(`user_inbox_${userId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'prayer_responses',
-          },
-          async (payload) => {
-            console.log('Prayer response change received:', payload);
-            
-            // Check if this response is for one of the user's prayers
-            const responseData = payload.new || payload.old;
-            if (!responseData || !responseData.prayer_id) {
-              console.log('Response event has no prayer_id, ignoring');
-              return;
-            }
-
-            // Only process if this response is for one of this user's prayers
-            if (!userPrayerIds.includes(responseData.prayer_id)) {
-              console.log('Response is not for this user\'s prayer, ignoring');
-              return;
-            }
-
-            console.log('Real-time inbox update received for user:', userId, 'prayer:', responseData.prayer_id);
-            
-            // Debounce rapid updates to prevent excessive fetching
-            debounceInboxRefetch();
-          }
-        )
-        .subscribe((status) => {
-          console.log('Inbox subscription status:', status);
-          if (status === 'SUBSCRIBED') {
-            console.log('Successfully subscribed to real-time inbox updates for user:', userId);
-          } else if (status === 'CHANNEL_ERROR') {
-            console.error('Failed to subscribe to real-time inbox updates for user:', userId);
-          }
-        });
-
-      return subscription;
-    } catch (error) {
-      console.error('Error setting up inbox subscription:', error);
-      return null;
-    }
-  };
-
-  // Set up the subscription
-  let subscription: any = null;
-  setupSubscription().then(sub => {
-    subscription = sub;
-  });
-
-  // Also subscribe to changes in the user's prayers (in case they create new prayers)
-  const prayerSubscription = supabase
-    .channel(`user_prayers_${userId}`)
+  const subscription = supabase
+    .channel(`user_inbox_${userId}`)
     .on(
       'postgres_changes',
       {
-        event: 'INSERT',
+        event: '*',
         schema: 'public',
-        table: 'prayers',
-        filter: `user_id=eq.${userId}`
+        table: 'prayer_responses',
       },
-      async (payload) => {
-        console.log('New prayer created by user, updating prayer IDs list');
-        if (payload.new?.id) {
-          userPrayerIds.push(payload.new.id);
-        }
+      async () => {
+        const inbox = await fetchUserInbox(userId);
+        callback(inbox);
       }
     )
     .subscribe();
 
-  // Return unsubscribe function with proper cleanup
   return () => {
-    console.log('Unsubscribing from inbox updates for user:', userId);
-    
-    // Clear any pending debounced fetch
-    if (debounceTimer) {
-      clearTimeout(debounceTimer);
-      debounceTimer = null;
-    }
-    
-    if (subscription) {
-      subscription.unsubscribe();
-    }
-    prayerSubscription.unsubscribe();
+    subscription.unsubscribe();
   };
 }
 
@@ -959,10 +938,17 @@ export function subscribeToUserInbox(userId: string, callback: (inbox: any[]) =>
  * Real-time updates for all prayer connections as they're created anywhere
  * in the world, making the Living Map truly dynamic and responsive.
  *
- * @param callback - Function called with updated global connections list on any change
+ * PERFORMANCE: Uses incremental updates instead of full refetches.
+ * - INSERT: Adds single connection to array (200x less data)
+ * - UPDATE: Updates single connection in array
+ * - DELETE: Removes single connection from array
+ *
+ * @param callback - Function called with connection list updater function
  * @returns Unsubscribe function
  */
-export function subscribeToAllConnections(callback: (connections: PrayerConnection[]) => void) {
+export function subscribeToAllConnections(
+  callback: (updater: (prev: PrayerConnection[]) => PrayerConnection[]) => void
+) {
   if (!supabase) {
     console.warn('Supabase client not initialized');
     return () => {};
@@ -978,10 +964,35 @@ export function subscribeToAllConnections(callback: (connections: PrayerConnecti
         schema: 'public',
         table: 'prayer_connections',
       },
-      async () => {
-        // Fetch all updated connections globally
-        const connections = await fetchAllConnections();
-        callback(connections);
+      async (payload) => {
+        console.log('Real-time connection event:', payload.eventType, payload.new?.id || payload.old?.id);
+
+        // INCREMENTAL UPDATE: Handle each event type separately for efficiency
+        if (payload.eventType === 'INSERT') {
+          const newConnection = rowToPrayerConnection(payload.new as PrayerConnectionRow);
+
+          callback((prev) => {
+            // Prevent duplicates
+            if (prev.some(c => c.id === newConnection.id)) {
+              console.log('Connection already exists, skipping:', newConnection.id);
+              return prev;
+            }
+            return [...prev, newConnection];
+          });
+        }
+        else if (payload.eventType === 'UPDATE') {
+          const updatedConnection = rowToPrayerConnection(payload.new as PrayerConnectionRow);
+
+          callback((prev) =>
+            prev.map(c => c.id === updatedConnection.id ? updatedConnection : c)
+          );
+        }
+        else if (payload.eventType === 'DELETE') {
+          const deletedId = payload.old.id;
+          console.log('Connection deleted:', deletedId);
+
+          callback((prev) => prev.filter(c => c.id !== deletedId));
+        }
       }
     )
     .subscribe();

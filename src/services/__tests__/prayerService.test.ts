@@ -84,6 +84,7 @@ function mockQueryBuilder<T>(data: T, error: { message: string; code?: string } 
     update: vi.fn().mockReturnThis(),
     delete: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
+    in: vi.fn().mockReturnThis(),
     not: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     single: vi.fn().mockResolvedValue({ data, error }),
@@ -259,13 +260,13 @@ describe('prayerService', () => {
   });
 
   describe('fetchAllConnections', () => {
-    it('should fetch all connections using RPC', async () => {
+    it('should fetch all connections using RPC with default limit', async () => {
       const mockData = [createMockConnectionRow()];
       vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
 
       const result = await prayerService.fetchAllConnections();
 
-      expect(supabase.rpc).toHaveBeenCalledWith('get_all_connections');
+      expect(supabase.rpc).toHaveBeenCalledWith('get_all_connections', { limit_count: 200 });
       expect(result).toHaveLength(1);
       expect(result[0].id).toBe('connection-123');
     });
@@ -313,6 +314,33 @@ describe('prayerService', () => {
 
       expect(result).toEqual([]);
       expect(console.error).toHaveBeenCalled();
+    });
+
+    it('should pass custom limit to RPC function', async () => {
+      const mockData = [createMockConnectionRow()];
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
+
+      await prayerService.fetchAllConnections(100);
+
+      expect(supabase.rpc).toHaveBeenCalledWith('get_all_connections', { limit_count: 100 });
+    });
+
+    it('should enforce maximum limit of 500', async () => {
+      const mockData = [createMockConnectionRow()];
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
+
+      await prayerService.fetchAllConnections(1000);
+
+      expect(supabase.rpc).toHaveBeenCalledWith('get_all_connections', { limit_count: 500 });
+    });
+
+    it('should enforce minimum limit of 1', async () => {
+      const mockData = [createMockConnectionRow()];
+      vi.mocked(supabase.rpc).mockResolvedValueOnce({ data: mockData, error: null } satisfies SupabaseResponse<typeof mockData>);
+
+      await prayerService.fetchAllConnections(0);
+
+      expect(supabase.rpc).toHaveBeenCalledWith('get_all_connections', { limit_count: 1 });
     });
   });
 
@@ -705,13 +733,23 @@ describe('prayerService', () => {
 
   describe('fetchUserInbox', () => {
     it('should fetch prayers with responses', async () => {
-      const mockData = [{
-        ...createMockPrayerRow(),
-        prayer_responses: [createMockPrayerResponseRow()],
+      const mockPrayers = [createMockPrayerRow()];
+      const mockResponses = [{
+        ...createMockPrayerResponseRow(),
+        profiles: { display_name: 'Jane Smith' }
       }];
-      const builder = mockQueryBuilder(mockData);
-      builder.not.mockResolvedValue({ data: mockData, error: null });
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
+
+      // Mock first call - fetching user's prayers
+      const prayersBuilder = mockQueryBuilder(mockPrayers);
+      prayersBuilder.order.mockResolvedValue({ data: mockPrayers, error: null });
+
+      // Mock second call - fetching responses
+      const responsesBuilder = mockQueryBuilder(mockResponses);
+      responsesBuilder.order.mockResolvedValue({ data: mockResponses, error: null });
+
+      vi.mocked(supabase.from)
+        .mockReturnValueOnce(prayersBuilder as unknown as ReturnType<typeof supabase.from>)
+        .mockReturnValueOnce(responsesBuilder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await prayerService.fetchUserInbox('user-456');
 
@@ -721,17 +759,24 @@ describe('prayerService', () => {
     });
 
     it('should calculate unread count', async () => {
-      const mockData = [{
-        ...createMockPrayerRow(),
-        prayer_responses: [
-          createMockPrayerResponseRow({ id: '1', read_at: null }),
-          createMockPrayerResponseRow({ id: '2', read_at: '2024-01-03T00:00:00Z' }),
-          createMockPrayerResponseRow({ id: '3', read_at: null }),
-        ],
-      }];
-      const builder = mockQueryBuilder(mockData);
-      builder.not.mockResolvedValue({ data: mockData, error: null });
-      vi.mocked(supabase.from).mockReturnValueOnce(builder as unknown as ReturnType<typeof supabase.from>);
+      const mockPrayers = [createMockPrayerRow()];
+      const mockResponses = [
+        { ...createMockPrayerResponseRow({ id: '1', read_at: null }), profiles: { display_name: 'User 1' } },
+        { ...createMockPrayerResponseRow({ id: '2', read_at: '2024-01-03T00:00:00Z' }), profiles: { display_name: 'User 2' } },
+        { ...createMockPrayerResponseRow({ id: '3', read_at: null }), profiles: { display_name: 'User 3' } },
+      ];
+
+      // Mock first call - fetching user's prayers
+      const prayersBuilder = mockQueryBuilder(mockPrayers);
+      prayersBuilder.order.mockResolvedValue({ data: mockPrayers, error: null });
+
+      // Mock second call - fetching responses
+      const responsesBuilder = mockQueryBuilder(mockResponses);
+      responsesBuilder.order.mockResolvedValue({ data: mockResponses, error: null });
+
+      vi.mocked(supabase.from)
+        .mockReturnValueOnce(prayersBuilder as unknown as ReturnType<typeof supabase.from>)
+        .mockReturnValueOnce(responsesBuilder as unknown as ReturnType<typeof supabase.from>);
 
       const result = await prayerService.fetchUserInbox('user-456');
 

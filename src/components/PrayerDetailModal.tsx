@@ -6,6 +6,8 @@ import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Switch } from './ui/switch';
 import { AudioPlayer } from './AudioPlayer';
+import { PrayButton } from './PrayButton';
+import { useAnimationFeatures } from '../hooks/useAnimationFeatures';
 
 // CODE SPLITTING: Lazy-load heavy recording components
 // Only loaded when user chooses to record audio/video
@@ -35,7 +37,7 @@ interface PrayerDetailModalProps {
   prayer: Prayer;
   userLocation: { lat: number; lng: number };
   onClose: () => void;
-  onPray: (prayer: Prayer, replyData?: PrayerReplyData) => Promise<boolean>;
+  onPray: (prayer: Prayer, replyData?: PrayerReplyData) => void;
   onOpenVideoFeed?: (prayer: Prayer) => void;
 }
 
@@ -58,6 +60,7 @@ function calculateDistance(
 }
 
 export function PrayerDetailModal({ prayer, userLocation, onClose, onPray, onOpenVideoFeed }: PrayerDetailModalProps) {
+  const { features } = useAnimationFeatures();
   const [isPraying, setIsPraying] = useState(false);
   const [showSpotlight, setShowSpotlight] = useState(false);
   const [replyType, setReplyType] = useState<'text' | 'audio' | 'video'>(
@@ -72,18 +75,17 @@ export function PrayerDetailModal({ prayer, userLocation, onClose, onPray, onOpe
   const [replyVideoBlob, setReplyVideoBlob] = useState<Blob | null>(null);
 
   const isAudioPrayer = prayer.content_type === 'audio' && prayer.content_url;
+  const useNewButton = features.useNewPrayButton;
 
   const handleReplyTypeClick = (type: 'text' | 'audio' | 'video') => {
     setReplyType(type);
     setShowReplyForm(true);
   };
 
-  const handlePray = async () => {
-    setIsPraying(true);
-    setShowSpotlight(true);
-
-    try {
-      // Pass reply data along with the prayer
+  const handlePray = useCallback(() => {
+    if (useNewButton) {
+      // New PrayButton handles its own timing and animation states
+      // Just pass the reply data to onPray immediately
       const replyData: PrayerReplyData = {
         message: replyContent || 'Praying for you!',
         contentType: replyType,
@@ -91,59 +93,47 @@ export function PrayerDetailModal({ prayer, userLocation, onClose, onPray, onOpe
         videoBlob: replyVideoBlob || undefined,
         isAnonymous,
       };
-      
-      // Wait for animation to complete before submitting
-      setTimeout(async () => {
-        const success = await onPray(prayer, replyData);
-        if (success) {
-          // Close modal on success after a brief delay
-          setTimeout(() => {
-            onClose();
-          }, 1500);
-        } else {
-          // Reset state on failure so user can try again
-          setIsPraying(false);
-          setShowSpotlight(false);
-        }
+      onPray(prayer, replyData);
+    } else {
+      // Legacy behavior: manage state and timing here
+      setIsPraying(true);
+      setShowSpotlight(true);
+
+      setTimeout(() => {
+        const replyData: PrayerReplyData = {
+          message: replyContent || 'Praying for you!',
+          contentType: replyType,
+          audioBlob: replyAudioBlob || undefined,
+          videoBlob: replyVideoBlob || undefined,
+          isAnonymous,
+        };
+        onPray(prayer, replyData);
       }, 2500);
-    } catch (error) {
-      console.error('Prayer submission failed:', error);
-      setIsPraying(false);
-      setShowSpotlight(false);
     }
-  };
+  }, [useNewButton, replyContent, replyType, replyAudioBlob, replyVideoBlob, isAnonymous, onPray, prayer]);
 
-  const handleQuickPray = useCallback(async () => {
-    // Quick one-touch prayer response (no custom message)
-    setIsPraying(true);
-    setShowSpotlight(true);
+  const handleQuickPray = useCallback(() => {
+    if (useNewButton) {
+      // New PrayButton handles its own timing and animation states
+      onPray(prayer, {
+        message: 'Praying for you!',
+        contentType: 'text',
+        isAnonymous: false,
+      });
+    } else {
+      // Legacy behavior: manage state and timing here
+      setIsPraying(true);
+      setShowSpotlight(true);
 
-    try {
-      // Quick pray uses default message, not anonymous
-      setTimeout(async () => {
-        const success = await onPray(prayer, {
+      setTimeout(() => {
+        onPray(prayer, {
           message: 'Praying for you!',
           contentType: 'text',
           isAnonymous: false,
         });
-        
-        if (success) {
-          // Close modal on success after a brief delay
-          setTimeout(() => {
-            onClose();
-          }, 1500);
-        } else {
-          // Reset state on failure so user can try again
-          setIsPraying(false);
-          setShowSpotlight(false);
-        }
       }, 2500);
-    } catch (error) {
-      console.error('Quick prayer submission failed:', error);
-      setIsPraying(false);
-      setShowSpotlight(false);
     }
-  }, [prayer, onPray, onClose]);
+  }, [useNewButton, prayer, onPray]);
 
   const handleAudioEnded = useCallback(() => {
     setAudioFinished(true);
@@ -253,22 +243,31 @@ export function PrayerDetailModal({ prayer, userLocation, onClose, onPray, onOpe
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: audioFinished ? 0 : 0.5 }}
                   >
-                    <motion.button
-                      onClick={handleQuickPray}
-                      className="w-full glass rounded-2xl p-4 flex items-center justify-center gap-3 group hover:bg-white/40 transition-colors"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <motion.div
-                        animate={audioFinished ? { scale: [1, 1.2, 1] } : {}}
-                        transition={{ duration: 1, repeat: audioFinished ? Infinity : 0 }}
+                    {useNewButton ? (
+                      <PrayButton
+                        onPray={handleQuickPray}
+                        disabled={false}
+                        isLoading={false}
+                        showQuickOption={false}
+                      />
+                    ) : (
+                      <motion.button
+                        onClick={handleQuickPray}
+                        className="w-full glass rounded-2xl p-4 flex items-center justify-center gap-3 group hover:bg-white/40 transition-colors"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
                       >
-                        <Heart className="w-6 h-6 text-pink-500 group-hover:text-pink-600" />
-                      </motion.div>
-                      <span className="text-gray-700 font-medium">
-                        {audioFinished ? 'Tap to Pray for Them' : 'Pray While Listening'}
-                      </span>
-                    </motion.button>
+                        <motion.div
+                          animate={audioFinished ? { scale: [1, 1.2, 1] } : {}}
+                          transition={{ duration: 1, repeat: audioFinished ? Infinity : 0 }}
+                        >
+                          <Heart className="w-6 h-6 text-pink-500 group-hover:text-pink-600" />
+                        </motion.div>
+                        <span className="text-gray-700 font-medium">
+                          {audioFinished ? 'Tap to Pray for Them' : 'Pray While Listening'}
+                        </span>
+                      </motion.button>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -506,13 +505,22 @@ export function PrayerDetailModal({ prayer, userLocation, onClose, onPray, onOpe
                   )}
                 </AnimatePresence>
 
-                <Button
-                  onClick={handlePray}
-                  className="w-full bg-gradient-to-r from-yellow-300 to-purple-300 hover:from-yellow-400 hover:to-purple-400 text-gray-800 rounded-full py-6 flex items-center justify-center gap-2 shadow-lg"
-                >
-                  <Send className="w-5 h-5" />
-                  <span>Send Prayer</span>
-                </Button>
+                {useNewButton ? (
+                  <PrayButton
+                    onPray={handlePray}
+                    disabled={false}
+                    isLoading={false}
+                    showQuickOption={false}
+                  />
+                ) : (
+                  <Button
+                    onClick={handlePray}
+                    className="w-full bg-gradient-to-r from-yellow-300 to-purple-300 hover:from-yellow-400 hover:to-purple-400 text-gray-800 rounded-full py-6 flex items-center justify-center gap-2 shadow-lg"
+                  >
+                    <Send className="w-5 h-5" />
+                    <span>Send Prayer</span>
+                  </Button>
+                )}
               </>
             )}
 
@@ -574,14 +582,23 @@ export function PrayerDetailModal({ prayer, userLocation, onClose, onPray, onOpe
                           </Suspense>
                         )}
 
-                        <Button
-                          onClick={handlePray}
-                          className="w-full bg-gradient-to-r from-yellow-300 to-purple-300 hover:from-yellow-400 hover:to-purple-400 text-gray-800 rounded-full"
-                          disabled={replyType === 'text' && !replyContent.trim() && !replyAudioBlob}
-                        >
-                          <Send className="w-4 h-4 mr-2" />
-                          Send Response
-                        </Button>
+                        {useNewButton ? (
+                          <PrayButton
+                            onPray={handlePray}
+                            disabled={replyType === 'text' && !replyContent.trim() && !replyAudioBlob}
+                            isLoading={false}
+                            showQuickOption={false}
+                          />
+                        ) : (
+                          <Button
+                            onClick={handlePray}
+                            className="w-full bg-gradient-to-r from-yellow-300 to-purple-300 hover:from-yellow-400 hover:to-purple-400 text-gray-800 rounded-full"
+                            disabled={replyType === 'text' && !replyContent.trim() && !replyAudioBlob}
+                          >
+                            <Send className="w-4 h-4 mr-2" />
+                            Send Response
+                          </Button>
+                        )}
                       </div>
                     </motion.div>
                   )}

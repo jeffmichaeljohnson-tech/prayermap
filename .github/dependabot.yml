@@ -1,0 +1,173 @@
+# Dependabot Configuration for PrayerMap
+# Automated dependency updates and security vulnerability scanning
+# Reference: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+updates:
+  # Main npm dependencies (root package.json)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/New_York"
+
+    # Group updates to reduce PR noise
+    groups:
+      # Group all patch updates together (auto-mergeable)
+      patch-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+
+      # Group React ecosystem minor updates
+      react-ecosystem:
+        patterns:
+          - "react*"
+          - "@types/react*"
+          - "framer-motion"
+        update-types:
+          - "minor"
+
+      # Group Capacitor ecosystem minor updates
+      capacitor-ecosystem:
+        patterns:
+          - "@capacitor/*"
+        update-types:
+          - "minor"
+
+      # Group Radix UI ecosystem minor updates
+      radix-ui:
+        patterns:
+          - "@radix-ui/*"
+        update-types:
+          - "minor"
+
+      # Group Supabase ecosystem minor updates
+      supabase-ecosystem:
+        patterns:
+          - "@supabase/*"
+        update-types:
+          - "minor"
+
+      # Group testing tools minor updates
+      testing-tools:
+        patterns:
+          - "@playwright/*"
+          - "playwright"
+          - "@vitest/*"
+          - "vitest"
+          - "@testing-library/*"
+        update-types:
+          - "minor"
+
+      # Group build tools minor updates
+      build-tools:
+        patterns:
+          - "vite*"
+          - "@vitejs/*"
+          - "typescript*"
+          - "eslint*"
+          - "@eslint/*"
+          - "tailwindcss*"
+          - "@tailwindcss/*"
+        update-types:
+          - "minor"
+
+    # Open pull requests limit
+    open-pull-requests-limit: 10
+
+    # Automatically rebase when conflicts occur
+    rebase-strategy: "auto"
+
+    # Ignore major version updates (require manual review)
+    ignore:
+      # React 19 - stay on current major until thoroughly tested
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+
+      # TypeScript - major updates need careful migration
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
+
+      # Vite - major updates can break build config
+      - dependency-name: "vite"
+        update-types: ["version-update:semver-major"]
+
+      # Capacitor - major updates require mobile testing
+      - dependency-name: "@capacitor/*"
+        update-types: ["version-update:semver-major"]
+
+      # TailwindCSS - major updates need design system review
+      - dependency-name: "tailwindcss"
+        update-types: ["version-update:semver-major"]
+
+    # Commit message configuration
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+      include: "scope"
+
+    # Pull request labels
+    labels:
+      - "dependencies"
+      - "automated"
+
+    # Reviewers (optional - uncomment and add your GitHub usernames)
+    # reviewers:
+    #   - "your-github-username"
+
+    # Allow both direct and indirect dependency updates
+    versioning-strategy: "increase"
+
+  # Admin dashboard dependencies (if it has separate package.json)
+  - package-ecosystem: "npm"
+    directory: "/admin"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/New_York"
+
+    groups:
+      patch-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+
+    open-pull-requests-limit: 5
+    rebase-strategy: "auto"
+
+    commit-message:
+      prefix: "chore(admin-deps)"
+      prefix-development: "chore(admin-deps-dev)"
+      include: "scope"
+
+    labels:
+      - "dependencies"
+      - "admin"
+      - "automated"
+
+  # GitHub Actions workflow dependencies
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/New_York"
+
+    open-pull-requests-limit: 3
+
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"
+
+    labels:
+      - "ci"
+      - "automated"

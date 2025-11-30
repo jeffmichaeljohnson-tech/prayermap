@@ -1,0 +1,14 @@
+{
+  "imports": {
+    "supabase": "https://esm.sh/@supabase/supabase-js@2.39.0"
+  },
+  "tasks": {
+    "dev": "deno run --watch --allow-net --allow-env --allow-read index.ts"
+  },
+  "compilerOptions": {
+    "strict": true,
+    "lib": ["deno.window", "dom"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "react"
+  }
+}

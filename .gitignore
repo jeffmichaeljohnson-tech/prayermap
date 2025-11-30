@@ -29,6 +29,30 @@ dist-ssr
 .mcp.json
 .vercel
 .env
+.env.local
+.env.production
+.env.staging
+.env*.local
 .ora/
 coverage/
-.env*.local
+
+# Android
+android/keystore/
+android/keystore.properties
+android/app/release/
+android/app/build/outputs/bundle/
+android/app/build/outputs/apk/
+android/.gradle/
+android/build/
+android/app/build/
+
+# iOS
+ios/App/Pods/
+
+# Capacitor generated files
+ios/App/public/
+android/app/src/main/assets/public/
+
+# Test reports (generated)
+playwright-report/
+test-results/

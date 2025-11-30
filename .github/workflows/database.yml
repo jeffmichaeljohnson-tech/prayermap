@@ -1,0 +1,95 @@
+name: Database
+
+on:
+  push:
+    paths:
+      - 'supabase/migrations/**'
+      - 'src/services/**Service.ts'
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'src/services/**Service.ts'
+
+jobs:
+  validate-migrations:
+    name: Validate Migrations
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Validate SQL Syntax
+        run: |
+          for file in supabase/migrations/*.sql; do
+            echo "Validating $file..."
+            # Basic SQL syntax check
+            if ! grep -q "CREATE\|ALTER\|DROP\|INSERT" "$file"; then
+              echo "Warning: $file may be empty or invalid"
+            fi
+          done
+
+      - name: Check Migration Naming
+        run: |
+          for file in supabase/migrations/*.sql; do
+            filename=$(basename "$file")
+            if ! [[ $filename =~ ^[0-9]{3,14}_.+\.sql$ ]]; then
+              echo "Error: Invalid migration filename: $filename"
+              echo "Expected format: NNN_description.sql, YYYYMMDD_description.sql, or YYYYMMDDHHMMSS_description.sql"
+              exit 1
+            fi
+          done
+
+  test-services:
+    name: Test Database Services
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Service Tests
+        run: npm test -- src/services/__tests__
+
+      - name: Check TypeScript Types
+        run: npx tsc --noEmit
+
+  performance-check:
+    name: Performance Regression Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Check Bundle Size
+        run: |
+          BUNDLE_SIZE=$(du -sk dist/assets/*.js | awk '{sum+=$1} END {print sum}')
+          echo "Bundle size: ${BUNDLE_SIZE}KB"
+          if [ $BUNDLE_SIZE -gt 500 ]; then
+            echo "Warning: Bundle size exceeds 500KB"
+          fi

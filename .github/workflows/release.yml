@@ -1,0 +1,212 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for changelog generation
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: |
+          npm run test:ci
+          npm run lint
+
+      - name: Build application
+        run: npm run build
+
+      - name: Build Android APK
+        run: |
+          npm run android:sync
+          npm run android:build
+        continue-on-error: true # Don't fail if Android build fails
+
+      - name: Build Android AAB
+        run: npm run android:build:aab
+        continue-on-error: true
+
+      - name: Extract version from tag
+        id: get_version
+        run: |
+          echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+          echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          # Get the previous tag
+          PREVIOUS_TAG=$(git describe --abbrev=0 --tags ${GITHUB_REF}^ 2>/dev/null || echo "")
+
+          if [ -z "$PREVIOUS_TAG" ]; then
+            # First release - get all commits
+            CHANGELOG=$(git log --pretty=format:"* %s (%h)" --no-merges)
+          else
+            # Get commits since previous tag
+            CHANGELOG=$(git log ${PREVIOUS_TAG}..${GITHUB_REF} --pretty=format:"* %s (%h)" --no-merges)
+          fi
+
+          # Categorize commits by type
+          FEATURES=$(echo "$CHANGELOG" | grep -E '^\* feat' || echo "")
+          FIXES=$(echo "$CHANGELOG" | grep -E '^\* fix' || echo "")
+          MOBILE=$(echo "$CHANGELOG" | grep -E '^\* mobile' || echo "")
+          REFACTOR=$(echo "$CHANGELOG" | grep -E '^\* refactor' || echo "")
+          DOCS=$(echo "$CHANGELOG" | grep -E '^\* docs' || echo "")
+          CHORE=$(echo "$CHANGELOG" | grep -E '^\* (chore|style|test)' || echo "")
+
+          # Build formatted changelog
+          FORMATTED_CHANGELOG="## What's Changed\n\n"
+
+          if [ -n "$FEATURES" ]; then
+            FORMATTED_CHANGELOG="${FORMATTED_CHANGELOG}### ✨ Features\n${FEATURES}\n\n"
+          fi
+
+          if [ -n "$FIXES" ]; then
+            FORMATTED_CHANGELOG="${FORMATTED_CHANGELOG}### 🐛 Bug Fixes\n${FIXES}\n\n"
+          fi
+
+          if [ -n "$MOBILE" ]; then
+            FORMATTED_CHANGELOG="${FORMATTED_CHANGELOG}### 📱 Mobile\n${MOBILE}\n\n"
+          fi
+
+          if [ -n "$REFACTOR" ]; then
+            FORMATTED_CHANGELOG="${FORMATTED_CHANGELOG}### ♻️ Refactoring\n${REFACTOR}\n\n"
+          fi
+
+          if [ -n "$DOCS" ]; then
+            FORMATTED_CHANGELOG="${FORMATTED_CHANGELOG}### 📚 Documentation\n${DOCS}\n\n"
+          fi
+
+          if [ -n "$CHORE" ]; then
+            FORMATTED_CHANGELOG="${FORMATTED_CHANGELOG}### 🔧 Maintenance\n${CHORE}\n\n"
+          fi
+
+          # Add installation instructions
+          FORMATTED_CHANGELOG="${FORMATTED_CHANGELOG}## 📦 Installation\n\n"
+          FORMATTED_CHANGELOG="${FORMATTED_CHANGELOG}### Web\n"
+          FORMATTED_CHANGELOG="${FORMATTED_CHANGELOG}Visit [https://prayermap.net](https://prayermap.net)\n\n"
+          FORMATTED_CHANGELOG="${FORMATTED_CHANGELOG}### Android\n"
+          FORMATTED_CHANGELOG="${FORMATTED_CHANGELOG}Download the APK from the assets below.\n\n"
+          FORMATTED_CHANGELOG="${FORMATTED_CHANGELOG}### iOS\n"
+          FORMATTED_CHANGELOG="${FORMATTED_CHANGELOG}Available on TestFlight (contact team for access).\n\n"
+
+          # Add full changelog link
+          if [ -n "$PREVIOUS_TAG" ]; then
+            FORMATTED_CHANGELOG="${FORMATTED_CHANGELOG}**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREVIOUS_TAG}...${GITHUB_REF_NAME}"
+          else
+            FORMATTED_CHANGELOG="${FORMATTED_CHANGELOG}**Full Changelog**: https://github.com/${{ github.repository }}/commits/${GITHUB_REF_NAME}"
+          fi
+
+          # Save to file
+          echo -e "$FORMATTED_CHANGELOG" > RELEASE_NOTES.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: RELEASE_NOTES.md
+          draft: false
+          prerelease: ${{ contains(steps.get_version.outputs.VERSION, 'alpha') || contains(steps.get_version.outputs.VERSION, 'beta') || contains(steps.get_version.outputs.VERSION, 'rc') }}
+          files: |
+            dist/**/*
+            android/app/build/outputs/apk/release/*.apk
+            android/app/build/outputs/bundle/release/*.aab
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update CHANGELOG.md
+        run: |
+          # Prepend the new release notes to CHANGELOG.md
+          if [ -f CHANGELOG.md ]; then
+            cat RELEASE_NOTES.md CHANGELOG.md > CHANGELOG.tmp
+            mv CHANGELOG.tmp CHANGELOG.md
+          else
+            cp RELEASE_NOTES.md CHANGELOG.md
+          fi
+
+          # Add version and date header
+          sed -i "1i # Changelog\n\n## [${{ steps.get_version.outputs.VERSION }}] - $(date +%Y-%m-%d)\n" CHANGELOG.md
+
+      - name: Commit CHANGELOG.md
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git commit -m "chore: update CHANGELOG.md for ${{ steps.get_version.outputs.TAG }}" || echo "No changes to commit"
+          git push origin HEAD:main || echo "Could not push to main"
+        continue-on-error: true
+
+      - name: Notify Slack (if configured)
+        if: env.SLACK_WEBHOOK_URL != ''
+        run: |
+          curl -X POST ${{ secrets.SLACK_WEBHOOK_URL }} \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "text": "🎉 New PrayerMap release: ${{ steps.get_version.outputs.TAG }}",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*PrayerMap ${{ steps.get_version.outputs.TAG }} Released!*\n\nView the release: https://github.com/${{ github.repository }}/releases/tag/${{ steps.get_version.outputs.TAG }}"
+                  }
+                }
+              ]
+            }'
+        continue-on-error: true
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  update-version:
+    name: Update package.json version
+    runs-on: ubuntu-latest
+    needs: release
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Extract version from tag
+        id: get_version
+        run: |
+          echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Update package.json version
+        run: |
+          npm version ${{ steps.get_version.outputs.VERSION }} --no-git-tag-version
+
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json package-lock.json
+          git commit -m "chore: bump version to ${{ steps.get_version.outputs.VERSION }}" || echo "No changes to commit"
+          git push origin main
+        continue-on-error: true

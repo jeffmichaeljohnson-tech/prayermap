@@ -100,6 +100,14 @@ export interface Database {
         }
         Returns: Array<PrayerConnection & { requester_name: string; replier_name: string }>
       }
+      get_prayers_paginated: {
+        Args: {
+          page_size?: number
+          cursor_id?: string | null
+          cursor_created_at?: string | null
+        }
+        Returns: Array<Prayer & { has_more: boolean }>
+      }
     }
   }
 }

@@ -16,6 +16,7 @@
 export * from './mocks/supabase';
 export * from './mocks/mediaRecorder';
 export * from './mocks/mediaDevices';
+export * from './mocks/framer-motion';
 
 // ============================================================================
 // Factories
