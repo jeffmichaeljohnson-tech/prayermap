@@ -15,7 +15,8 @@
  * - Performance monitoring and throttling
  */
 
-import { Message, messagingChannelManager } from './MessagingChannelManager';
+import type { Message } from './MessagingChannelManager';
+import { messagingChannelManager } from './MessagingChannelManager';
 import { mobileOptimizedRealtime } from './MobileOptimizedRealtime';
 import type { Prayer, PrayerConnection } from '../../types/prayer';
 

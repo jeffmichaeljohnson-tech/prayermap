@@ -15,8 +15,8 @@
  */
 
 import { datadogRum } from '@datadog/browser-rum';
-import * as datadogRumReact from '@datadog/browser-rum-react';
-import React from 'react';
+// import * as datadogRumReact from '@datadog/browser-rum-react';
+// import React from 'react';
 
 // Initialize Datadog RUM
 let initialized = false;
@@ -80,10 +80,10 @@ export function initDatadog() {
     // Error handling - removed duplicate beforeSend
   });
   
-  // React integration
-  if (typeof window !== 'undefined') {
-    datadogRumReact.setupTracking(React);
-  }
+  // React integration - temporarily disabled due to import issues
+  // if (typeof window !== 'undefined' && datadogRumReact.setupTracking) {
+  //   datadogRumReact.setupTracking(React);
+  // }
   
   initialized = true;
   console.log('✅ Datadog RUM initialized');

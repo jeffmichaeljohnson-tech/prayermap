@@ -10,7 +10,7 @@
  * - Mobile optimization
  */
 
-import { TypingIndicator } from './MessagingChannelManager';
+import type { TypingIndicator } from './MessagingChannelManager';
 
 export interface TypingState {
   userId: string;

@@ -11,7 +11,7 @@
  * - Data compression for efficiency
  */
 
-import { MessageData } from './MessageDeliveryTracker';
+import type { MessageData } from './MessageDeliveryTracker';
 
 export interface QueuedMessage {
   id: string;

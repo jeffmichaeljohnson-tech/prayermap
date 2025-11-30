@@ -11,7 +11,7 @@
  * - IndexedDB persistence for offline access
  */
 
-import { Message } from './MessagingChannelManager';
+import type { Message } from './MessagingChannelManager';
 
 export interface CacheOptions {
   maxCacheSize?: number; // Maximum number of messages to cache

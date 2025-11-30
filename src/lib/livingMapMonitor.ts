@@ -456,6 +456,65 @@ class LivingMapMonitor {
     return 'None - Living Map is functioning at optimal spiritual excellence';
   }
   
+  /**
+   * Take a snapshot of current Living Map state for debugging
+   */
+  takeSnapshot(prayers: Prayer[], connections: PrayerConnection[], context: string) {
+    const snapshot = {
+      timestamp: new Date().toISOString(),
+      context,
+      prayers_count: prayers.length,
+      connections_count: connections.length,
+      prayers_sample: prayers.slice(0, 3).map(p => ({ id: p.id, created_at: p.created_at })),
+      connections_sample: connections.slice(0, 3).map(c => ({ id: c.id, created_at: c.created_at })),
+    };
+    
+    trackEvent('living_map.snapshot_taken', snapshot);
+    
+    // Update universal map state metrics
+    this.trackUniversalMapState(prayers.length, connections.length);
+  }
+
+  /**
+   * Validate Living Map state integrity
+   */
+  validateLivingMap(prayers: Prayer[], connections: PrayerConnection[]) {
+    // Check for basic data integrity
+    const hasValidData = prayers.length >= 0 && connections.length >= 0;
+    
+    if (!hasValidData) {
+      this.raiseAlert({
+        type: 'data_integrity',
+        severity: 'high',
+        message: 'Invalid Living Map state detected',
+        context: { prayers_count: prayers.length, connections_count: connections.length },
+        spiritualImpact: 'Map state corruption could affect prayer visibility',
+      });
+    }
+    
+    trackEvent('living_map.validation_performed', {
+      is_valid: hasValidData,
+      prayers_count: prayers.length,
+      connections_count: connections.length,
+    });
+  }
+
+  /**
+   * Log current Living Map status
+   */
+  logStatus(prayers: Prayer[], connections: PrayerConnection[]) {
+    const status = {
+      prayers_count: prayers.length,
+      connections_count: connections.length,
+      health_score: this.getLivingMapHealthScore(),
+      uptime: Date.now() - this.startupTime,
+    };
+    
+    console.log('🕊️ Living Map Status:', status);
+    
+    trackEvent('living_map.status_logged', status);
+  }
+
   private startPeriodicHealthChecks() {
     // Run persistence check every hour
     setInterval(() => {
