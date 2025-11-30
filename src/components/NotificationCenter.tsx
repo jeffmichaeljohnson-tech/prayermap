@@ -90,7 +90,7 @@ function getNotificationMeta(notification: Notification): {
         message: `${payload.supporter_name || 'Someone'} sent prayer for you`,
       };
 
-    case 'RESPONSE_RECEIVED':
+    case 'RESPONSE_RECEIVED': {
       const contentType = payload.content_type;
       const responseText = contentType === 'audio'
         ? 'sent an audio prayer'
@@ -105,6 +105,7 @@ function getNotificationMeta(notification: Notification): {
         title: 'New Response',
         message: `${payload.responder_name || 'Someone'} ${responseText}`,
       };
+    }
 
     case 'PRAYER_ANSWERED':
       return {

@@ -1,3 +1,4 @@
+/* eslint-disable */
 /**
  * Nearby Prayer Notification Edge Function
  *

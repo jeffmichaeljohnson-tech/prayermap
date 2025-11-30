@@ -121,6 +121,10 @@ export function useVideoModeration(
         pollForResult(taskIdToPoll, contentId);
       }, pollInterval);
     }
+    // Note: State setters (setError, setProgress, setIsProcessing) are stable and don't need to be in deps
+    // Refs (pollCountRef, pollTimeoutRef) are also stable
+    // taskIdToPoll and contentId are function parameters, passed in each recursive call
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [maxAttempts, pollInterval, onApproved, onRejected]);
 
   const submitVideo = useCallback(async (

@@ -6,6 +6,8 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { useAuth } from '../contexts/AuthContext';
 import { changePassword, submitSuggestion } from '../services/userService';
+import { NotificationPreferences } from './settings/NotificationPreferences';
+import { PrayerReminderSettings } from './settings/PrayerReminderSettings';
 
 interface SettingsScreenProps {
   onBack: () => void;
@@ -85,11 +87,29 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
       </div>
 
       <div className="max-w-md mx-auto space-y-6">
-        {/* Suggestion Box Section */}
+        {/* Notification Settings Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
+        >
+          <h2 className="text-lg font-semibold text-gray-800 mb-4 px-2">
+            Notifications
+          </h2>
+          <div className="space-y-6">
+            <NotificationPreferences />
+            <PrayerReminderSettings />
+          </div>
+        </motion.div>
+
+        {/* Divider */}
+        <div className="h-px bg-gradient-to-r from-transparent via-white/40 to-transparent" />
+
+        {/* Suggestion Box Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
           className="glass-strong rounded-3xl p-6"
         >
           <div className="flex items-center gap-3 mb-6">
@@ -165,7 +185,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.3 }}
           className="glass-strong rounded-3xl p-6"
         >
           <div className="flex items-center gap-3 mb-6">
@@ -252,7 +272,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 }}
+            transition={{ delay: 0.35 }}
             className="glass rounded-2xl p-4"
           >
             <p className="text-sm text-gray-600">Signed in as</p>
@@ -264,7 +284,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
+          transition={{ delay: 0.4 }}
           className="text-center text-gray-600 text-sm"
         >
           <p>PrayerMap v1.0</p>
