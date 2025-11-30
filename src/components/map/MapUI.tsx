@@ -3,7 +3,6 @@
  *
  * Handles:
  * - Header with inbox and settings buttons
- * - Sun/moon indicator
  * - Request prayer button
  * - Info button
  *
@@ -12,10 +11,8 @@
 
 import { motion } from 'framer-motion';
 import { Inbox, Settings, Info } from 'lucide-react';
-import { SunMoonIndicator } from '../SunMoonIndicator';
 
 export interface MapUIProps {
-  userLocation: { lat: number; lng: number };
   totalUnread: number;
   onOpenInbox: () => void;
   onOpenSettings: () => void;
@@ -29,7 +26,6 @@ export interface MapUIProps {
  * Renders all UI chrome elements that sit on top of the map.
  */
 export function MapUI({
-  userLocation,
   totalUnread,
   onOpenInbox,
   onOpenSettings,
@@ -67,11 +63,6 @@ export function MapUI({
             <Settings className="w-6 h-6 text-gray-700" />
           </button>
         </div>
-      </div>
-
-      {/* Sunset/Sunrise Indicator */}
-      <div className="absolute top-24 right-4 pointer-events-none" style={{ zIndex: 30 }}>
-        <SunMoonIndicator location={userLocation} />
       </div>
 
       {/* Request Prayer Button */}

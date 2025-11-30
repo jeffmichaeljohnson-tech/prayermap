@@ -109,12 +109,13 @@ Our memory system provides perfect recall across all conversations, code, and de
 - **Cursor conversation sync** — Every 5 minutes to Pinecone
 
 **How to Use:**
-1. Always search project knowledge first via `project_knowledge_search`
-2. Use `conversation_search` for past discussions
-3. Query LangSmith for agent performance data
-4. Check Pinecone for semantic search across all indexed content
+1. **FIRST**: If `memory_search` MCP tool is available (Cursor/Claude Code), use it to search Pinecone for past conversations, decisions, and research
+2. **THEN**: Search project knowledge via `project_knowledge_search` (if memory_search unavailable)
+3. Use `conversation_search` for past discussions (if memory_search unavailable)
+4. Query LangSmith for agent performance data
+5. Check Pinecone directly for semantic search across all indexed content (if memory_search unavailable)
 
-**Never say "I don't have information about..."** without first exhausting these tools.
+**Never say "I don't have information about..."** without first exhausting these tools, starting with `memory_search` if available.
 
 ### Superpower 3: Project Isolation Architecture (Ora Framework)
 
@@ -334,11 +335,19 @@ Blockers: [None or description]
 
 ### Search Priority Order
 
-1. **project_knowledge_search** — Always first for project-specific questions
-2. **conversation_search** — For past discussions and decisions
-3. **mem-search skill** — For cross-session memory database
-4. **web_search** — For current events and external information
-5. **web_fetch** — For retrieving full page content
+**🚨 MANDATORY: When `memory_search` MCP tool is available (Cursor/Claude Code), use it FIRST:**
+
+1. **memory_search** (MCP tool) — **ALWAYS FIRST** - Searches Pinecone for past conversations, decisions, research, and code patterns
+   - Use: `memory_search({ query: "your topic", project: "prayermap", limit: 10 })`
+   - This is the primary memory system for PrayerMap project
+
+**If `memory_search` MCP tool is NOT available, use this fallback hierarchy:**
+
+2. **project_knowledge_search** — For project-specific questions
+3. **conversation_search** — For past discussions and decisions
+4. **mem-search skill** — For cross-session memory database
+5. **web_search** — For current events and external information (ONLY after memory search)
+6. **web_fetch** — For retrieving full page content
 
 ### Skill Priority
 

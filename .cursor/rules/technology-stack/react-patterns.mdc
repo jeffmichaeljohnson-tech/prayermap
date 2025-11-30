@@ -1,0 +1,13 @@
+  ---
+  description: React 19 patterns for PrayerMap mobile-first development
+  globs: ["src/components/**/*", "src/hooks/**/*"]
+  priority: high
+  ---
+
+  # React 19 + Mobile Patterns
+
+  ## Component Template
+  [Include mobile-first React component patterns]
+
+  ## Performance Patterns  
+  [Concurrent features, Suspense for mobile]

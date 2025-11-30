@@ -33,6 +33,11 @@ import { fetchAllConnections, subscribeToAllConnections } from '../services/pray
 import { realtimeMonitor } from '../services/realtimeMonitor';
 import { getVisibleConnections, extendBounds } from '../utils/viewportCulling';
 import { debounce } from '../utils/debounce';
+import { 
+  loadConnectionsFromCache, 
+  saveConnectionsToCache 
+} from '../utils/statePersistence';
+import { livingMapMonitor } from '../utils/livingMapMonitor';
 
 // Extracted components
 import { MapContainer } from './map/MapContainer';
@@ -84,7 +89,7 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
     actions.setPrevUnreadCount
   );
 
-  // Track prayers state changes for debugging animation issues
+  // Track prayers state changes and validate Living Map requirements
   useEffect(() => {
     console.log('🔄 PRAYERS STATE CHANGED:', {
       count: prayers.length,
@@ -93,22 +98,63 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
       timestamp: new Date().toISOString()
     });
 
+    // Monitor Living Map state for debugging
+    livingMapMonitor.takeSnapshot(prayers, state.connections, 'Prayer State Change');
+    livingMapMonitor.validateLivingMap(prayers, state.connections);
+
     // If we have prayers and animation just finished, log success
     if (prayers.length > 0 && !state.creatingPrayerAnimation) {
       console.log('✅ Prayer creation flow appears successful - prayers loaded and no animation active');
+      livingMapMonitor.logStatus(prayers, state.connections);
     }
-  }, [prayers, state.creatingPrayerAnimation]);
+  }, [prayers, state.creatingPrayerAnimation, state.connections]);
 
   // GLOBAL LIVING MAP: Fetch and subscribe to ALL prayer connections worldwide
   useEffect(() => {
+    // Initialize with cached connections for instant loading
+    const cachedConnections = loadConnectionsFromCache();
+    if (cachedConnections.length > 0) {
+      console.log('🚀 Fast loading with', cachedConnections.length, 'cached connections');
+      actions.setConnections(cachedConnections);
+    }
+
+    // Load fresh connections from server
     fetchAllConnections().then((globalConnections) => {
-      console.log('Loaded global connections:', globalConnections.length);
+      console.log('✅ Loaded global connections:', globalConnections.length);
       actions.setConnections(globalConnections);
+      
+      // Cache fresh connections
+      if (globalConnections.length > 0) {
+        saveConnectionsToCache(globalConnections);
+      }
     });
 
+    // Subscribe to real-time updates with intelligent merging
     const unsubscribe = subscribeToAllConnections((updatedConnections) => {
-      console.log('Real-time connection update:', updatedConnections.length);
-      actions.setConnections(updatedConnections);
+      console.log('📥 Real-time connection update:', updatedConnections.length);
+      
+      // CRITICAL FIX: Use function form to prevent state replacement
+      actions.setConnections(currentConnections => {
+        // Intelligent merging - preserve existing connections, add new ones
+        const connectionMap = new Map(currentConnections.map(conn => [conn.id, conn]));
+        
+        // Add/update connections from server
+        updatedConnections.forEach(conn => {
+          connectionMap.set(conn.id, conn);
+        });
+        
+        const merged = Array.from(connectionMap.values())
+          .sort((a, b) => b.created_at.getTime() - a.created_at.getTime());
+        
+        console.log('🔄 Connection state merged:', currentConnections.length, '→', merged.length, 'connections');
+        
+        // Cache updated state for persistence
+        if (merged.length > 0) {
+          saveConnectionsToCache(merged);
+        }
+        
+        return merged;
+      });
     });
 
     return unsubscribe;
@@ -304,7 +350,6 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
 
       {/* UI Chrome */}
       <MapUI
-        userLocation={userLocation}
         totalUnread={totalUnread}
         onOpenInbox={actions.openInbox}
         onOpenSettings={onOpenSettings}

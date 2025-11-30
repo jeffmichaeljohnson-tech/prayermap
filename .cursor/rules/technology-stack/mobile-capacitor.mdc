@@ -1,0 +1,8 @@
+---
+  description: Capacitor mobile deployment patterns for iOS/Android
+  globs: ["ios/**/*", "android/**/*", "capacitor.config.ts"]
+  priority: critical
+  ---
+
+  # Mobile Deployment Patterns
+  [iOS/Android specific patterns and troubleshooting]

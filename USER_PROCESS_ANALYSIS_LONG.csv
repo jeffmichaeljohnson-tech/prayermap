@@ -1,0 +1,152 @@
+Process Name,Step Number,Step Description,Time (seconds),Total Steps,Total Time (seconds)
+App Launch (First-Time User),1,App loads - loading screen displays (2s animation),2.0,4,5.0
+App Launch (First-Time User),2,User waits for location permission prompt,1.5,4,5.0
+App Launch (First-Time User),3,User grants location permission (tap "Allow"),0.8,4,5.0
+App Launch (First-Time User),4,Map loads and displays prayers,0.7,4,5.0
+App Launch (Returning User),1,App loads - loading screen displays (2s animation),2.0,3,3.5
+App Launch (Returning User),2,Location already granted - map loads,1.0,3,3.5
+App Launch (Returning User),3,Prayers and connections render,0.5,3,3.5
+Sign In with Apple,1,User taps "Sign in with Apple" button,0.3,3,4.2
+Sign In with Apple,2,Apple authentication modal appears,0.4,3,4.2
+Sign In with Apple,3,User taps "Continue" in Apple modal,0.5,3,4.2
+Sign In with Apple,4,User authenticates with Face ID/Touch ID/Password,2.5,3,4.2
+Sign In with Apple,5,App processes authentication,0.5,3,4.2
+Email/Password Login,1,User taps "Login" tab (if not already selected),0.3,5,12.5
+Email/Password Login,2,User taps email input field,0.3,5,12.5
+Email/Password Login,3,User types email address (avg 20 chars),4.2,5,12.5
+Email/Password Login,4,User taps password input field,0.3,5,12.5
+Email/Password Login,5,User types password (avg 12 chars),5.4,5,12.5
+Email/Password Login,6,User taps "Enter PrayerMap" button,0.3,5,12.5
+Email/Password Login,7,App processes login (loading state),1.7,5,12.5
+Email/Password Sign Up,1,User taps "Sign Up" tab,0.3,7,18.3
+Email/Password Sign Up,2,User taps name input field,0.3,7,18.3
+Email/Password Sign Up,3,User types first name (avg 6 chars),1.8,7,18.3
+Email/Password Sign Up,4,User taps email input field,0.3,7,18.3
+Email/Password Sign Up,5,User types email address (avg 20 chars),4.2,7,18.3
+Email/Password Sign Up,6,User taps password input field,0.3,7,18.3
+Email/Password Sign Up,7,User types password (avg 12 chars),5.4,7,18.3
+Email/Password Sign Up,8,User taps "Join PrayerMap" button,0.3,7,18.3
+Email/Password Sign Up,9,App processes signup (loading state),1.7,7,18.3
+Email/Password Sign Up,10,User reads success message,3.0,7,18.3
+Request Prayer - Text Only,1,User taps "Request Prayer" button (bottom center),0.4,7,25.4
+Request Prayer - Text Only,2,Request Prayer modal slides up,0.5,7,25.4
+Request Prayer - Text Only,3,User taps textarea field,0.3,7,25.4
+Request Prayer - Text Only,4,User types prayer text (avg 50 words = 250 chars),18.5,7,25.4
+Request Prayer - Text Only,5,User taps "Add to Map" button,0.4,7,25.4
+Request Prayer - Text Only,6,App processes submission (loading state),1.2,7,25.4
+Request Prayer - Text Only,7,Modal closes automatically,0.4,7,25.4
+Request Prayer - Text with Title,1,User taps "Request Prayer" button,0.4,8,32.1
+Request Prayer - Text with Title,2,Request Prayer modal slides up,0.5,8,32.1
+Request Prayer - Text with Title,3,User taps title input field,0.3,8,32.1
+Request Prayer - Text with Title,4,User types title (avg 4 words = 20 chars),3.2,8,32.1
+Request Prayer - Text with Title,5,User taps textarea field,0.3,8,32.1
+Request Prayer - Text with Title,6,User types prayer text (avg 50 words = 250 chars),18.5,8,32.1
+Request Prayer - Text with Title,7,User taps "Add to Map" button,0.4,8,32.1
+Request Prayer - Text with Title,8,App processes submission (loading state),1.2,8,32.1
+Request Prayer - Text with Title,9,Modal closes automatically,0.4,8,32.1
+Request Prayer - Audio,1,User taps "Request Prayer" button,0.4,9,67.8
+Request Prayer - Audio,2,Request Prayer modal slides up,0.5,9,67.8
+Request Prayer - Audio,3,User taps "Audio" content type button,0.4,9,67.8
+Request Prayer - Audio,4,Audio recorder component loads,0.8,9,67.8
+Request Prayer - Audio,5,User taps "Start Recording" button,0.3,9,67.8
+Request Prayer - Audio,6,User records audio prayer (avg 30 seconds),30.0,9,67.8
+Request Prayer - Audio,7,User taps "Stop Recording" button,0.3,9,67.8
+Request Prayer - Audio,8,User taps "Add to Map" button,0.4,9,67.8
+Request Prayer - Audio,9,App uploads audio and processes (loading state),3.2,9,67.8
+Request Prayer - Audio,10,Modal closes automatically,0.4,9,67.8
+Request Prayer - Video,1,User taps "Request Prayer" button,0.4,9,95.2
+Request Prayer - Video,2,Request Prayer modal slides up,0.5,9,95.2
+Request Prayer - Video,3,User taps "Video" content type button,0.4,9,95.2
+Request Prayer - Video,4,Video recorder component loads,1.2,9,95.2
+Request Prayer - Video,5,User grants camera permission (if first time),1.5,9,95.2
+Request Prayer - Video,6,User taps "Start Recording" button,0.3,9,95.2
+Request Prayer - Video,7,User records video prayer (avg 60 seconds),60.0,9,95.2
+Request Prayer - Video,8,User taps "Stop Recording" button,0.3,9,95.2
+Request Prayer - Video,9,User taps "Add to Map" button,0.4,9,95.2
+Request Prayer - Video,10,App uploads video and processes (loading state),8.5,9,95.2
+Request Prayer - Video,11,Modal closes automatically,0.4,9,95.2
+Respond to Prayer - Quick Pray (Audio Prayer),1,User taps prayer marker on map,0.4,4,8.5
+Respond to Prayer - Quick Pray (Audio Prayer),2,Prayer Detail modal opens,0.5,4,8.5
+Respond to Prayer - Quick Pray (Audio Prayer),3,Audio prayer auto-plays,0.0,4,8.5
+Respond to Prayer - Quick Pray (Audio Prayer),4,User taps "Tap to Pray for Them" button,0.4,4,8.5
+Respond to Prayer - Quick Pray (Audio Prayer),5,Prayer animation plays (2.5s),2.5,4,8.5
+Respond to Prayer - Quick Pray (Audio Prayer),6,Modal closes automatically,0.4,4,8.5
+Respond to Prayer - Text Response,1,User taps prayer marker on map,0.4,8,28.7
+Respond to Prayer - Text Response,2,Prayer Detail modal opens,0.5,8,28.7
+Respond to Prayer - Text Response,3,User reads prayer text (avg 10 seconds),10.0,8,28.7
+Respond to Prayer - Text Response,4,User taps "Text" reply type button,0.4,8,28.7
+Respond to Prayer - Text Response,5,Reply form expands,0.3,8,28.7
+Respond to Prayer - Text Response,6,User taps textarea field,0.3,8,28.7
+Respond to Prayer - Text Response,7,User types response (avg 30 words = 150 chars),11.1,8,28.7
+Respond to Prayer - Text Response,8,User taps "Send Prayer" button,0.4,8,28.7
+Respond to Prayer - Text Response,9,Prayer animation plays (2.5s),2.5,8,28.7
+Respond to Prayer - Text Response,10,Modal closes automatically,0.4,8,28.7
+Respond to Prayer - Audio Response,1,User taps prayer marker on map,0.4,9,71.3
+Respond to Prayer - Audio Response,2,Prayer Detail modal opens,0.5,9,71.3
+Respond to Prayer - Audio Response,3,User reads prayer text (avg 10 seconds),10.0,9,71.3
+Respond to Prayer - Audio Response,4,User taps "Voice" reply type button,0.4,9,71.3
+Respond to Prayer - Audio Response,5,Reply form expands - audio recorder loads,0.8,9,71.3
+Respond to Prayer - Audio Response,6,User taps "Start Recording" button,0.3,9,71.3
+Respond to Prayer - Audio Response,7,User records audio response (avg 30 seconds),30.0,9,71.3
+Respond to Prayer - Audio Response,8,User taps "Stop Recording" button,0.3,9,71.3
+Respond to Prayer - Audio Response,9,User taps "Send Response" button,0.4,9,71.3
+Respond to Prayer - Audio Response,10,App uploads audio (loading state),3.2,9,71.3
+Respond to Prayer - Audio Response,11,Prayer animation plays (2.5s),2.5,9,71.3
+Respond to Prayer - Audio Response,12,Modal closes automatically,0.4,9,71.3
+Respond to Prayer - Video Response,1,User taps prayer marker on map,0.4,9,98.6
+Respond to Prayer - Video Response,2,Prayer Detail modal opens,0.5,9,98.6
+Respond to Prayer - Video Response,3,User reads prayer text (avg 10 seconds),10.0,9,98.6
+Respond to Prayer - Video Response,4,User taps "Video" reply type button,0.4,9,98.6
+Respond to Prayer - Video Response,5,Reply form expands - video recorder loads,1.2,9,98.6
+Respond to Prayer - Video Response,6,User grants camera permission (if first time),1.5,9,98.6
+Respond to Prayer - Video Response,7,User taps "Start Recording" button,0.3,9,98.6
+Respond to Prayer - Video Response,8,User records video response (avg 60 seconds),60.0,9,98.6
+Respond to Prayer - Video Response,9,User taps "Stop Recording" button,0.3,9,98.6
+Respond to Prayer - Video Response,10,User taps "Send Prayer" button,0.4,9,98.6
+Respond to Prayer - Video Response,11,App uploads video (loading state),8.5,9,98.6
+Respond to Prayer - Video Response,12,Prayer animation plays (2.5s),2.5,9,98.6
+Respond to Prayer - Video Response,13,Modal closes automatically,0.4,9,98.6
+View Prayer Details (Text Prayer),1,User taps prayer marker on map,0.4,2,1.2
+View Prayer Details (Text Prayer),2,Prayer Detail modal opens and displays content,0.8,2,1.2
+View Prayer Details (Audio Prayer),1,User taps prayer marker on map,0.4,2,1.2
+View Prayer Details (Audio Prayer),2,Prayer Detail modal opens - audio player loads,0.8,2,1.2
+View Prayer Details (Video Prayer),1,User taps prayer marker on map,0.4,2,1.2
+View Prayer Details (Video Prayer),2,Prayer Detail modal opens - video player loads,0.8,2,1.2
+Open Inbox,1,User taps inbox icon (top left),0.5,1,0.5
+View Inbox Message,1,User taps inbox icon,0.5,2,1.8
+View Inbox Message,2,Inbox modal opens - user scans message list,1.3,2,1.8
+Open Conversation Thread,1,User taps on a message card in inbox,0.6,1,0.6
+Reply in Conversation Thread,1,User opens conversation thread,0.6,6,24.3
+Reply in Conversation Thread,2,User reads conversation history (avg 5 seconds),5.0,6,24.3
+Reply in Conversation Thread,3,User taps reply input field,0.3,6,24.3
+Reply in Conversation Thread,4,User types reply (avg 30 words = 150 chars),11.1,6,24.3
+Reply in Conversation Thread,5,User taps send button,0.3,6,24.3
+Reply in Conversation Thread,6,App processes reply (loading state),1.2,6,24.3
+Close Modal,1,User taps X button or taps outside modal,0.3,1,0.3
+Navigate Map - Zoom In,1,User pinch-to-zoom or double-tap to zoom in,0.8,1,0.8
+Navigate Map - Pan,1,User drags finger to pan map,1.2,1,1.2
+Tap Prayer Marker,1,User taps prayer marker (🙏 emoji) on map,0.4,1,0.4
+Open Settings,1,User taps settings icon (top right),0.5,1,0.5
+Change Password,1,User opens settings screen,0.5,6,22.4
+Change Password,2,User scrolls to "Change Password" section,1.2,6,22.4
+Change Password,3,User taps "New Password" input field,0.3,6,22.4
+Change Password,4,User types new password (avg 12 chars),5.4,6,22.4
+Change Password,5,User taps "Confirm New Password" input field,0.3,6,22.4
+Change Password,6,User types password confirmation (avg 12 chars),5.4,6,22.4
+Change Password,7,User taps "Update Password" button,0.4,6,22.4
+Change Password,8,App processes password change (loading state),1.7,6,22.4
+Change Password,9,User sees success message,2.0,6,22.4
+Submit Suggestion,1,User opens settings screen,0.5,4,18.7
+Submit Suggestion,2,User scrolls to "Suggestion Box" section,1.2,4,18.7
+Submit Suggestion,3,User taps textarea field,0.3,4,18.7
+Submit Suggestion,4,User types suggestion (avg 50 words = 250 chars),18.5,4,18.7
+Submit Suggestion,5,User taps "Send Suggestion" button,0.4,4,18.7
+Submit Suggestion,6,App processes suggestion (loading state),1.7,4,18.7
+Submit Suggestion,7,User sees success message,2.0,4,18.7
+Toggle Anonymous (Request Prayer),1,User toggles "Post anonymously" switch,0.4,1,0.4
+Toggle Anonymous (Respond to Prayer),1,User toggles "Send Anonymously" switch,0.4,1,0.4
+Switch Content Type (Text/Audio/Video),1,User taps different content type button (Text/Audio/Video),0.5,1,0.5
+Expand Message Preview,1,User taps "Show more" link on truncated message,0.3,1,0.3
+Listen to Audio Prayer,1,Audio prayer plays (duration varies: 10-120 seconds),Variable,1,Variable
+Watch Video Prayer,1,Video prayer plays (duration varies: 15-90 seconds),Variable,1,Variable
+

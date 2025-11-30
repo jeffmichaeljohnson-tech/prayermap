@@ -1,5 +1,0 @@
-# Page snapshot
-
-```yaml
-- generic [ref=e2]: "{\"code\":400,\"error_code\":\"validation_failed\",\"msg\":\"Unsupported provider: provider is not enabled\"}"
-```

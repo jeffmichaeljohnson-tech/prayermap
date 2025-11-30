@@ -448,7 +448,7 @@ ENVIRONMENT VARIABLES:
 }
 
 // Main execution
-if (require.main === module) {
+if (import.meta.url === new URL(process.argv[1], 'file://').href) {
   const options = parseArgs();
   const cli = new PineconeUploadCLI();
   

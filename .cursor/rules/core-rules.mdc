@@ -19,7 +19,8 @@ PrayerMap is a sacred digital sanctuary for prayer. Every line of code serves th
 **THESE PRINCIPLES MUST GUIDE EVERY DECISION:**
 
 ### 1. Research-Driven Decisions
-- ALWAYS check the most recent official documentation before deciding on implementation approaches
+- **STEP 1**: ALWAYS query memory first using `memory_search` tool before any research
+- **STEP 2**: If memory insufficient, THEN check the most recent official documentation before deciding on implementation approaches
 - ONLY use credible sources: official documentation, industry leaders, world-class experts
 - Verify information is current and applicable to our stack (React 19, Vite 7, TailwindCSS 4, etc.)
 - Never implement based on outdated or unverified patterns

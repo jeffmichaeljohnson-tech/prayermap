@@ -27,12 +27,13 @@
     "pinecone:upload:docs": "tsx src/scripts/uploadToPinecone.ts --source ./docs --type directory",
     "pinecone:upload:dry-run": "tsx src/scripts/uploadToPinecone.ts --dry-run",
     "agents:deploy": "./scripts/deploy-agents.sh deploy",
-    "agents:status": "./scripts/deploy-agents.sh status", 
+    "agents:status": "./scripts/deploy-agents.sh status",
     "agents:results": "./scripts/deploy-agents.sh results",
     "agents:cleanup": "./scripts/deploy-agents.sh cleanup",
     "ora": "./scripts/deploy-agents.sh deploy"
   },
   "dependencies": {
+    "@capacitor/android": "^7.4.4",
     "@capacitor/app": "^7.1.0",
     "@capacitor/camera": "^7.0.2",
     "@capacitor/cli": "^7.4.4",
@@ -45,7 +46,7 @@
     "@capacitor/splash-screen": "^7.0.3",
     "@capacitor/status-bar": "^7.0.3",
     "@heroicons/react": "^2.2.0",
-    "@pinecone-database/pinecone": "^4.0.0",
+    "@pinecone-database/pinecone": "^4.1.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-aspect-ratio": "^1.1.8",

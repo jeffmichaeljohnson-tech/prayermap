@@ -236,6 +236,20 @@ async function handleMemorySearch(args) {
     const searchFn = async () => {
         // Generate embedding for the query
         const queryEmbedding = await generateEmbedding(query);
+        // Use advanced filtering if any filters are specified
+        const hasAdvancedFilters = topics || messageType || hasCode !== undefined || dateRange;
+        if (hasAdvancedFilters) {
+            return queryWithFilters(queryEmbedding, {
+                topK: limit,
+                topics,
+                sources: source !== "all" ? [source] : undefined,
+                projects: project ? [project] : undefined,
+                messageTypes: messageType ? [messageType] : undefined,
+                hasCode,
+                dateRange,
+            });
+        }
+        // Simple query with basic filters
         // Build filter
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const filter = {};

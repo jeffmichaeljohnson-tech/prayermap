@@ -9,6 +9,10 @@ import {
   subscribeToAllPrayers,
 } from '../services/prayerService';
 import { realtimeMonitor } from '../services/realtimeMonitor';
+import { 
+  loadPrayersFromCache, 
+  savePrayersToCache 
+} from '../utils/statePersistence';
 
 interface UsePrayersOptions {
   location: { lat: number; lng: number };
@@ -49,7 +53,17 @@ export function usePrayers({
   enableRealtime = true,
   globalMode = false, // GLOBAL LIVING MAP: Default to global mode
 }: UsePrayersOptions): UsePrayersReturn {
-  const [prayers, setPrayers] = useState<Prayer[]>([]);
+  // Initialize with cached data for instant loading
+  const [prayers, setPrayers] = useState<Prayer[]>(() => {
+    if (globalMode && typeof window !== 'undefined') {
+      const cached = loadPrayersFromCache();
+      if (cached.length > 0) {
+        console.log('🚀 Fast loading with', cached.length, 'cached prayers');
+        return cached;
+      }
+    }
+    return [];
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const unsubscribeRef = useRef<(() => void) | null>(null);
@@ -64,7 +78,13 @@ export function usePrayers({
       const fetchedPrayers = globalMode
         ? await fetchAllPrayers()
         : await fetchNearbyPrayers(location.lat, location.lng, radiusKm);
+      
       setPrayers(fetchedPrayers);
+      
+      // Cache global prayers for persistence across reloads
+      if (globalMode && fetchedPrayers.length > 0) {
+        savePrayersToCache(fetchedPrayers);
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch prayers';
       setError(errorMessage);
@@ -81,7 +101,26 @@ export function usePrayers({
     }
   }, [autoFetch, fetchPrayers]);
 
-  // Set up real-time subscription with enhanced monitoring
+  // Intelligent state merging function for Living Map persistence
+  const mergeWithDeduplication = useCallback((currentPrayers: Prayer[], newPrayers: Prayer[]): Prayer[] => {
+    // Start with all new prayers (most recent data from server)
+    const mergedPrayers = [...newPrayers];
+    
+    // Add any existing prayers that aren't in the new data (preserve local state)
+    currentPrayers.forEach(existingPrayer => {
+      const isInNewData = newPrayers.some(newPrayer => newPrayer.id === existingPrayer.id);
+      if (!isInNewData) {
+        mergedPrayers.push(existingPrayer);
+      }
+    });
+    
+    // Sort by creation time (newest first) and deduplicate by ID
+    return mergedPrayers
+      .sort((a, b) => b.created_at.getTime() - a.created_at.getTime())
+      .filter((prayer, index, arr) => arr.findIndex(p => p.id === prayer.id) === index);
+  }, []);
+
+  // Set up real-time subscription with enhanced monitoring and intelligent merging
   useEffect(() => {
     if (!enableRealtime) return;
 
@@ -101,20 +140,38 @@ export function usePrayers({
         realtimeMonitor.start();
       }
 
-      // Subscribe to enhanced monitoring
+      // Subscribe to enhanced monitoring with intelligent state merging
       unsubscribe = realtimeMonitor.subscribeToPrayers((updatedPrayers) => {
         console.log('📥 Enhanced real-time update received:', updatedPrayers.length, 'prayers');
-        setPrayers(updatedPrayers);
+        
+        // CRITICAL FIX: Use intelligent merging instead of state replacement
+        setPrayers(currentPrayers => {
+          const merged = mergeWithDeduplication(currentPrayers, updatedPrayers);
+          console.log('🔄 Prayer state merged:', currentPrayers.length, '→', merged.length, 'prayers');
+          
+          // Cache updated state for persistence
+          if (globalMode && merged.length > 0) {
+            savePrayersToCache(merged);
+          }
+          
+          return merged;
+        });
       });
     } else {
-      // Fallback to original subscription for nearby prayers
+      // Fallback to original subscription for nearby prayers with same merging logic
       unsubscribe = subscribeToNearbyPrayers(
         location.lat,
         location.lng,
         radiusKm,
         (updatedPrayers) => {
           console.log('📥 Nearby prayers update received:', updatedPrayers.length, 'prayers');
-          setPrayers(updatedPrayers);
+          
+          // Apply same intelligent merging for consistency
+          setPrayers(currentPrayers => {
+            const merged = mergeWithDeduplication(currentPrayers, updatedPrayers);
+            console.log('🔄 Prayer state merged (nearby):', currentPrayers.length, '→', merged.length, 'prayers');
+            return merged;
+          });
         }
       );
     }
@@ -128,7 +185,7 @@ export function usePrayers({
         unsubscribeRef.current = null;
       }
     };
-  }, [location.lat, location.lng, radiusKm, enableRealtime, globalMode]);
+  }, [location.lat, location.lng, radiusKm, enableRealtime, globalMode, mergeWithDeduplication]);
 
   // Create a new prayer
   const createPrayer = useCallback(

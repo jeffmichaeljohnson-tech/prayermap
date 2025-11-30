@@ -11,25 +11,47 @@ alwaysApply: true
 
 **THESE PRINCIPLES MUST GUIDE ALL AGENT COLLABORATION:**
 
-### 🔍 MANDATORY: All Agents Must Use Observability System (TOP PRIORITY)
+**🚨 MANDATORY STARTUP SEQUENCE (IN THIS EXACT ORDER):**
+
+### STEP 0: Initialize Observability System (FIRST - Enables Logging)
 - **CRITICAL**: Initialize observability context at the start of every task
 - **REQUIRED**: `const { logPerformance, trackError } = useObservability(agentRole)`
-- **MANDATORY**: Query past failures before starting: `await queryPatterns('failure', taskDescription)`
+- **WHY FIRST**: You need logging set up before doing anything else, so all actions are tracked
+
+### STEP 1: Query Memory Before Acting (SECOND - Learn from Past)
+**MANDATORY SEQUENCE:**
+1. **FIRST**: Call `memory_search` tool to check for existing research, decisions, and patterns
+   - This includes querying observability patterns: `memory_search({ query: "similar task failures", project: "prayermap" })`
+2. **THEN**: Review existing patterns in the codebase using Grep/Glob tools
+3. **ALSO**: Check AI-AGENTS.md for established guidelines and architectural decisions
+4. **FINALLY**: Read related files to understand current implementation approaches
+
+**Why This Order Matters:**
+- Observability setup enables logging of all subsequent actions
+- Memory search finds past conversations, decisions, and research (prevents duplicate work)
+- Grep/Glob finds code patterns in current codebase (complements memory search)
+- Documentation provides architectural context (supports both)
+
+### STEP 2: Continue with Observability Requirements
+- **MANDATORY**: Query past failures before starting: `await queryPatterns('failure', taskDescription)` (after memory_search)
 - **NON-NEGOTIABLE**: Track all operations >100ms with performance logging
 - **ESSENTIAL**: Capture full error context and attempt automated recovery
 - **COMPLIANCE**: Follow EU AI Act and NIST AI Risk Management Framework standards
 
-### All Agents Must Query Memory Before Acting
-- Before implementing a solution, review existing patterns in the codebase
-- Check AGENTS.md for established guidelines and architectural decisions
-- Read related files to understand current implementation approaches
-- Search for similar existing features before building from scratch
-- Use Grep/Glob tools to find existing patterns and conventions
-- **🔍 MANDATORY**: Query observability patterns for similar past issues
-- Example: Before adding a new service, search for existing service patterns with `Grep`
+**Why This Order Matters:**
+- `memory_search` finds past conversations, decisions, and research (fastest, most comprehensive)
+- Grep/Glob finds code patterns in current codebase (complements memory search)
+- Documentation provides architectural context (supports both)
+
+**🔍 MANDATORY**: Query observability patterns for similar past issues via `memory_search`
+**Example**: Before adding a new service:
+  1. `memory_search({ query: "service patterns", project: "prayermap" })`
+  2. Then `grep` for existing service files
+  3. Then read AI-AGENTS.md for service patterns
 
 ### Research-Driven Decision Making
-- ALWAYS consult official documentation before choosing an implementation approach
+- **STEP 1**: ALWAYS query memory first using `memory_search` tool before any research
+- **STEP 2**: If memory insufficient, THEN consult official documentation before choosing an implementation approach
 - For React patterns: Check React 19 official docs (our version)
 - For Framer Motion: Check latest Framer Motion documentation
 - For Capacitor: Check Capacitor official docs for native features

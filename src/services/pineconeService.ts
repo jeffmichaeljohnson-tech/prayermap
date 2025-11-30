@@ -1,5 +1,5 @@
 import { PineconeRecord } from '@pinecone-database/pinecone';
-import { openai } from '@/lib/openai';
+import { openai } from '../lib/openai';
 
 /**
  * MEMORY_LOG:
