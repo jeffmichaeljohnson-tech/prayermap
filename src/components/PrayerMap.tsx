@@ -376,6 +376,7 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
         onOpenSettings={onOpenSettings}
         onOpenRequestModal={actions.openRequestModal}
         onOpenInfo={actions.openInfo}
+        onOpenInbox={actions.openInbox}
       />
 
       {/* All Modals */}
