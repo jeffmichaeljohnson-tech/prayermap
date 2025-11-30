@@ -35,21 +35,67 @@ export function PrayerAnimationLayer({ prayer, userLocation, map, onComplete }: 
     // Reset completion tracking when animation starts
     hasCompletedRef.current = false;
 
+    console.log('🎬 Starting 6-second prayer animation sequence...');
+
     // Calculate bounds that include both points
     const bounds = new mapboxgl.LngLatBounds();
     bounds.extend([prayer.location.lng, prayer.location.lat]);
     bounds.extend([userLocation.lng, userLocation.lat]);
 
-    // Zoom out to show both locations with padding (instant if reduced motion)
-    map.fitBounds(bounds, {
-      padding: 150,
-      pitch: 45,
-      bearing: 0,
-      duration: reducedMotion ? 0 : 1500,
-      maxZoom: 13
-    });
+    // PHASE 1: DRAMATIC CAMERA APPROACH (0-1.5s)
+    // Zoom out and pitch up for dramatic effect, then focus on prayer location
+    const originalCenter = map.getCenter();
+    const originalZoom = map.getZoom();
+    const originalPitch = map.getPitch();
 
-    // Calculate positions
+    if (reducedMotion) {
+      // Simple instant view for reduced motion
+      map.fitBounds(bounds, {
+        padding: 150,
+        pitch: 45,
+        bearing: 0,
+        duration: 0,
+        maxZoom: 13
+      });
+    } else {
+      // DRAMATIC SEQUENCE: Start with high pitch overview, then focus
+      console.log('📹 Phase 1: Camera zoom and pitch to 60°');
+      
+      map.fitBounds(bounds, {
+        padding: 200,
+        pitch: 60, // Higher pitch for more dramatic effect
+        bearing: 0,
+        duration: 1500, // 1.5 seconds for camera movement
+        maxZoom: 12
+      });
+
+      // PHASE 2: GENTLE ZOOM TO OPTIMAL VIEW (1.5-2.5s)
+      setTimeout(() => {
+        console.log('📹 Phase 2: Adjusting to optimal prayer view');
+        map.fitBounds(bounds, {
+          padding: 150,
+          pitch: 45, // Slightly lower pitch for line animation
+          bearing: 0,
+          duration: 1000, // 1 second transition
+          maxZoom: 13
+        });
+      }, 1500);
+
+      // PHASE 4: RETURN TO NORMAL VIEW (4.5-6s)
+      setTimeout(() => {
+        console.log('📹 Phase 4: Returning to normal view');
+        map.easeTo({
+          center: originalCenter,
+          zoom: Math.max(originalZoom, 10), // Ensure we're not too zoomed out
+          pitch: originalPitch,
+          bearing: 0,
+          duration: 1500, // 1.5 seconds to return
+          essential: false
+        });
+      }, 4500);
+    }
+
+    // Calculate positions and update when map moves
     const updatePositions = () => {
       const fromPoint = map.project([userLocation.lng, userLocation.lat]); // Replier location
       const toPoint = map.project([prayer.location.lng, prayer.location.lat]); // Prayer location
@@ -62,10 +108,11 @@ export function PrayerAnimationLayer({ prayer, userLocation, map, onComplete }: 
     updatePositions();
     map.on('move', updatePositions);
 
-    // Complete after animation (6s total, or instantly if reduced motion)
+    // Complete after full animation sequence
     const timer = setTimeout(() => {
       if (!hasCompletedRef.current) {
         hasCompletedRef.current = true;
+        console.log('✅ Prayer animation sequence complete - calling onComplete');
         onCompleteRef.current();
       }
     }, reducedMotion ? 500 : 6000);

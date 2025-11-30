@@ -5,6 +5,12 @@ import { respondToPrayer } from '../services/prayerService';
 import { uploadAudio } from '../services/storageService';
 import { useAuth } from '../contexts/AuthContext';
 import { useAudioRecorder } from '../hooks/useAudioRecorder';
+import { TypingIndicator, useTypingIndicator } from './realtime/TypingIndicator';
+import { ReadReceiptStatus } from './realtime/ReadReceiptStatus';
+import { PresenceIndicator, ConversationPresence } from './realtime/PresenceIndicator';
+import { TypingActivity } from '../services/typingIndicatorService';
+import { readReceiptService } from '../services/readReceiptService';
+import { presenceService, PresenceStatus } from '../services/presenceService';
 import type { PrayerResponse } from '../types/prayer';
 
 interface Message {
@@ -46,6 +52,14 @@ export function ConversationThread({
   const [textInput, setTextInput] = useState('');
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [participants, setParticipants] = useState<string[]>([]);
+
+  // Real-time hooks
+  const {
+    typingUsers,
+    startTyping,
+    stopTyping
+  } = useTypingIndicator(conversationId);
 
   // Audio recorder hook
   const {
@@ -77,6 +91,13 @@ export function ConversationThread({
     if (initialResponses && initialResponses.length > 0) {
       const convertedMessages = initialResponses.map(responseToMessage);
       setMessages(convertedMessages);
+      
+      // Extract participants
+      const participantIds = new Set<string>();
+      if (originalPrayer.userId) participantIds.add(originalPrayer.userId);
+      if (user?.id) participantIds.add(user.id);
+      initialResponses.forEach(response => participantIds.add(response.responder_id));
+      setParticipants(Array.from(participantIds));
     } else if (initialMessage) {
       setMessages([{
         id: '1',
@@ -86,8 +107,23 @@ export function ConversationThread({
         senderName: otherPersonName,
         timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000)
       }]);
+      
+      // Set initial participants
+      const participantIds = [originalPrayer.userId, user?.id].filter(Boolean) as string[];
+      setParticipants(participantIds);
     }
-  }, [initialResponses, initialMessage, otherPersonName, responseToMessage]);
+  }, [initialResponses, initialMessage, otherPersonName, responseToMessage, originalPrayer.userId, user?.id]);
+
+  // Start presence tracking when component mounts
+  useEffect(() => {
+    if (user?.id) {
+      presenceService.startPresenceTracking(user.id, PresenceStatus.ONLINE);
+      
+      return () => {
+        presenceService.stopPresenceTracking();
+      };
+    }
+  }, [user?.id]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {

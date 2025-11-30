@@ -275,7 +275,7 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
   const handleRequestPrayer = async (newPrayer: Omit<Prayer, 'id' | 'created_at' | 'updated_at'>) => {
     if (!user) return;
 
-    actions.closeRequestModal();
+    // Keep modal open until prayer creation completes
     actions.startCreationAnimation(newPrayer.location);
 
     try {
@@ -286,15 +286,16 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
       
       if (createdPrayer) {
         console.log('Prayer created successfully during animation:', createdPrayer.id);
-        // Prayer creation successful - animation will complete normally and trigger marker refresh via subscription
+        // Prayer creation successful - now close modal and let animation complete
+        actions.closeRequestModal();
       } else {
         console.error('Failed to create prayer - no prayer returned');
-        // If prayer creation fails, clear animation immediately
+        // If prayer creation fails, clear animation and keep modal open
         actions.stopCreationAnimation();
       }
     } catch (error) {
       console.error('Failed to create prayer:', error);
-      // If prayer creation fails, clear animation immediately
+      // If prayer creation fails, clear animation and keep modal open  
       actions.stopCreationAnimation();
     }
   };

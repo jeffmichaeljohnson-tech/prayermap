@@ -6,6 +6,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import OpenAI from 'openai';
 import { pineconeClient } from './pinecone-client';
+import { withTrace, calculateOpenAICost } from '../lib/langsmith';
 import type {
   AgentMemoryEntry,
   DecisionNode,
@@ -35,38 +36,52 @@ function getOpenAIClient(): OpenAI {
 }
 
 /**
- * Generate embedding for content using OpenAI's text-embedding-3-small model
+ * Generate embedding for content using OpenAI's text-embedding-3-large model
  *
- * Uses the latest OpenAI embedding model (text-embedding-3-small) which:
- * - Produces 1536-dimensional vectors (matches Pinecone index)
- * - More cost-effective than ada-002
- * - Better performance on benchmarks
- * - Optimized for latency and storage
+ * Uses the latest OpenAI embedding model (text-embedding-3-large) which:
+ * - Produces 3072-dimensional vectors (matches Pinecone index)
+ * - Maximum semantic search accuracy
+ * - Better performance on complex queries
+ * - Optimized for nuanced understanding
  *
  * @see https://platform.openai.com/docs/guides/embeddings
- * @see https://platform.openai.com/docs/models/text-embedding-3-small
+ * @see https://platform.openai.com/docs/models/text-embedding-3-large
  */
 async function generateEmbedding(text: string): Promise<number[]> {
-  try {
-    const client = getOpenAIClient();
+  const maxChars = 8000;
+  const truncatedText = text.length > maxChars ? text.slice(0, maxChars) + '...' : text;
+  
+  return withTrace(
+    'generate_embedding',
+    'embedding',
+    'embeddings',
+    {
+      text_length: text.length,
+      truncated: text.length > maxChars,
+      model: 'text-embedding-3-large',
+    },
+    async () => {
+      const client = getOpenAIClient();
+      const startTime = Date.now();
 
-    // Truncate text if too long (OpenAI has token limits)
-    // ~8000 chars ≈ 2000 tokens (conservative estimate)
-    const maxChars = 8000;
-    const truncatedText = text.length > maxChars ? text.slice(0, maxChars) + '...' : text;
+      const response = await client.embeddings.create({
+        model: 'text-embedding-3-large',
+        input: truncatedText,
+      });
 
-    const response = await client.embeddings.create({
-      model: 'text-embedding-3-small',
-      input: truncatedText,
-    });
+      const latency = Date.now() - startTime;
+      const embedding = response.data[0].embedding;
+      const tokensUsed = response.usage?.total_tokens || 0;
+      const cost = calculateOpenAICost('text-embedding-3-large', tokensUsed);
 
-    return response.data[0].embedding;
-  } catch (error) {
-    console.error('Error generating embedding:', error);
-    throw new Error(
-      `Failed to generate embedding: ${error instanceof Error ? error.message : 'Unknown error'}`
-    );
-  }
+      return embedding;
+    },
+    {
+      dimension: 3072,
+      latency_ms: Date.now() - Date.now(), // Will be calculated in wrapper
+      cost_estimate: 0, // Will be calculated in wrapper
+    }
+  );
 }
 
 /**

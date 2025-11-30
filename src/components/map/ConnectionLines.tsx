@@ -14,7 +14,7 @@
  * by only showing connections visible in the current map viewport.
  */
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import type mapboxgl from 'mapbox-gl';
 import type { LngLatBounds } from 'mapbox-gl';
 import type { PrayerConnection } from '../../types/prayer';
@@ -79,7 +79,7 @@ export function ConnectionLines({
         </linearGradient>
       </defs>
 
-      {mapLoaded && map && visibleConnections.map(conn => {
+      {(mapLoaded === true) && map && visibleConnections.map(conn => {
         console.log('Rendering connection in map:', conn.id, 'mapLoaded:', mapLoaded);
         return (
           <PrayerConnectionComponent

@@ -28,7 +28,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
 
   const generateFn = async () => {
     const response = await openaiClient!.embeddings.create({
-      model: "text-embedding-3-small",
+      model: "text-embedding-3-large",
       input: truncatedText,
     });
     return response.data[0].embedding;
@@ -42,7 +42,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
       {
         text_length: text.length,
         truncated: text.length > maxChars,
-        model: "text-embedding-3-small",
+        model: "text-embedding-3-large",
       },
       generateFn,
       { operation: "single_embedding" }
@@ -77,7 +77,7 @@ export async function generateEmbeddings(
       });
 
       const response = await openaiClient!.embeddings.create({
-        model: "text-embedding-3-small",
+        model: "text-embedding-3-large",
         input: truncatedBatch,
       });
 
@@ -103,7 +103,7 @@ export async function generateEmbeddings(
         total_texts: texts.length,
         batch_size: batchSize,
         num_batches: Math.ceil(texts.length / batchSize),
-        model: "text-embedding-3-small",
+        model: "text-embedding-3-large",
       },
       generateBatchFn,
       { operation: "batch_embedding" }

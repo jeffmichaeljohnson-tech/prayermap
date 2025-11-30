@@ -63,10 +63,12 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
 
   const handleSubmit = async () => {
     setUploadError(null);
+    setIsUploading(true);
 
     // Validate title if provided
     if (title.trim() && title.length > 200) {
       setUploadError('Title must be less than 200 characters');
+      setIsUploading(false);
       return;
     }
 
@@ -74,6 +76,7 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
     if (contentType === 'text') {
       if (!content.trim()) {
         setUploadError('Please enter your prayer request');
+        setIsUploading(false);
         return;
       }
 
@@ -81,22 +84,31 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
       const contentValidation = validators.prayerContent(content.trim());
       if (!contentValidation.valid) {
         setUploadError(contentValidation.errors[0]);
+        setIsUploading(false);
         return;
       }
 
       // Validate location
       if (!validators.coordinates(userLocation.lat, userLocation.lng)) {
         setUploadError('Invalid location. Please try again.');
+        setIsUploading(false);
         return;
       }
 
-      onSubmit({
-        title: title.trim() || undefined,
-        content: content.trim(),
-        content_type: contentType,
-        location: userLocation,
-        is_anonymous: isAnonymous
-      });
+      try {
+        onSubmit({
+          title: title.trim() || undefined,
+          content: content.trim(),
+          content_type: contentType,
+          location: userLocation,
+          is_anonymous: isAnonymous
+        });
+        // Note: Modal will close when onSubmit completes successfully in parent
+      } catch (error) {
+        console.error('Error submitting prayer:', error);
+        setUploadError('Failed to submit prayer. Please try again.');
+        setIsUploading(false);
+      }
       return;
     }
 
@@ -234,24 +246,10 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
           >
             {contentType === 'text' && (
               <motion.div
-                className="absolute inset-0 rounded-xl pointer-events-none"
-                style={{
-                  background: 'linear-gradient(90deg, rgba(255,215,0,0.4), rgba(255,192,203,0.4), rgba(147,112,219,0.4), rgba(135,206,250,0.4), rgba(255,215,0,0.4))',
-                  backgroundSize: '300% 300%',
-                  padding: '2px',
-                  WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                  WebkitMaskComposite: 'xor',
-                  maskComposite: 'exclude',
-                  opacity: 0.6
-                }}
-                animate={{
-                  backgroundPosition: ['0% 50%', '100% 50%', '0% 50%']
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "linear"
-                }}
+                className="absolute inset-0 rounded-xl pointer-events-none border-2 border-blue-400/50"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
               />
             )}
             <Type className="w-5 h-5 text-gray-700" />
@@ -268,24 +266,10 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
           >
             {contentType === 'audio' && (
               <motion.div
-                className="absolute inset-0 rounded-xl pointer-events-none"
-                style={{
-                  background: 'linear-gradient(90deg, rgba(255,215,0,0.4), rgba(255,192,203,0.4), rgba(147,112,219,0.4), rgba(135,206,250,0.4), rgba(255,215,0,0.4))',
-                  backgroundSize: '300% 300%',
-                  padding: '2px',
-                  WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                  WebkitMaskComposite: 'xor',
-                  maskComposite: 'exclude',
-                  opacity: 0.6
-                }}
-                animate={{
-                  backgroundPosition: ['0% 50%', '100% 50%', '0% 50%']
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "linear"
-                }}
+                className="absolute inset-0 rounded-xl pointer-events-none border-2 border-blue-400/50"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
               />
             )}
             <Mic className="w-5 h-5 text-gray-700" />
@@ -302,24 +286,10 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
           >
             {contentType === 'video' && (
               <motion.div
-                className="absolute inset-0 rounded-xl pointer-events-none"
-                style={{
-                  background: 'linear-gradient(90deg, rgba(255,215,0,0.4), rgba(255,192,203,0.4), rgba(147,112,219,0.4), rgba(135,206,250,0.4), rgba(255,215,0,0.4))',
-                  backgroundSize: '300% 300%',
-                  padding: '2px',
-                  WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-                  WebkitMaskComposite: 'xor',
-                  maskComposite: 'exclude',
-                  opacity: 0.6
-                }}
-                animate={{
-                  backgroundPosition: ['0% 50%', '100% 50%', '0% 50%']
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: "linear"
-                }}
+                className="absolute inset-0 rounded-xl pointer-events-none border-2 border-blue-400/50"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
               />
             )}
             <Video className="w-5 h-5 text-gray-700" />

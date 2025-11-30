@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
+// Import Percy for visual regression testing (optional - only if @percy/playwright is installed)
+// import '@percy/playwright';
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
@@ -23,6 +26,12 @@ export default defineConfig({
     { name: 'webkit', use: { ...devices['Desktop Safari'] } },
     { name: 'mobile-chrome', use: { ...devices['Pixel 5'] } },
     { name: 'mobile-safari', use: { ...devices['iPhone 12'] } },
+    // Visual regression testing with Percy (requires @percy/playwright)
+    {
+      name: 'percy-visual',
+      testMatch: /.*\.visual\.spec\.ts/,
+      use: { ...devices['Desktop Chrome'] },
+    },
   ],
   webServer: {
     command: 'npm run dev',

@@ -11,7 +11,7 @@ import type { AgentMemoryEntry, QueryFilter } from './types';
  */
 const PINECONE_INDEX_NAME = 'prayermap-agent-memory';
 const PINECONE_NAMESPACE = 'memories';
-const EMBEDDING_DIMENSION = 1536; // OpenAI ada-002 dimension
+const EMBEDDING_DIMENSION = 3072; // OpenAI text-embedding-3-large dimension
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 

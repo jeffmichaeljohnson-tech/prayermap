@@ -273,7 +273,18 @@ export class IntelligentPineconeUploader {
    * AI-powered conversation analysis for metadata extraction
    */
   private async analyzeConversationWithAI(conversation: ConversationData): Promise<Partial<ConversationMetadata>> {
-    const prompt = `
+    return withTrace(
+      'analyze_conversation_metadata',
+      'chain',
+      'pinecone',
+      {
+        conversation_id: conversation.id,
+        conversation_type: conversation.type,
+        content_length: conversation.content.length,
+        participants_count: conversation.participants.length,
+      },
+      async () => {
+        const prompt = `
 Analyze this conversation and extract structured metadata:
 
 CONVERSATION:
@@ -305,26 +316,28 @@ Please respond with JSON containing:
 Focus on accuracy and relevance. Omit fields if uncertain.
 `;
 
-    try {
-      const response = await openai.chat.completions.create({
-        model: "gpt-4-turbo-preview",
-        messages: [{ role: "user", content: prompt }],
-        temperature: 0.1,
-        max_tokens: 1000
-      });
+        try {
+          const response = await openai.chat.completions.create({
+            model: "gpt-4-turbo-preview",
+            messages: [{ role: "user", content: prompt }],
+            temperature: 0.1,
+            max_tokens: 1000
+          });
 
-      const content = response.choices[0]?.message?.content;
-      if (!content) throw new Error('No response from OpenAI');
+          const content = response.choices[0]?.message?.content;
+          if (!content) throw new Error('No response from OpenAI');
 
-      // Parse JSON response
-      const analysis = JSON.parse(content);
-      
-      // Validate and sanitize the analysis
-      return this.validateAndSanitizeAnalysis(analysis);
-    } catch (error) {
-      console.warn('AI analysis failed, using basic extraction:', error);
-      return this.extractBasicMetadata(conversation);
-    }
+          // Parse JSON response
+          const analysis = JSON.parse(content);
+          
+          // Validate and sanitize the analysis
+          return this.validateAndSanitizeAnalysis(analysis);
+        } catch (error) {
+          console.warn('AI analysis failed, using basic extraction:', error);
+          return this.extractBasicMetadata(conversation);
+        }
+      }
+    );
   }
 
   /**
@@ -515,17 +528,31 @@ Focus on accuracy and relevance. Omit fields if uncertain.
   private async generateEmbeddings(chunks: ChunkedContent[]): Promise<number[][]> {
     const texts = chunks.map(chunk => chunk.content);
     
-    try {
-      const response = await openai.embeddings.create({
-        model: "text-embedding-3-small",
-        input: texts,
-      });
-      
-      return response.data.map(item => item.embedding);
-    } catch (error) {
-      console.error('❌ Embedding generation failed:', error);
-      throw error;
-    }
+    return withTrace(
+      'generate_batch_embeddings',
+      'embedding',
+      'embeddings',
+      {
+        batch_size: chunks.length,
+        total_chars: texts.reduce((sum, text) => sum + text.length, 0),
+        model: 'text-embedding-3-large',
+      },
+      async () => {
+        const response = await openai.embeddings.create({
+          model: "text-embedding-3-large",
+          input: texts,
+        });
+        
+        const tokensUsed = response.usage?.total_tokens || 0;
+        const cost = calculateOpenAICost('text-embedding-3-large', tokensUsed);
+        
+        return response.data.map(item => item.embedding);
+      },
+      {
+        dimension: 3072,
+        operation: 'batch_embedding',
+      }
+    );
   }
 
   /**
@@ -568,24 +595,42 @@ Focus on accuracy and relevance. Omit fields if uncertain.
       includeMetadata = true
     } = options;
 
-    try {
-      // Generate query embedding
-      const queryEmbedding = await this.generateEmbeddings([{ content: query } as ChunkedContent]);
-      
-      // Search Pinecone
-      const searchResults = await this.pinecone.query({
-        vector: queryEmbedding[0],
+    return withTrace(
+      'pinecone_search',
+      'retriever',
+      'pinecone',
+      {
+        query: query.substring(0, 200),
         topK,
-        filter,
-        includeMetadata,
-        namespace
-      });
-      
-      return searchResults.matches || [];
-    } catch (error) {
-      console.error('❌ Search failed:', error);
-      throw error;
-    }
+        namespace: namespace || 'default',
+        has_filter: Object.keys(filter).length > 0,
+      },
+      async () => {
+        const startTime = Date.now();
+        
+        // Generate query embedding
+        const queryEmbedding = await this.generateEmbeddings([{ content: query } as ChunkedContent]);
+        
+        // Search Pinecone
+        const searchResults = await this.pinecone.query({
+          vector: queryEmbedding[0],
+          topK,
+          filter,
+          includeMetadata,
+          namespace
+        });
+        
+        const latency = Date.now() - startTime;
+        const matches = searchResults.matches || [];
+        
+        return {
+          results: matches,
+          latency_ms: latency,
+          results_count: matches.length,
+          top_scores: matches.slice(0, 3).map(m => m.score || 0),
+        };
+      }
+    ).then(result => result.results || []);
   }
 }
 

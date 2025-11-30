@@ -5,8 +5,9 @@ import { AnimatePresence } from 'framer-motion';
 import { ConversationThread } from './ConversationThread';
 import { useInbox } from '../hooks/useInbox';
 import type { InboxItem } from '../hooks/useInbox';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../contexts/AuthContext';
 import { formatRelativeTime, formatInboxMessage, isRecentMessage } from '../lib/utils';
+import type { PrayerResponse } from '../types/prayer';
 
 interface InboxModalProps {
   onClose: () => void;
@@ -21,7 +22,7 @@ interface SelectedConversation {
   prayerTitle: string;
   originalPrayerContent: string;
   contentType: 'text' | 'audio' | 'video';
-  responses: import('../types/prayer').PrayerResponse[];
+  responses: PrayerResponse[];
 }
 
 export function InboxModal({ onClose }: InboxModalProps) {

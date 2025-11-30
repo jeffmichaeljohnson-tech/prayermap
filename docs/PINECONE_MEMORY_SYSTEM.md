@@ -215,7 +215,7 @@ Available filters for narrowing results:
 ### Pinecone Setup
 
 1. **Create Index**:
-   - Dimension: `1536` (for OpenAI text-embedding-3-small)
+   - Dimension: `3072` (for OpenAI text-embedding-3-large)
    - Metric: `cosine`
    - Pod Type: `p1.x1` or `s1.x1`
 
@@ -513,7 +513,7 @@ curl -H "Authorization: Bearer $OPENAI_API_KEY" \
 |-------|-------|----------|
 | `API key invalid` | Wrong Pinecone key | Check environment variable |
 | `Index not found` | Missing index | Create index in Pinecone console |
-| `Dimension mismatch` | Wrong embedding size | Use 1536 dimensions |
+| `Dimension mismatch` | Wrong embedding size | Use 3072 dimensions |
 | `Rate limit exceeded` | Too many requests | Reduce batch size |
 | `Quota exceeded` | Usage limits | Check Pinecone billing |
 

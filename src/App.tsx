@@ -35,7 +35,7 @@ class LazyLoadErrorBoundary extends Component<
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log to error tracker
-    errorTracker.captureError(error, {
+    errorTracker.captureException(error, {
       context: 'lazy_load_failure',
       componentStack: errorInfo.componentStack,
     });
@@ -72,6 +72,7 @@ class LazyLoadErrorBoundary extends Component<
 // Initialize observability systems on app start
 errorTracker.init();
 performanceMonitor.init();
+// initLangSmith(); // Initialize LangSmith tracing for AI operations - TODO: Define this function
 // newErrorTracker.init();
 // newPerformanceMonitor.init();
 // monitoringOrchestrator.init();
@@ -205,12 +206,11 @@ function AppContent() {
     return <LoadingScreen />;
   }
 
-  // Show auth modal if not authenticated
-  if (!user) {
-    return <AuthModal />;
-  }
-
-  // Show location error
+  // LIVING MAP PRINCIPLE: Allow anonymous viewing of prayers and memorial lines
+  // Only require authentication for creating prayers and responding
+  // This creates the "instant spiritual impact" when users first open the app
+  
+  // Show location error (even for anonymous users, we need location for map)
   if (locationError) {
     return (
       <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-purple-100 to-blue-100 p-4">
@@ -229,10 +229,10 @@ function AppContent() {
     );
   }
 
-  // Show loading while waiting for location
-  if (!userLocation) {
-    return <LoadingScreen />;
-  }
+  // For anonymous users without location, provide a default location (San Francisco)
+  // This allows instant map viewing while respecting the Living Map principle
+  const defaultLocation = { lat: 37.7749, lng: -122.4194 }; // San Francisco
+  const mapLocation = userLocation || defaultLocation;
 
   // Show monitoring dashboard if requested (world-class observability)
   // if (showMonitoring) {
@@ -266,7 +266,7 @@ function AppContent() {
       </button> */}
       
       <PrayerMap
-        userLocation={userLocation}
+        userLocation={mapLocation}
         onOpenSettings={() => setShowSettings(true)}
       />
       <DebugPanel />

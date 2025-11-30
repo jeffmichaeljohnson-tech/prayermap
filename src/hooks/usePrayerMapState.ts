@@ -139,7 +139,10 @@ export function usePrayerMapState(): UsePrayerMapStateReturn {
     setPrevUnreadCount,
 
     // Map actions
-    setMapLoaded,
+    setMapLoaded: (loaded: boolean) => {
+      console.log('usePrayerMapState: setMapLoaded called with:', loaded);
+      setMapLoaded(loaded);
+    },
     setMapBounds,
   };
 

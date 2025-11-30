@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prayer Marker Debug Test</title>
+    <style>
+        body { 
+            font-family: system-ui; 
+            margin: 20px; 
+            background: #f5f5f5;
+        }
+        
+        .debug-panel {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 10px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .emoji-test {
+            font-size: 48px;
+            margin: 10px 0;
+        }
+        
+        .marker-demo {
+            position: relative;
+            width: 300px;
+            height: 200px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .prayer-marker {
+            position: absolute;
+            font-size: 32px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+        
+        .prayer-marker:hover {
+            transform: scale(1.2);
+        }
+        
+        .prayer-marker.prayed {
+            opacity: 0.6;
+            filter: sepia(1) hue-rotate(35deg) saturate(2);
+        }
+        
+        .prayer-marker.new {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        
+        .glow {
+            position: absolute;
+            inset: -10px;
+            background: radial-gradient(circle, rgba(255,215,0,0.4) 0%, transparent 70%);
+            border-radius: 50%;
+            z-index: 5;
+            animation: glow 2s infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { opacity: 0.3; }
+            to { opacity: 0.7; }
+        }
+        
+        .log {
+            background: #000;
+            color: #0f0;
+            font-family: monospace;
+            padding: 15px;
+            border-radius: 5px;
+            height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #5a6fd8;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Prayer Marker Debug Test</h1>
+    
+    <div class="debug-panel">
+        <h2>1. Emoji Rendering Test</h2>
+        <p>Testing if prayer emoji renders properly:</p>
+        <div class="emoji-test">🙏</div>
+        <p>Unicode: U+1F64F (PERSON WITH FOLDED HANDS)</p>
+    </div>
+    
+    <div class="debug-panel">
+        <h2>2. Marker States Demo</h2>
+        <p>Testing different prayer marker states:</p>
+        
+        <div class="marker-demo">
+            <!-- Default marker -->
+            <div class="prayer-marker" style="top: 20px; left: 50px;">
+                🙏
+            </div>
+            
+            <!-- Prayed marker with glow -->
+            <div class="prayer-marker prayed" style="top: 80px; left: 150px;">
+                🙏
+                <div class="glow"></div>
+            </div>
+            
+            <!-- New marker with pulse -->
+            <div class="prayer-marker new" style="top: 140px; left: 100px;">
+                🙏
+            </div>
+        </div>
+        
+        <p>
+            <strong>States:</strong><br>
+            • Left: Default prayer marker<br>
+            • Center: Prayed marker (with gold glow)<br>
+            • Right: New marker (pulsing animation)
+        </p>
+    </div>
+    
+    <div class="debug-panel">
+        <h2>3. MapBox Integration Test</h2>
+        <button onclick="testMapBoxMarker()">Test MapBox Marker Creation</button>
+        <button onclick="testLocationProjection()">Test Location Projection</button>
+        <button onclick="testMarkerPositioning()">Test Marker Positioning</button>
+        <button onclick="clearLog()">Clear Log</button>
+        
+        <div id="log" class="log"></div>
+    </div>
+    
+    <div class="debug-panel">
+        <h2>4. Performance Test</h2>
+        <button onclick="testManyMarkers()">Test 100 Markers</button>
+        <button onclick="testMarkerCluster()">Test Marker Clustering</button>
+        
+        <div id="performance-log" class="log" style="height: 100px;"></div>
+    </div>
+
+    <script>
+        // Logging utilities
+        function log(message, target = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById(target);
+            logElement.textContent += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+        
+        // Test functions
+        function testMapBoxMarker() {
+            log('🧪 Testing MapBox marker creation...');
+            
+            // Simulate MapBox marker creation
+            const mockMarker = {
+                element: document.createElement('div'),
+                location: { lat: 40.7128, lng: -74.0060 }, // NYC
+                prayer: {
+                    id: 'test-1',
+                    title: 'Test Prayer',
+                    content: 'Please pray for healing',
+                    location: { lat: 40.7128, lng: -74.0060 }
+                }
+            };
+            
+            // Add emoji to marker element
+            mockMarker.element.innerHTML = '🙏';
+            mockMarker.element.style.fontSize = '32px';
+            mockMarker.element.style.cursor = 'pointer';
+            
+            log('✅ Mock marker created successfully');
+            log(`   - Location: ${mockMarker.location.lat}, ${mockMarker.location.lng}`);
+            log(`   - Emoji: ${mockMarker.element.innerHTML}`);
+            log(`   - Element size: ${mockMarker.element.style.fontSize}`);
+        }
+        
+        function testLocationProjection() {
+            log('🧪 Testing location projection...');
+            
+            // Mock MapBox projection function
+            function mockProject(lng, lat) {
+                // Simple projection for testing (not accurate)
+                const x = (lng + 180) * (300 / 360); // Scale to 300px width
+                const y = (90 - lat) * (200 / 180);   // Scale to 200px height
+                return { x, y };
+            }
+            
+            const testLocations = [
+                { lat: 40.7128, lng: -74.0060, name: 'New York' },
+                { lat: 51.5074, lng: -0.1278, name: 'London' },
+                { lat: 35.6762, lng: 139.6503, name: 'Tokyo' },
+                { lat: -33.8688, lng: 151.2093, name: 'Sydney' }
+            ];
+            
+            testLocations.forEach(location => {
+                const projected = mockProject(location.lng, location.lat);
+                log(`   ${location.name}: (${location.lat}, ${location.lng}) → (${projected.x.toFixed(1)}px, ${projected.y.toFixed(1)}px)`);
+            });
+            
+            log('✅ Location projection test completed');
+        }
+        
+        function testMarkerPositioning() {
+            log('🧪 Testing marker positioning...');
+            
+            // Test if markers are positioned correctly
+            const markers = document.querySelectorAll('.prayer-marker');
+            markers.forEach((marker, index) => {
+                const rect = marker.getBoundingClientRect();
+                const computedStyle = window.getComputedStyle(marker);
+                
+                log(`   Marker ${index + 1}:`);
+                log(`     Position: ${computedStyle.position}`);
+                log(`     Top: ${computedStyle.top}, Left: ${computedStyle.left}`);
+                log(`     Size: ${rect.width}px × ${rect.height}px`);
+                log(`     Z-index: ${computedStyle.zIndex}`);
+                log(`     Visibility: ${computedStyle.visibility}`);
+                log(`     Display: ${computedStyle.display}`);
+            });
+            
+            log('✅ Marker positioning test completed');
+        }
+        
+        function testManyMarkers() {
+            log('⚡ Testing performance with 100 markers...', 'performance-log');
+            
+            const startTime = performance.now();
+            
+            // Create 100 mock markers
+            for (let i = 0; i < 100; i++) {
+                const marker = document.createElement('div');
+                marker.innerHTML = '🙏';
+                marker.style.position = 'absolute';
+                marker.style.fontSize = '16px';
+                marker.style.top = Math.random() * 200 + 'px';
+                marker.style.left = Math.random() * 300 + 'px';
+                marker.style.zIndex = '10';
+                
+                // Don't actually add to DOM for this test
+            }
+            
+            const endTime = performance.now();
+            const duration = endTime - startTime;
+            
+            log(`✅ Created 100 markers in ${duration.toFixed(2)}ms`, 'performance-log');
+            log(`   Average: ${(duration / 100).toFixed(3)}ms per marker`, 'performance-log');
+        }
+        
+        function testMarkerCluster() {
+            log('🧪 Testing marker clustering logic...', 'performance-log');
+            
+            // Mock clustering function
+            function clusterPrayers(prayers, threshold = 0.0001) {
+                const groups = [];
+                const assigned = new Set();
+                
+                prayers.forEach(prayer => {
+                    if (assigned.has(prayer.id)) return;
+                    
+                    const nearby = prayers.filter(p => {
+                        if (assigned.has(p.id)) return false;
+                        const latDiff = Math.abs(p.location.lat - prayer.location.lat);
+                        const lngDiff = Math.abs(p.location.lng - prayer.location.lng);
+                        return latDiff < threshold && lngDiff < threshold;
+                    });
+                    
+                    nearby.forEach(p => assigned.add(p.id));
+                    groups.push({ primary: prayer, count: nearby.length, prayers: nearby });
+                });
+                
+                return groups;
+            }
+            
+            // Test data
+            const mockPrayers = [
+                { id: '1', location: { lat: 40.7128, lng: -74.0060 } },
+                { id: '2', location: { lat: 40.7129, lng: -74.0061 } }, // Very close
+                { id: '3', location: { lat: 40.7130, lng: -74.0062 } }, // Very close
+                { id: '4', location: { lat: 51.5074, lng: -0.1278 } },   // Far away
+                { id: '5', location: { lat: 51.5075, lng: -0.1279 } }    // Close to #4
+            ];
+            
+            const clusters = clusterPrayers(mockPrayers);
+            
+            log(`✅ Clustered ${mockPrayers.length} prayers into ${clusters.length} groups:`, 'performance-log');
+            clusters.forEach((cluster, index) => {
+                log(`   Group ${index + 1}: ${cluster.count} prayers at (${cluster.primary.location.lat}, ${cluster.primary.location.lng})`, 'performance-log');
+            });
+        }
+        
+        // Initial emoji test
+        log('🚀 Prayer Marker Debug Test initialized');
+        log('📱 User agent: ' + navigator.userAgent);
+        log('🎨 Emoji support: ' + (navigator.userAgent.includes('Chrome') ? 'Chrome (good)' : 'Unknown'));
+        
+        // Test emoji rendering immediately
+        setTimeout(() => {
+            const emojiEl = document.querySelector('.emoji-test');
+            const rect = emojiEl.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) {
+                log('✅ Emoji rendering: SUCCESS - Width: ' + rect.width + 'px, Height: ' + rect.height + 'px');
+            } else {
+                log('❌ Emoji rendering: FAILED - No visible emoji');
+            }
+        }, 100);
+    </script>
+</body>
+</html>

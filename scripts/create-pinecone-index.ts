@@ -7,7 +7,7 @@ import { Pinecone } from "@pinecone-database/pinecone";
 
 const PINECONE_API_KEY = process.env.PINECONE_API_KEY;
 const INDEX_NAME = process.env.PINECONE_INDEX || "ora-prayermap";
-const DIMENSION = 1536; // OpenAI text-embedding-3-small dimension
+const DIMENSION = 3072; // OpenAI text-embedding-3-large dimension
 
 async function main() {
   if (!PINECONE_API_KEY) {

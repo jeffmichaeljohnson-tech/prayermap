@@ -27,7 +27,7 @@ npm install openai
 1. Go to [Pinecone Console](https://app.pinecone.io/)
 2. Create a new index with these settings:
    - **Name**: `prayermap-agent-memory`
-   - **Dimensions**: `1536`
+   - **Dimensions**: `3072`
    - **Metric**: `cosine`
    - **Environment**: Choose your preferred region
 
@@ -142,8 +142,8 @@ See `example.ts` for more comprehensive usage examples.
 - Verify the index name matches exactly
 - Check that the index is in the active state
 
-### "Invalid embedding: expected dimension 1536"
-- Make sure you're using OpenAI's ada-002 model (1536 dimensions)
+### "Invalid embedding: expected dimension 3072"
+- Make sure you're using OpenAI's text-embedding-3-large model (3072 dimensions)
 - If using a different model, update `EMBEDDING_DIMENSION` in `pinecone-client.ts`
 
 ### Placeholder embeddings warning

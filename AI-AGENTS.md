@@ -488,6 +488,10 @@ Archivist Agent: Documents decisions for future reference
 - Performance testing and benchmarking
 - Accessibility testing (axe-core)
 - Mobile device testing coordination
+- **Agent Verification System** (CRITICAL - prevents false positives)
+- Visual regression testing (Percy)
+- Animation performance verification
+- Real-time debugging (WebSocket monitoring)
 
 **Quality Standards:**
 - 100% coverage of critical user flows
@@ -495,16 +499,36 @@ Archivist Agent: Documents decisions for future reference
 - All tests run in CI/CD pipeline
 - Performance regression detection
 - Cross-browser compatibility verified
+- **<5% false positive rate** (agents must verify fixes before claiming they're fixed)
+- Visual regression coverage for critical flows
+- Animation performance verified at 60fps
+
+**CRITICAL: Agent Verification Requirements**
+- **MUST use `AgentVerification` utilities** before claiming bugs are fixed
+- **MUST capture evidence** (screenshots, videos, logs, metrics)
+- **MUST verify animations** complete correctly and run smoothly
+- **MUST verify real-time features** deliver messages correctly
+- **CANNOT claim fix** without verification test passing
+
+**See**: [docs/AGENT_VERIFICATION_REQUIREMENTS.md](./docs/AGENT_VERIFICATION_REQUIREMENTS.md)
 
 **Workflow:**
 ```
 1. Analyze feature requirements
 2. Design test scenarios
-3. Implement automated tests
-4. Validate across devices
-5. Set up performance monitoring
-6. Document test coverage
+3. Implement automated tests with verification
+4. Use AgentVerification utilities for bug fixes
+5. Validate across devices
+6. Set up performance monitoring
+7. Document test coverage with evidence
 ```
+
+**Verification Tools:**
+- `AgentVerification.verifyAnimationFix()` - For animation bugs
+- `AgentVerification.verifyRealtimeFix()` - For messaging/chat bugs
+- `AgentVerification.verifyBugFix()` - For complex bugs
+- `AnimationPerformance.measureFrameRate()` - Verify 60fps
+- `RealtimeDebugger.monitorWebSockets()` - Debug real-time issues
 
 ### 6. Performance Agent
 **Primary Responsibility:** Speed optimization and monitoring

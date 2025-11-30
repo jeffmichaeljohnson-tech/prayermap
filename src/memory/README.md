@@ -55,12 +55,12 @@ SESSION_ID=optional_session_identifier
 
 Create an index in the Pinecone dashboard with:
 - **Name**: `prayermap-agent-memory`
-- **Dimensions**: `1536` (for OpenAI text-embedding-3-small)
+- **Dimensions**: `3072` (for OpenAI text-embedding-3-large)
 - **Metric**: `cosine`
 
 ### 4. Configure OpenAI API Key
 
-The memory system uses OpenAI's text-embedding-3-small model for generating embeddings:
+The memory system uses OpenAI's text-embedding-3-large model for generating embeddings:
 
 ```bash
 # Add to .env
@@ -69,7 +69,7 @@ OPENAI_API_KEY=your_openai_api_key_here
 
 Get your API key from: https://platform.openai.com/api-keys
 
-**Note**: The OpenAI integration is already implemented in `logger.ts` and `query.ts` using the latest `text-embedding-3-small` model, which is more cost-effective and performant than the older `text-embedding-ada-002` model.
+**Note**: The OpenAI integration is already implemented in `logger.ts` and `query.ts` using the latest `text-embedding-3-large` model, which provides maximum semantic search accuracy and better performance on complex queries.
 
 ## Usage
 
@@ -380,7 +380,7 @@ All functions include retry logic and error handling:
 
 ## Future Enhancements
 
-- [x] Integrate OpenAI embeddings (✅ Completed - using text-embedding-3-small)
+- [x] Integrate OpenAI embeddings (✅ Completed - using text-embedding-3-large)
 - [ ] Add graph visualization of decision dependencies
 - [ ] Implement automatic insight generation
 - [ ] Add conversation threading

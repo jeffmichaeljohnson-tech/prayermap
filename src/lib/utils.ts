@@ -2,6 +2,17 @@
  * Utility functions for PrayerMap
  */
 
+import clsx from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+/**
+ * Utility function for conditionally joining classNames
+ * Combines clsx and tailwind-merge for optimal className handling
+ */
+export function cn(...inputs: Parameters<typeof clsx>): string {
+  return twMerge(clsx(...inputs));
+}
+
 /**
  * Format a date into a human-readable relative time string
  * Examples: "just now", "2m ago", "1h ago", "3d ago", "Oct 15"

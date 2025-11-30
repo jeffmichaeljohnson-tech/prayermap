@@ -71,7 +71,8 @@ export function MapContainer({ userLocation, onMapLoad, onMapLoaded, children }:
       if (!map.current) return;
 
       // Mark map as loaded
-      onMapLoaded?.();
+      console.log('MapContainer: Map loaded, calling onMapLoaded callback');
+      onMapLoaded?.(true);
 
       // Customize map colors for ethereal theme
       try {
