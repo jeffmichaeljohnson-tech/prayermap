@@ -107,6 +107,11 @@
     <!-- Push Notifications (Android 13+ requires explicit permission) -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
+    <!-- Local Notifications / Prayer Reminders (Android 12+ exact alarms) -->
+    <!-- SCHEDULE_EXACT_ALARM: Required for exact timing of daily prayer reminders -->
+    <!-- Android 14+ introduced USE_EXACT_ALARM as alternative without user permission -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+
     <!-- ===================================================================== -->
     <!-- FEATURES (Optional hardware - allows install on devices without)     -->
     <!-- ===================================================================== -->

@@ -125,6 +125,35 @@ export interface Database {
           expires_at?: string
         }
       }
+      notifications: {
+        Row: {
+          notification_id: string
+          user_id: string
+          type: 'SUPPORT_RECEIVED' | 'RESPONSE_RECEIVED' | 'PRAYER_ANSWERED'
+          payload: Json
+          is_read: boolean
+          read_at: string | null
+          created_at: string
+        }
+        Insert: {
+          notification_id?: string
+          user_id: string
+          type: 'SUPPORT_RECEIVED' | 'RESPONSE_RECEIVED' | 'PRAYER_ANSWERED'
+          payload: Json
+          is_read?: boolean
+          read_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          notification_id?: string
+          user_id?: string
+          type?: 'SUPPORT_RECEIVED' | 'RESPONSE_RECEIVED' | 'PRAYER_ANSWERED'
+          payload?: Json
+          is_read?: boolean
+          read_at?: string | null
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never
