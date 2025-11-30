@@ -69,6 +69,9 @@ class LivingMapMonitor {
   private metrics: Partial<LivingMapMetrics> = {};
   private alertHistory: LivingMapAlert[] = [];
   private startupTime: number = Date.now();
+  private lastSnapshotTime: number = 0;
+  private lastValidationTime: number = 0;
+  private lastStatusLogTime: number = 0;
   
   /**
    * Initialize Living Map monitoring
@@ -458,8 +461,16 @@ class LivingMapMonitor {
   
   /**
    * Take a snapshot of current Living Map state for debugging
+   * Throttled to prevent excessive API calls
    */
   takeSnapshot(prayers: Prayer[], connections: PrayerConnection[], context: string) {
+    const now = Date.now();
+    // Throttle to max once per 5 seconds to prevent flickering
+    if (now - this.lastSnapshotTime < 5000) {
+      return;
+    }
+    this.lastSnapshotTime = now;
+    
     const snapshot = {
       timestamp: new Date().toISOString(),
       context,
@@ -477,8 +488,16 @@ class LivingMapMonitor {
 
   /**
    * Validate Living Map state integrity
+   * Throttled to prevent excessive API calls
    */
   validateLivingMap(prayers: Prayer[], connections: PrayerConnection[]) {
+    const now = Date.now();
+    // Throttle to max once per 10 seconds to prevent flickering
+    if (now - this.lastValidationTime < 10000) {
+      return;
+    }
+    this.lastValidationTime = now;
+    
     // Check for basic data integrity
     const hasValidData = prayers.length >= 0 && connections.length >= 0;
     
@@ -501,8 +520,16 @@ class LivingMapMonitor {
 
   /**
    * Log current Living Map status
+   * Throttled to prevent excessive logging
    */
   logStatus(prayers: Prayer[], connections: PrayerConnection[]) {
+    const now = Date.now();
+    // Throttle to max once per 30 seconds to prevent spam
+    if (now - this.lastStatusLogTime < 30000) {
+      return;
+    }
+    this.lastStatusLogTime = now;
+    
     const status = {
       prayers_count: prayers.length,
       connections_count: connections.length,
