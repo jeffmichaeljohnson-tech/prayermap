@@ -18,7 +18,8 @@ import { getAvailableTopics, getAvailableMessageTypes } from "./tagging.js";
 // Environment variables
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const PINECONE_API_KEY = process.env.PINECONE_API_KEY;
-const PINECONE_INDEX = process.env.PINECONE_INDEX || "ora-prayermap";
+// Use consistent index name - prioritize env var, fallback to standard name
+const PINECONE_INDEX = process.env.PINECONE_INDEX || process.env.PINECONE_INDEX_NAME || "prayermap-agent-memory";
 // Default paths for conversation sources
 const CLAUDE_CODE_PROJECTS = process.env.CLAUDE_CODE_PROJECTS ||
     path.join(os.homedir(), ".claude", "projects");
@@ -30,11 +31,14 @@ async function initialize() {
     if (isInitialized)
         return true;
     if (!OPENAI_API_KEY) {
-        console.error("OPENAI_API_KEY environment variable is required");
+        console.error("❌ OPENAI_API_KEY environment variable is required");
+        console.error("   Get your API key from: https://platform.openai.com/api-keys");
         return false;
     }
     if (!PINECONE_API_KEY) {
-        console.error("PINECONE_API_KEY environment variable is required");
+        console.error("❌ PINECONE_API_KEY environment variable is required");
+        console.error("   Get your API key from: https://app.pinecone.io/");
+        console.error(`   Using index: ${PINECONE_INDEX}`);
         return false;
     }
     try {
@@ -43,7 +47,10 @@ async function initialize() {
         initOpenAI(OPENAI_API_KEY);
         await initPinecone(PINECONE_API_KEY, PINECONE_INDEX);
         isInitialized = true;
-        console.error("Memory server initialized successfully");
+        console.error(`✅ Memory server initialized successfully`);
+        console.error(`   Pinecone Index: ${PINECONE_INDEX}`);
+        console.error(`   OpenAI Model: text-embedding-3-large`);
+        console.error(`   LangSmith: ${process.env.LANGSMITH_API_KEY ? '✅ Enabled' : '⚠️  Disabled (optional)'}`);
         return true;
     }
     catch (error) {

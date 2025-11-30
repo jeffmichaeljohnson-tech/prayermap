@@ -103,6 +103,20 @@ export {
   type AuditLogEntry,
 } from './SecurityManager';
 
+// Performance monitoring and validation
+export {
+  MessagingPerformanceMonitor,
+  messagingPerformanceMonitor,
+  type MessagingPerformanceMetrics,
+} from './MessagingPerformanceMonitor';
+
+export {
+  RealTimeValidator,
+  realTimeValidator,
+  type ValidationResult,
+  type RealTimeTest,
+} from './RealTimeValidator';
+
 /**
  * Complete Messaging System Integration
  * 
@@ -159,8 +173,17 @@ export class PrayerMapMessagingSystem {
       // 9. Initialize Living Map integration (CRITICAL)
       await livingMapIntegration;
       console.log('✅ Living Map Integration initialized');
+      
+      // 10. Initialize performance monitoring
+      // Performance monitor auto-starts on import
+      console.log('✅ Performance Monitor initialized');
+      
+      // 11. Initialize real-time validation
+      const { realTimeValidator } = await import('./RealTimeValidator');
+      realTimeValidator.startContinuousValidation(30000); // Every 30 seconds
+      console.log('✅ Real-time Validator initialized');
 
-      // 10. Connect all systems
+      // 12. Connect all systems
       await this.connectSystems();
 
       this.isInitialized = true;
@@ -222,7 +245,7 @@ export class PrayerMapMessagingSystem {
   }
 
   /**
-   * Send a message through the complete pipeline
+   * Send a message through the complete pipeline with LIVING MAP optimization
    */
   public async sendMessage(
     conversationId: string,
@@ -230,11 +253,13 @@ export class PrayerMapMessagingSystem {
     contentType: 'text' | 'audio' | 'video' = 'text',
     contentUrl?: string,
     userId?: string
-  ): Promise<{ success: boolean; message?: Message; errors?: string[] }> {
+  ): Promise<{ success: boolean; message?: Message; errors?: string[]; deliveryLatency?: number }> {
     if (!this.isInitialized) {
       await this.initialize();
     }
 
+    const sendStartTime = Date.now();
+    
     try {
       const currentUserId = userId || 'current-user-id'; // Get from auth context
 
@@ -265,9 +290,27 @@ export class PrayerMapMessagingSystem {
       });
 
       if (result) {
-        return { success: true, message: result };
+        const deliveryLatency = Date.now() - sendStartTime;
+        
+        // Track delivery performance for LIVING MAP compliance
+        const { messagingPerformanceMonitor } = await import('./MessagingPerformanceMonitor');
+        messagingPerformanceMonitor.trackMessageDelivery(result.id, deliveryLatency, true);
+        
+        return { 
+          success: true, 
+          message: result, 
+          deliveryLatency 
+        };
       } else {
-        return { success: false, errors: ['Message delivery failed'] };
+        const failureLatency = Date.now() - sendStartTime;
+        const { messagingPerformanceMonitor } = await import('./MessagingPerformanceMonitor');
+        messagingPerformanceMonitor.trackMessageDelivery('failed', failureLatency, false);
+        
+        return { 
+          success: false, 
+          errors: ['Message delivery failed'],
+          deliveryLatency: failureLatency
+        };
       }
 
     } catch (error) {
@@ -345,10 +388,10 @@ export class PrayerMapMessagingSystem {
   }
 
   /**
-   * Get system status and metrics
+   * Get comprehensive system status and metrics
    */
   public getSystemStatus() {
-    return {
+    const baseStatus = {
       initialized: this.isInitialized,
       channelManager: messagingChannelManager.getStatus(),
       deliveryTracker: {
@@ -367,6 +410,24 @@ export class PrayerMapMessagingSystem {
         metrics: securityManager.getMetrics(),
       },
     };
+    
+    // Add performance monitoring if available
+    try {
+      const { messagingPerformanceMonitor } = require('./MessagingPerformanceMonitor');
+      const performanceReport = messagingPerformanceMonitor.getPerformanceReport();
+      
+      return {
+        ...baseStatus,
+        performance: performanceReport,
+        livingMapCompliance: {
+          avgLatency: performanceReport.avgMessageLatency,
+          realTimeCompliance: performanceReport.realTimeCompliance,
+          meetsRequirement: performanceReport.avgMessageLatency < 2000 && performanceReport.realTimeCompliance > 95,
+        },
+      };
+    } catch {
+      return baseStatus;
+    }
   }
 
   /**
@@ -374,6 +435,19 @@ export class PrayerMapMessagingSystem {
    */
   public async destroy(): Promise<void> {
     console.log('[PrayerMapMessagingSystem] Shutting down...');
+
+    // Stop monitoring services first
+    try {
+      const { realTimeValidator } = await import('./RealTimeValidator');
+      realTimeValidator.destroy();
+      console.log('✅ Real-time Validator stopped');
+    } catch {}
+    
+    try {
+      const { messagingPerformanceMonitor } = await import('./MessagingPerformanceMonitor');
+      messagingPerformanceMonitor.destroy();
+      console.log('✅ Performance Monitor stopped');
+    } catch {}
 
     // Destroy all components in reverse order
     await livingMapIntegration.destroy();

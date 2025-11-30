@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import mapboxgl from 'mapbox-gl';
 import type { Prayer } from '../types/prayer';
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import { animationMonitor } from '../lib/animation-monitor';
 
 interface PrayerAnimationLayerProps {
   prayer: Prayer;
@@ -28,6 +29,7 @@ export function PrayerAnimationLayer({ prayer, userLocation, map, onComplete }: 
 
   // Track if we've already completed to prevent double-calls
   const hasCompletedRef = useRef(false);
+  const animationStartTimeRef = useRef<number>(0);
 
   useEffect(() => {
     if (!map) return;
@@ -36,6 +38,11 @@ export function PrayerAnimationLayer({ prayer, userLocation, map, onComplete }: 
     hasCompletedRef.current = false;
 
     console.log('🎬 Starting 6-second prayer animation sequence...');
+
+    // Start monitoring animation performance
+    const animationName = 'prayer_send_animation';
+    animationStartTimeRef.current = performance.now();
+    animationMonitor.start(animationName);
 
     // Calculate bounds that include both points
     const bounds = new mapboxgl.LngLatBounds();
@@ -109,17 +116,26 @@ export function PrayerAnimationLayer({ prayer, userLocation, map, onComplete }: 
     map.on('move', updatePositions);
 
     // Complete after full animation sequence
+    const expectedDuration = reducedMotion ? 500 : 6000;
     const timer = setTimeout(() => {
       if (!hasCompletedRef.current) {
         hasCompletedRef.current = true;
+        
+        // Track animation completion
+        const actualDuration = performance.now() - animationStartTimeRef.current;
+        animationMonitor.trackCompletion(animationName, actualDuration, expectedDuration);
+        animationMonitor.stop(animationName);
+        
         console.log('✅ Prayer animation sequence complete - calling onComplete');
         onCompleteRef.current();
       }
-    }, reducedMotion ? 500 : 6000);
+    }, expectedDuration);
 
     return () => {
       map.off('move', updatePositions);
       clearTimeout(timer);
+      // Stop monitoring if component unmounts
+      animationMonitor.stop(animationName);
     };
   }, [map, prayer.location.lat, prayer.location.lng, userLocation.lat, userLocation.lng, reducedMotion]);
 
@@ -129,9 +145,23 @@ export function PrayerAnimationLayer({ prayer, userLocation, map, onComplete }: 
   const midY = (positions.from.y + positions.to.y) / 2 - 80;
 
   return (
-    <div className="absolute inset-0 pointer-events-none">
+    <div 
+      className="absolute inset-0 pointer-events-none"
+      style={{ 
+        willChange: 'transform', 
+        transform: 'translateZ(0)', // Force GPU layer
+        isolation: 'isolate' // Create stacking context for performance
+      }}
+    >
       {/* Permanent Connection Line (appears at the end, or immediately if reduced motion) */}
-      <svg className="absolute inset-0 w-full h-full">
+      <svg 
+        className="absolute inset-0 w-full h-full"
+        style={{ 
+          willChange: 'opacity', 
+          transform: 'translateZ(0)',
+          vectorEffect: 'non-scaling-stroke' // Optimize SVG rendering
+        }}
+      >
         <motion.path
           d={`M ${positions.from.x} ${positions.from.y} Q ${midX} ${midY} ${positions.to.x} ${positions.to.y}`}
           stroke="url(#permanentGradient)"
@@ -139,7 +169,16 @@ export function PrayerAnimationLayer({ prayer, userLocation, map, onComplete }: 
           fill="none"
           initial={{ pathLength: reducedMotion ? 1 : 0, opacity: reducedMotion ? 0.7 : 0 }}
           animate={{ pathLength: 1, opacity: 0.7 }}
-          transition={reducedMotion ? { duration: 0 } : { delay: 5.5, duration: 0.5, ease: "easeOut" }}
+          transition={reducedMotion ? { duration: 0 } : { 
+            delay: 5.5, 
+            duration: 0.5, 
+            ease: "easeOut",
+            type: "tween" // Ensure consistent timing
+          }}
+          style={{ 
+            willChange: 'stroke-dasharray, opacity',
+            transform: 'translateZ(0)'
+          }}
         />
         
         <defs>
@@ -155,7 +194,14 @@ export function PrayerAnimationLayer({ prayer, userLocation, map, onComplete }: 
       {!reducedMotion && (
         <>
           {/* First Phase: Line travels from replier TO prayer request (0-2.5s) */}
-          <svg className="absolute inset-0 w-full h-full">
+          <svg 
+            className="absolute inset-0 w-full h-full"
+            style={{ 
+              willChange: 'opacity',
+              transform: 'translateZ(0)',
+              vectorEffect: 'non-scaling-stroke'
+            }}
+          >
             <motion.path
               d={`M ${positions.from.x} ${positions.from.y} Q ${midX} ${midY} ${positions.to.x} ${positions.to.y}`}
               stroke="url(#outboundGradient)"
@@ -169,7 +215,12 @@ export function PrayerAnimationLayer({ prayer, userLocation, map, onComplete }: 
               transition={{
                 duration: 6,
                 times: [0, 0.4, 0.6, 0.65],
-                ease: "easeInOut"
+                ease: "easeInOut",
+                type: "tween"
+              }}
+              style={{ 
+                willChange: 'stroke-dasharray, opacity',
+                transform: 'translateZ(0)'
               }}
             />
 
@@ -195,13 +246,26 @@ export function PrayerAnimationLayer({ prayer, userLocation, map, onComplete }: 
             transition={{
               duration: 6,
               times: [0, 0.4, 0.6, 0.65],
-              ease: "easeInOut"
+              ease: "easeInOut",
+              type: "tween"
             }}
-            style={{ transform: 'translate(-50%, -50%)', willChange: 'transform, opacity' }}
+            style={{ 
+              transform: 'translate(-50%, -50%) translateZ(0)', 
+              willChange: 'transform, opacity, filter',
+              backfaceVisibility: 'hidden', // Prevent flickering
+              perspective: 1000 // Enable 3D hardware acceleration
+            }}
           />
 
           {/* Second Phase: Line shoots back from prayer TO replier (3.5-5.5s) */}
-          <svg className="absolute inset-0 w-full h-full">
+          <svg 
+            className="absolute inset-0 w-full h-full"
+            style={{ 
+              willChange: 'opacity',
+              transform: 'translateZ(0)',
+              vectorEffect: 'non-scaling-stroke'
+            }}
+          >
             <motion.path
               d={`M ${positions.to.x} ${positions.to.y} Q ${midX} ${midY} ${positions.from.x} ${positions.from.y}`}
               stroke="url(#returnGradient)"
@@ -215,7 +279,12 @@ export function PrayerAnimationLayer({ prayer, userLocation, map, onComplete }: 
               transition={{
                 duration: 6,
                 times: [0, 0.6, 0.9, 0.95],
-                ease: "easeInOut"
+                ease: "easeInOut",
+                type: "tween"
+              }}
+              style={{ 
+                willChange: 'stroke-dasharray, opacity',
+                transform: 'translateZ(0)'
               }}
             />
 
@@ -241,17 +310,25 @@ export function PrayerAnimationLayer({ prayer, userLocation, map, onComplete }: 
             transition={{
               duration: 6,
               times: [0, 0.6, 0.9, 0.95, 1],
-              ease: "easeInOut"
+              ease: "easeInOut",
+              type: "tween"
             }}
-            style={{ transform: 'translate(-50%, -50%)', willChange: 'transform, opacity' }}
+            style={{ 
+              transform: 'translate(-50%, -50%) translateZ(0)', 
+              willChange: 'transform, opacity, filter',
+              backfaceVisibility: 'hidden',
+              perspective: 1000
+            }}
           />
 
           {/* Pulsing marker at prayer request location */}
           <motion.div
             className="absolute"
             style={{
-              transform: `translate(calc(${positions.to.x}px - 50%), calc(${positions.to.y}px - 50%))`,
-              willChange: 'transform, opacity'
+              transform: `translate(calc(${positions.to.x}px - 50%), calc(${positions.to.y}px - 50%)) translateZ(0)`,
+              willChange: 'transform, opacity',
+              backfaceVisibility: 'hidden',
+              perspective: 1000
             }}
             initial={{ scale: 1, opacity: 0 }}
             animate={{
@@ -261,18 +338,27 @@ export function PrayerAnimationLayer({ prayer, userLocation, map, onComplete }: 
             transition={{
               duration: 6,
               times: [0, 0.15, 0.85, 1],
-              repeat: 0
+              repeat: 0,
+              type: "tween"
             }}
           >
-            <div className="w-12 h-12 rounded-full bg-yellow-300/40" />
+            <div 
+              className="w-12 h-12 rounded-full bg-yellow-300/40"
+              style={{ 
+                willChange: 'transform',
+                transform: 'translateZ(0)'
+              }}
+            />
           </motion.div>
 
           {/* Pulsing marker at replier location */}
           <motion.div
             className="absolute"
             style={{
-              transform: `translate(calc(${positions.from.x}px - 50%), calc(${positions.from.y}px - 50%))`,
-              willChange: 'transform, opacity'
+              transform: `translate(calc(${positions.from.x}px - 50%), calc(${positions.from.y}px - 50%)) translateZ(0)`,
+              willChange: 'transform, opacity',
+              backfaceVisibility: 'hidden',
+              perspective: 1000
             }}
             initial={{ scale: 1, opacity: 0 }}
             animate={{
@@ -282,10 +368,17 @@ export function PrayerAnimationLayer({ prayer, userLocation, map, onComplete }: 
             transition={{
               duration: 6,
               times: [0, 0.15, 0.85, 1],
-              repeat: 0
+              repeat: 0,
+              type: "tween"
             }}
           >
-            <div className="w-12 h-12 rounded-full bg-purple-300/40" />
+            <div 
+              className="w-12 h-12 rounded-full bg-purple-300/40"
+              style={{ 
+                willChange: 'transform',
+                transform: 'translateZ(0)'
+              }}
+            />
           </motion.div>
         </>
       )}

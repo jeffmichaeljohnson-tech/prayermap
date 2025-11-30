@@ -10,7 +10,8 @@ let tracingEnabled = false;
 
 // Environment variables
 const LANGSMITH_API_KEY = process.env.LANGSMITH_API_KEY;
-const LANGSMITH_PROJECT = process.env.LANGSMITH_PROJECT || "prayermap-memory";
+// Use consistent project name - prioritize env var, fallback to standard name
+const LANGSMITH_PROJECT = process.env.LANGSMITH_PROJECT || process.env.LANGSMITH_PROJECT_MEMORY || "prayermap-memory";
 
 /**
  * Initialize LangSmith client

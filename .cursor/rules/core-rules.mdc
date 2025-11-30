@@ -25,6 +25,14 @@ PrayerMap is a sacred digital sanctuary for prayer. Every line of code serves th
 - Verify information is current and applicable to our stack (React 19, Vite 7, TailwindCSS 4, etc.)
 - Never implement based on outdated or unverified patterns
 
+### 1a. Observability-Driven Development (ODD)
+- **MANDATORY**: Check Datadog BEFORE debugging errors (not after)
+- **MANDATORY**: Check Datadog BEFORE performance work (establish baseline)
+- **MANDATORY**: Verify metrics AFTER making changes (confirm improvement)
+- **MANDATORY**: Auto-enable debug mode on FIRST failure (not second)
+- **OPTIONAL**: Skip Datadog checks for trivial tasks (typos, docs, simple refactors)
+- **See**: `docs/OBSERVABILITY_DRIVEN_DEVELOPMENT.md` for complete protocol
+
 ### 2. iOS/Android Deployment Goal
 - Every decision MUST support mobile deployment via Capacitor
 - Web-only solutions that break mobile functionality are REJECTED
@@ -121,6 +129,9 @@ Component.tsx structure:
 - Write meaningful commit messages
 - Test on mobile viewport sizes
 - Consider accessibility (a11y)
+- Check Datadog before debugging (understand context first)
+- Verify metrics after changes (confirm improvement)
+- Enable debug mode on first error (not second)
 
 ## File Naming Conventions
 

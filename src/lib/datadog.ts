@@ -15,7 +15,7 @@
  */
 
 import { datadogRum } from '@datadog/browser-rum';
-import { datadogRumReact } from '@datadog/browser-rum-react';
+import * as datadogRumReact from '@datadog/browser-rum-react';
 import React from 'react';
 
 // Initialize Datadog RUM
@@ -77,14 +77,7 @@ export function initDatadog() {
       return true;
     },
     
-    // Error handling
-    beforeSend: (event) => {
-      // Don't send events in development unless explicitly enabled
-      if (import.meta.env.NODE_ENV === 'development' && !import.meta.env.VITE_DATADOG_ENABLE_DEV) {
-        return false;
-      }
-      return true;
-    },
+    // Error handling - removed duplicate beforeSend
   });
   
   // React integration

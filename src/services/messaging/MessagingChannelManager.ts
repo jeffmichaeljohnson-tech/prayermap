@@ -12,6 +12,8 @@
 
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
+import { realtimeMonitor } from '../../lib/realtime-monitor';
+import { traceSupabaseQuery, trackEvent, trackError, datadogRum } from '../../lib/datadog';
 
 export interface Message {
   id: string;
@@ -80,6 +82,14 @@ export class MessagingChannelManager {
   private connectionState: 'active' | 'background' | 'disconnected' = 'active';
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
+  private startTime: number = Date.now();
+  private performanceMetrics = {
+    messagesSent: 0,
+    messagesReceived: 0,
+    totalLatency: 0,
+    errorCount: 0,
+    reconnectCount: 0,
+  };
 
   constructor(options: ChannelOptions = {}) {
     this.options = {
@@ -192,6 +202,19 @@ export class MessagingChannelManager {
 
       if (error) throw error;
 
+      // Track message sent for delivery latency monitoring
+      const channelName = `conversation_${conversationId}`;
+      realtimeMonitor.trackMessageSent(channelName, data.id);
+      
+      // Track message sending with Datadog
+      trackEvent('messaging.message_sent', {
+        conversation_id: conversationId,
+        content_type: contentType,
+        message_id: data.id,
+        user_id: user.id,
+        has_media: !!contentUrl,
+      });
+
       // Convert to Message format and update status
       const sentMessage: Message = {
         id: data.id,
@@ -220,6 +243,14 @@ export class MessagingChannelManager {
     } catch (error) {
       console.error('Failed to send message:', error);
       
+      // Track error with Datadog
+      trackError(error as Error, {
+        context: 'message_send_failed',
+        conversation_id: conversationId,
+        content_type: contentType,
+        user_id: (await supabase.auth.getUser()).data.user?.id,
+      });
+      
       // Update status to failed
       const callbacks = this.subscriptions.get(conversationId);
       if (callbacks) {
@@ -241,6 +272,12 @@ export class MessagingChannelManager {
   public sendTyping(conversationId: string, isTyping: boolean): void {
     const channel = this.channels.get(conversationId);
     if (!channel) return;
+
+    // Track typing indicators with Datadog
+    trackEvent('messaging.typing_indicator', {
+      conversation_id: conversationId,
+      is_typing: isTyping,
+    });
 
     // Broadcast typing status to other participants
     channel.send({
@@ -269,11 +306,13 @@ export class MessagingChannelManager {
       const user = (await supabase.auth.getUser()).data.user;
       if (!user) return;
 
-      // Update read status in database
-      await supabase
-        .from('prayer_responses')
-        .update({ read_at: new Date().toISOString() })
-        .eq('id', messageId);
+      // Update read status in database with Datadog tracing
+      await traceSupabaseQuery('mark_message_as_read', async () => {
+        return await supabase
+          .from('prayer_responses')
+          .update({ read_at: new Date().toISOString() })
+          .eq('id', messageId);
+      }, { message_id: messageId, user_id: user.id });
 
       // Broadcast read receipt
       const conversations = Array.from(this.channels.keys());
@@ -293,6 +332,12 @@ export class MessagingChannelManager {
       });
     } catch (error) {
       console.error('Failed to mark message as read:', error);
+      
+      // Track read receipt error
+      trackError(error as Error, {
+        context: 'mark_message_read_failed',
+        message_id: messageId,
+      });
     }
   }
 
@@ -338,6 +383,11 @@ export class MessagingChannelManager {
    * Get current status and metrics
    */
   public getStatus() {
+    const uptime = Date.now() - this.startTime;
+    const avgLatency = this.performanceMetrics.messagesReceived > 0 
+      ? this.performanceMetrics.totalLatency / this.performanceMetrics.messagesReceived 
+      : 0;
+    
     return {
       isActive: this.isActive,
       connectionState: this.connectionState,
@@ -346,6 +396,15 @@ export class MessagingChannelManager {
       reconnectAttempts: this.reconnectAttempts,
       options: this.options,
       queuedBatches: this.batchQueue.size,
+      performance: {
+        ...this.performanceMetrics,
+        avgLatency,
+        uptime,
+        messagesPerSecond: uptime > 0 ? (this.performanceMetrics.messagesReceived / (uptime / 1000)) : 0,
+        errorRate: this.performanceMetrics.messagesReceived > 0 
+          ? (this.performanceMetrics.errorCount / this.performanceMetrics.messagesReceived) 
+          : 0,
+      },
     };
   }
 
@@ -356,6 +415,13 @@ export class MessagingChannelManager {
 
     console.log('[MessagingChannelManager] Starting messaging service');
     this.isActive = true;
+    
+    // Track service start with Datadog
+    trackEvent('messaging.service_started', {
+      options: this.options,
+      active_subscriptions: this.subscriptions.size,
+    });
+    
     this.startHeartbeat();
     this.startBatchProcessor();
   }
@@ -365,6 +431,13 @@ export class MessagingChannelManager {
 
     console.log('[MessagingChannelManager] Stopping messaging service');
     this.isActive = false;
+    
+    // Track service stop with metrics
+    const metrics = this.getStatus();
+    trackEvent('messaging.service_stopped', {
+      final_metrics: metrics,
+      uptime_ms: Date.now() - (this.startTime || Date.now()),
+    });
 
     // Clean up all channels
     this.channels.forEach(channel => channel.unsubscribe());
@@ -392,6 +465,9 @@ export class MessagingChannelManager {
 
     const channelName = `conversation_${conversationId}`;
     const channel = supabase.channel(channelName);
+
+    // Monitor channel health with Datadog
+    realtimeMonitor.monitorChannel(channelName, channel);
 
     // Listen for new messages (prayer_responses inserts)
     channel.on('postgres_changes', {
@@ -440,6 +516,36 @@ export class MessagingChannelManager {
   private handleNewMessage(conversationId: string, messageData: any): void {
     const callbacks = this.subscriptions.get(conversationId);
     if (!callbacks) return;
+
+    // Track message received for delivery latency monitoring
+    const channelName = `conversation_${conversationId}`;
+    realtimeMonitor.trackMessageReceived(channelName, messageData.id);
+    
+    // Update performance metrics
+    this.performanceMetrics.messagesReceived++;
+    
+    // Track message received with Datadog
+    const messageLatency = Date.now() - new Date(messageData.created_at).getTime();
+    datadogRum.addTiming('messaging.message_received_latency', messageLatency);
+    
+    trackEvent('messaging.message_received', {
+      conversation_id: conversationId,
+      message_id: messageData.id,
+      content_type: messageData.content_type,
+      latency_ms: messageLatency,
+      is_realtime: messageLatency < 2000, // LIVING MAP requirement
+    });
+    
+    // Alert if message violates LIVING MAP <2 second requirement
+    if (messageLatency > 2000) {
+      trackError(new Error(`Message delivery exceeds LIVING MAP requirement: ${messageLatency}ms`), {
+        type: 'living_map_violation',
+        conversation_id: conversationId,
+        message_id: messageData.id,
+        latency_ms: messageLatency,
+        requirement_ms: 2000,
+      });
+    }
 
     const message: Message = {
       id: messageData.id,
@@ -508,18 +614,35 @@ export class MessagingChannelManager {
   }
 
   private handleChannelError(conversationId: string): void {
+    this.performanceMetrics.errorCount++;
+    
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       const callbacks = this.subscriptions.get(conversationId);
       if (callbacks) {
-        callbacks.onError(
-          new Error(`Max reconnection attempts reached for conversation ${conversationId}`),
-          'channel_error'
-        );
+        const error = new Error(`Max reconnection attempts reached for conversation ${conversationId}`);
+        
+        // Track critical error with Datadog
+        trackError(error, {
+          type: 'messaging_max_reconnect_failure',
+          conversation_id: conversationId,
+          reconnect_attempts: this.reconnectAttempts,
+          max_attempts: this.maxReconnectAttempts,
+        });
+        
+        callbacks.onError(error, 'channel_error');
       }
       return;
     }
 
     this.reconnectAttempts++;
+    this.performanceMetrics.reconnectCount++;
+    
+    // Track reconnection attempt
+    trackEvent('messaging.reconnect_attempt', {
+      conversation_id: conversationId,
+      attempt_number: this.reconnectAttempts,
+      max_attempts: this.maxReconnectAttempts,
+    });
     
     // Exponential backoff
     const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
@@ -581,11 +704,31 @@ export class MessagingChannelManager {
       if (!this.isActive) return;
 
       try {
-        // Simple ping to maintain connection
-        await supabase.from('prayers').select('count', { count: 'exact', head: true });
+        // Simple ping to maintain connection with Datadog tracing
+        const startTime = Date.now();
+        await traceSupabaseQuery('messaging_heartbeat', async () => {
+          return await supabase.from('prayers').select('count', { count: 'exact', head: true });
+        });
+        
+        const heartbeatLatency = Date.now() - startTime;
+        datadogRum.addTiming('messaging.heartbeat_latency', heartbeatLatency);
+        
+        // Report current metrics to Datadog
+        const status = this.getStatus();
+        trackEvent('messaging.heartbeat', {
+          ...status.performance,
+          connection_state: this.connectionState,
+          active_channels: this.channels.size,
+        });
+        
       } catch (error) {
         console.error('[MessagingChannelManager] Heartbeat failed:', error);
         this.connectionState = 'disconnected';
+        
+        trackError(error as Error, {
+          type: 'messaging_heartbeat_failed',
+          connection_state: this.connectionState,
+        });
       }
     }, interval);
   }

@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { ConversationService } from '../services/conversationService';
 import { supabase } from '../lib/supabase';
+import { realtimeMonitor } from '../lib/realtime-monitor';
 import type {
   ConversationThread,
   ThreadMessage,
@@ -618,8 +619,9 @@ export function useConversationManager({
     if (!enableRealtime || !userId) return;
     
     // Subscribe to conversation updates
+    const conversationChannelName = `user_conversations:${userId}`;
     const conversationSubscription = supabase
-      .channel(`user_conversations:${userId}`)
+      .channel(conversationChannelName)
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
@@ -631,12 +633,15 @@ export function useConversationManager({
       })
       .subscribe();
     
+    // Monitor conversation channel health
+    realtimeMonitor.monitorChannel(conversationChannelName, conversationSubscription);
     subscriptionsRef.current.set('conversations', conversationSubscription);
     
     // Subscribe to message updates for active conversations
     conversations.forEach(conv => {
+      const messageChannelName = `thread_messages:${conv.id}`;
       const messageSubscription = supabase
-        .channel(`thread_messages:${conv.id}`)
+        .channel(messageChannelName)
         .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
@@ -648,6 +653,8 @@ export function useConversationManager({
         })
         .subscribe();
       
+      // Monitor message channel health
+      realtimeMonitor.monitorChannel(messageChannelName, messageSubscription);
       subscriptionsRef.current.set(`messages:${conv.id}`, messageSubscription);
     });
     

@@ -12,6 +12,7 @@ import { DiagnosticOverlay } from './components/DiagnosticOverlay';
 import { AppErrorBoundary } from './components/ErrorBoundary';
 import { OfflineIndicator } from './components/FallbackUI';
 import { useConnectionStatus } from './lib/selfHealing';
+import { trackLayoutShifts } from './lib/layout-shift-tracker';
 // import { MonitoringDashboard } from './components/MonitoringDashboard';
 // import { logger as structuredLogger } from './lib/logging/structuredLogger';
 // import { performanceMonitor as newPerformanceMonitor } from './lib/logging/performanceMonitor';
@@ -98,6 +99,12 @@ function AppContent() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const { isOnline } = useConnectionStatus();
+
+  // Track layout shifts for visual stability monitoring
+  useEffect(() => {
+    const cleanup = trackLayoutShifts();
+    return cleanup;
+  }, []);
   
   // Initialize world-class observability for this component
   // const { 

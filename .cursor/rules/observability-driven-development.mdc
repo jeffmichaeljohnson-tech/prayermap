@@ -1,0 +1,284 @@
+---
+description: Observability-Driven Development (ODD) protocol - when and how to use Datadog
+globs:
+  - "**/*"
+alwaysApply: true
+---
+
+# Observability-Driven Development (ODD) Protocol
+
+> **Core Principle**: Data-driven decisions beat intuition. Check metrics before guessing, verify after changes, and debug with evidence.
+
+---
+
+## 🚨 MANDATORY Datadog Checks
+
+### When You MUST Check Datadog
+
+**1. Before Debugging Any Error** ⚠️ CRITICAL
+```
+❌ WRONG: "I see an error, let me check the code"
+✅ RIGHT: "I see an error, let me check Datadog first to understand the context"
+```
+
+**Why**: Errors in Datadog show frequency, trends, user context, related errors, and performance impact.
+
+**Action**: 
+1. Go to Datadog → Logs → Search for error message
+2. Check error frequency and trends
+3. Review error context (user_id, component, etc.)
+4. Look for related errors
+5. THEN investigate code
+
+---
+
+**2. Before Performance Work** ⚠️ CRITICAL
+```
+❌ WRONG: "This feels slow, let me optimize"
+✅ RIGHT: "Let me check Datadog to see actual performance metrics"
+```
+
+**Why**: Performance work without metrics is guessing.
+
+**Action**:
+1. Check Datadog → APM → Service Performance
+2. Identify slowest operations
+3. Review query performance (PostgreSQL)
+4. Check animation FPS metrics
+5. THEN optimize based on data
+
+---
+
+**3. After Making Changes** ⚠️ CRITICAL
+```
+❌ WRONG: "Code compiles, I'm done"
+✅ RIGHT: "Code compiles, let me verify metrics show improvement"
+```
+
+**Why**: Changes can have unintended consequences.
+
+**Action**:
+1. Make change
+2. Wait 2-5 minutes for metrics to update
+3. Check Datadog for error rate changes, performance changes, new errors
+4. Verify improvement or investigate regression
+
+---
+
+**4. When Investigating User Reports** ⚠️ CRITICAL
+```
+❌ WRONG: "User says it's broken, let me check code"
+✅ RIGHT: "User says it's broken, let me check Datadog for that user/timeframe"
+```
+
+**Why**: User reports need context - is it affecting all users or just one?
+
+**Action**:
+1. Check Datadog → Logs → Filter by user_id or timeframe
+2. Review error patterns
+3. Check performance metrics for that period
+4. Look for related issues
+5. THEN investigate code
+
+---
+
+## 🔍 OPTIONAL Datadog Checks
+
+### When Checking is Helpful But Not Required
+
+**1. Simple Refactors** (No behavior change)
+- If no behavior changes, metrics shouldn't change
+- Still good to verify, but not critical
+
+**2. Documentation Updates**
+- No code changes = no metric changes
+- Skip unless documenting metrics themselves
+
+**3. Trivial Bug Fixes** (Obvious issues)
+- If error is obvious (typo, null check), fix first
+- Then verify metrics show improvement
+
+**4. Styling/CSS Changes**
+- Visual changes don't affect backend metrics
+- Still check animation/layout metrics if relevant
+
+---
+
+## 🐛 Auto-Enable Debug Mode Protocol
+
+### When to Enable Debug Mode
+
+**MANDATORY**: Enable debug mode on **first failure**:
+
+```typescript
+// In your code or agent workflow:
+if (errorOccurred && !debugModeEnabled) {
+  enableDebugMode();
+  logToDatadog('Debug mode enabled due to error', { error, context });
+}
+```
+
+**Why**: 
+- First failure might be a fluke
+- Second failure = pattern = need more data
+- Debug mode provides detailed context
+
+**Action**:
+1. **First error**: Enable debug mode automatically
+2. **Check Datadog**: Review detailed logs
+3. **If error persists**: Debug mode already on, investigate
+4. **After fix**: Disable debug mode (or leave on for 24h)
+
+---
+
+## 📊 What to Check in Datadog
+
+### For Errors
+- Error frequency: How often does it occur?
+- Error trends: Is it increasing/decreasing?
+- Error context: user_id, component, action
+- Related errors: Are there patterns?
+- Performance impact: Is it slowing things down?
+
+**Location**: Datadog → Logs → Search error message
+
+---
+
+### For Performance
+- Query performance: PostgreSQL slow queries
+- API latency: Endpoint response times
+- Animation FPS: Frame rate metrics
+- Message latency: Realtime delivery times
+- Layout shifts: CLS scores
+
+**Location**: Datadog → APM → Service Performance
+
+---
+
+### For Messaging/Realtime
+- Connection health: % connected vs disconnected
+- Message latency: p50, p95, p99 delivery times
+- Subscription errors: Failed subscriptions
+- Reconnection rate: How often connections drop
+
+**Location**: Datadog → Logs → Search "realtime"
+
+---
+
+### For Animations
+- FPS: Average frame rate (target: 60fps)
+- Jank rate: % frames >16.67ms (target: <10%)
+- Completion variance: Actual vs expected duration
+- Layout shifts: CLS score (target: <0.1)
+
+**Location**: Datadog → Logs → Search "animation"
+
+---
+
+## 🎯 Agent Workflow Integration
+
+### Standard Agent Workflow with ODD
+
+```
+1. RECEIVE TASK
+   ↓
+2. CHECK DATADOG (if debugging/performance/errors)
+   ├─ Review relevant metrics
+   ├─ Understand baseline
+   └─ Identify patterns
+   ↓
+3. RESEARCH (query memory, check docs)
+   ↓
+4. IMPLEMENT
+   ↓
+5. VERIFY IN DATADOG (mandatory after changes)
+   ├─ Check error rates
+   ├─ Check performance metrics
+   └─ Verify improvement
+   ↓
+6. DOCUMENT FINDINGS
+```
+
+---
+
+### Error Handling Workflow
+
+```
+1. ERROR OCCURS
+   ↓
+2. AUTO-ENABLE DEBUG MODE (first failure)
+   ↓
+3. CHECK DATADOG IMMEDIATELY
+   ├─ Search error message
+   ├─ Check frequency/trends
+   ├─ Review context
+   └─ Identify patterns
+   ↓
+4. INVESTIGATE CODE (with context from Datadog)
+   ↓
+5. FIX
+   ↓
+6. VERIFY IN DATADOG
+   ├─ Error should stop
+   ├─ Performance should improve
+   └─ No new errors
+   ↓
+7. DISABLE DEBUG MODE (after 24h if stable)
+```
+
+---
+
+## 🚫 When NOT to Check Datadog
+
+**Don't check for**:
+- Simple typos or syntax errors
+- Documentation-only changes
+- Trivial refactors with no behavior change
+- Styling changes (unless animation-related)
+- Initial setup/installation
+
+**Use judgment**: If checking Datadog would take longer than fixing the issue, skip it.
+
+---
+
+## 💡 Best Practices
+
+### 1. Check Before Guessing
+```
+❌ "This might be slow because..."
+✅ "Datadog shows this is slow because..."
+```
+
+### 2. Verify After Changes
+```
+❌ "I fixed it"
+✅ "I fixed it, and Datadog confirms error rate dropped from X to Y"
+```
+
+### 3. Enable Debug Early
+```
+❌ "Let me try a few things first"
+✅ "First error = enable debug mode, then investigate"
+```
+
+### 4. Use Metrics to Prioritize
+```
+❌ "This feels important"
+✅ "Datadog shows this affects 50% of users, so it's high priority"
+```
+
+### 5. Document Findings
+```
+✅ "Datadog showed error rate of X before fix, Y after fix"
+✅ "Performance improved from Xms to Yms according to Datadog"
+```
+
+---
+
+## 📚 Full Documentation
+
+See `docs/OBSERVABILITY_DRIVEN_DEVELOPMENT.md` for complete protocol with examples.
+
+---
+
+**Remember**: Data-driven decisions beat intuition. Check metrics before guessing, verify after changes, and debug with evidence.

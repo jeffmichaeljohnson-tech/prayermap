@@ -34,9 +34,18 @@ alwaysApply: true
 
 ### STEP 2: Continue with Observability Requirements
 - **MANDATORY**: Query past failures before starting: `await queryPatterns('failure', taskDescription)` (after memory_search)
+- **MANDATORY**: Check Datadog BEFORE debugging (see OBSERVABILITY_DRIVEN_DEVELOPMENT.md)
+- **MANDATORY**: Auto-enable debug mode on FIRST failure (not second)
 - **NON-NEGOTIABLE**: Track all operations >100ms with performance logging
 - **ESSENTIAL**: Capture full error context and attempt automated recovery
 - **COMPLIANCE**: Follow EU AI Act and NIST AI Risk Management Framework standards
+
+**Datadog Check Protocol**:
+- **Before debugging**: Check Datadog logs for error context, frequency, trends
+- **Before performance work**: Check Datadog APM for baseline metrics
+- **After changes**: Verify metrics show improvement (error rate down, performance up)
+- **On first error**: Auto-enable debug mode, then investigate with full context
+- **Skip checks**: For trivial tasks (typos, docs, simple refactors) - use judgment
 
 **Why This Order Matters:**
 - `memory_search` finds past conversations, decisions, and research (fastest, most comprehensive)

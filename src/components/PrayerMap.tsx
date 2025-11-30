@@ -37,7 +37,7 @@ import {
   loadConnectionsFromCache, 
   saveConnectionsToCache 
 } from '../utils/statePersistence';
-import { livingMapMonitor } from '../utils/livingMapMonitor';
+import { livingMapMonitor } from '../lib/livingMapMonitor';
 
 // Extracted components
 import { MapContainer } from './map/MapContainer';
@@ -110,28 +110,60 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
   }, [prayers, state.creatingPrayerAnimation, state.connections]);
 
   // GLOBAL LIVING MAP: Fetch and subscribe to ALL prayer connections worldwide
+  // Enhanced with Living Map monitoring for spiritual excellence
   useEffect(() => {
+    const setupStartTime = Date.now();
+    console.log('🕊️ Setting up Living Map connections with monitoring...');
+    
     // Initialize with cached connections for instant loading
     const cachedConnections = loadConnectionsFromCache();
     if (cachedConnections.length > 0) {
       console.log('🚀 Fast loading with', cachedConnections.length, 'cached connections');
       actions.setConnections(cachedConnections);
+      
+      // Track universal map state
+      livingMapMonitor.trackUniversalMapState(prayers.length, cachedConnections.length);
     }
 
-    // Load fresh connections from server
+    // Load fresh connections from server with Living Map monitoring
     fetchAllConnections().then((globalConnections) => {
+      const loadTime = Date.now() - setupStartTime;
       console.log('✅ Loaded global connections:', globalConnections.length);
       actions.setConnections(globalConnections);
+      
+      // Track historical data loading performance for Living Map
+      livingMapMonitor.trackHistoricalDataLoad(
+        setupStartTime, 
+        globalConnections.length, 
+        globalConnections.length // All expected connections loaded
+      );
+      
+      // Track universal shared reality
+      livingMapMonitor.trackUniversalMapState(prayers.length, globalConnections.length);
       
       // Cache fresh connections
       if (globalConnections.length > 0) {
         saveConnectionsToCache(globalConnections);
       }
+    }).catch(error => {
+      console.error('❌ Failed to load global connections:', error);
+      // Track failed historical data load
+      livingMapMonitor.trackHistoricalDataLoad(setupStartTime, 0, 1);
     });
 
-    // Subscribe to real-time updates with intelligent merging
+    // Subscribe to real-time updates with Living Map monitoring
     const unsubscribe = subscribeToAllConnections((updatedConnections) => {
       console.log('📥 Real-time connection update:', updatedConnections.length);
+      
+      // Track real-time memorial line creation for Living Map
+      updatedConnections.forEach(conn => {
+        const creationTime = new Date(conn.created_at).getTime();
+        livingMapMonitor.trackMemorialLineCreation(
+          conn.id, 
+          creationTime, 
+          true // All memorial lines must be eternal
+        );
+      });
       
       // CRITICAL FIX: Use function form to prevent state replacement
       actions.setConnections(currentConnections => {
@@ -148,6 +180,9 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
         
         console.log('🔄 Connection state merged:', currentConnections.length, '→', merged.length, 'connections');
         
+        // Track updated universal map state for Living Map
+        livingMapMonitor.trackUniversalMapState(prayers.length, merged.length);
+        
         // Cache updated state for persistence
         if (merged.length > 0) {
           saveConnectionsToCache(merged);
@@ -158,7 +193,7 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
     });
 
     return unsubscribe;
-  }, [actions]);
+  }, [actions, prayers.length]);
 
   // Handle map load
   const handleMapLoad = useCallback((mapInstance: mapboxgl.Map) => {

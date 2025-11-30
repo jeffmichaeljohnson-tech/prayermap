@@ -22,7 +22,7 @@ export async function generateEmbedding(text) {
     const truncatedText = text.length > maxChars ? text.slice(0, maxChars) + "..." : text;
     const generateFn = async () => {
         const response = await openaiClient.embeddings.create({
-            model: "text-embedding-3-small",
+            model: "text-embedding-3-large",
             input: truncatedText,
         });
         return response.data[0].embedding;
@@ -32,7 +32,7 @@ export async function generateEmbedding(text) {
         return withTrace("generate_embedding", "embedding", {
             text_length: text.length,
             truncated: text.length > maxChars,
-            model: "text-embedding-3-small",
+            model: "text-embedding-3-large",
         }, generateFn, { operation: "single_embedding" });
     }
     return generateFn();
@@ -55,7 +55,7 @@ export async function generateEmbeddings(texts, batchSize = 100) {
                 return text.length > maxChars ? text.slice(0, maxChars) + "..." : text;
             });
             const response = await openaiClient.embeddings.create({
-                model: "text-embedding-3-small",
+                model: "text-embedding-3-large",
                 input: truncatedBatch,
             });
             for (const item of response.data) {
@@ -74,7 +74,7 @@ export async function generateEmbeddings(texts, batchSize = 100) {
             total_texts: texts.length,
             batch_size: batchSize,
             num_batches: Math.ceil(texts.length / batchSize),
-            model: "text-embedding-3-small",
+            model: "text-embedding-3-large",
         }, generateBatchFn, { operation: "batch_embedding" });
     }
     return generateBatchFn();

@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Map as MapboxMap } from 'mapbox-gl';
 import type { Prayer } from '../types/prayer';
+import { trackEvent, trackError, datadogRum } from '../lib/datadog';
+import { markerMonitoringService } from '../services/markerMonitoringService';
 
 interface PrayerMarkerProps {
   prayer: Prayer;
@@ -24,27 +26,108 @@ export function PrayerMarker({
 }: PrayerMarkerProps) {
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
   const [showPrayerList, setShowPrayerList] = useState(false);
-
+  const mountTime = useRef<number>(performance.now());
+  const firstRenderTime = useRef<number>(0);
+  const projectionErrors = useRef<number>(0);
+  const positionUpdateCount = useRef<number>(0);
+  const markerId = useRef<string>('');
+  
+  // Initialize marker monitoring on mount
   useEffect(() => {
-    if (!map) return;
+    markerId.current = markerMonitoringService.trackMarkerCreation(prayer);
+    return () => {
+      markerMonitoringService.cleanupMarkerMetrics(markerId.current);
+    };
+  }, [prayer]);
 
-    // Validate location data
+  // Enhanced position tracking with performance monitoring
+  const updatePosition = useCallback(() => {
+    if (!map) return;
+    
     const lat = prayer.location?.lat;
     const lng = prayer.location?.lng;
-
+    
     if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng)) {
-      console.warn('Invalid prayer location:', prayer.id, prayer.location);
+      trackError(new Error(`Invalid prayer location for marker ${prayer.id}`), {
+        prayer_id: prayer.id,
+        location: prayer.location,
+        type: 'invalid_location'
+      });
       return;
     }
 
-    const updatePosition = () => {
-      try {
-        const point = map.project([lng, lat]);
-        setPosition({ x: point.x, y: point.y });
-      } catch (error) {
-        console.error('Error projecting prayer location:', error);
+    try {
+      const startTime = performance.now();
+      const point = map.project([lng, lat]);
+      const projectionTime = performance.now() - startTime;
+      
+      setPosition({ x: point.x, y: point.y });
+      positionUpdateCount.current++;
+      
+      // Track first render time for Living Map real-time requirements
+      if (firstRenderTime.current === 0) {
+        firstRenderTime.current = performance.now();
+        const totalRenderTime = firstRenderTime.current - mountTime.current;
+        
+        // Use monitoring service for comprehensive tracking
+        markerMonitoringService.trackMarkerFirstRender(markerId.current, firstRenderTime.current);
+        
+        trackEvent('prayer_marker.first_render', {
+          prayer_id: prayer.id,
+          mount_to_render_ms: totalRenderTime,
+          is_stacked: stackCount > 1,
+          is_prayed: isPrayed,
+          projection_time_ms: projectionTime
+        });
+        
+        // Alert on slow first render (critical for Living Map experience)
+        if (totalRenderTime > 100) {
+          trackError(new Error(`Slow marker first render: ${totalRenderTime.toFixed(1)}ms for prayer ${prayer.id}`), {
+            prayer_id: prayer.id,
+            render_time_ms: totalRenderTime,
+            type: 'slow_first_render',
+            living_map_violation: true
+          });
+        }
       }
-    };
+      
+      // Track excessive position updates (performance issue)
+      if (positionUpdateCount.current > 100) {
+        trackError(new Error(`Excessive position updates for prayer marker ${prayer.id}: ${positionUpdateCount.current}`), {
+          prayer_id: prayer.id,
+          update_count: positionUpdateCount.current,
+          type: 'excessive_updates'
+        });
+      }
+      
+    } catch (error) {
+      projectionErrors.current++;
+      markerMonitoringService.trackPositionUpdate(markerId.current, projectionTime, false);
+      trackError(error as Error, {
+        prayer_id: prayer.id,
+        location: { lat, lng },
+        error_count: projectionErrors.current,
+        type: 'projection_error'
+      });
+    }
+  }, [map, prayer.location, prayer.id, stackCount, isPrayed]);
+
+  useEffect(() => {
+    if (!map) {
+      trackEvent('prayer_marker.waiting_for_map', {
+        prayer_id: prayer.id,
+        timestamp: Date.now()
+      });
+      return;
+    }
+
+    // Track marker initialization
+    trackEvent('prayer_marker.initialized', {
+      prayer_id: prayer.id,
+      has_valid_location: !!(prayer.location?.lat && prayer.location?.lng),
+      stack_count: stackCount,
+      is_prayed: isPrayed
+    });
 
     updatePosition();
     map.on('move', updatePosition);
@@ -53,8 +136,16 @@ export function PrayerMarker({
     return () => {
       map.off('move', updatePosition);
       map.off('zoom', updatePosition);
+      
+      // Track marker cleanup
+      trackEvent('prayer_marker.unmounted', {
+        prayer_id: prayer.id,
+        lifetime_ms: performance.now() - mountTime.current,
+        position_updates: positionUpdateCount.current,
+        projection_errors: projectionErrors.current
+      });
     };
-  }, [map, prayer.location, prayer.id]);
+  }, [map, updatePosition]);
 
   if (!position) return null;
 
@@ -90,21 +181,82 @@ export function PrayerMarker({
         />
       </motion.div>
 
-      {/* Prayer Emoji Marker - Optimized: removed infinite animations, using CSS for glow */}
+      {/* Prayer Emoji Marker - Enhanced with interaction tracking */}
       <motion.button
         onClick={() => {
+          // Track marker interaction using monitoring service
+          markerMonitoringService.trackMarkerInteraction(markerId.current, 'click', {
+            is_stacked: stackCount > 1,
+            stack_count: stackCount,
+            is_prayed: isPrayed
+          });
+          
+          trackEvent('prayer_marker.click', {
+            prayer_id: prayer.id,
+            is_stacked: stackCount > 1,
+            stack_count: stackCount,
+            is_prayed: isPrayed,
+            timestamp: Date.now()
+          });
+          
           if (stackCount > 1) {
             setShowPrayerList(!showPrayerList);
+            markerMonitoringService.trackMarkerInteraction(markerId.current, 'expand_stack', {
+              stack_count: stackCount,
+              showing: !showPrayerList
+            });
+            trackEvent('prayer_marker.expand_stack', {
+              prayer_id: prayer.id,
+              stack_count: stackCount,
+              showing: !showPrayerList
+            });
           } else {
             onClick();
+            markerMonitoringService.trackMarkerInteraction(markerId.current, 'open_detail', {
+              is_prayed: isPrayed
+            });
+            trackEvent('prayer_marker.open_detail', {
+              prayer_id: prayer.id,
+              is_prayed: isPrayed
+            });
           }
+        }}
+        onAnimationComplete={() => {
+          // Track animation completion for performance monitoring
+          trackEvent('prayer_marker.animation_complete', {
+            prayer_id: prayer.id,
+            animation_type: 'entrance',
+            render_time_ms: performance.now() - mountTime.current
+          });
         }}
         className="relative z-10"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
-        whileHover={{ scale: 1.2 }}
-        whileTap={{ scale: 0.9 }}
-        transition={{ duration: 0.3 }}
+        whileHover={{ 
+          scale: 1.2,
+          rotateZ: 5,
+          transition: { 
+            duration: 0.2,
+            ease: "easeOut",
+            type: "spring",
+            stiffness: 300
+          }
+        }}
+        whileTap={{ 
+          scale: 0.9,
+          rotateZ: -2,
+          transition: { 
+            duration: 0.1,
+            ease: "easeInOut"
+          }
+        }}
+        transition={{ 
+          duration: 0.4, 
+          ease: "easeOut",
+          type: "spring",
+          stiffness: 260,
+          damping: 20
+        }}
       >
         <div className={`text-4xl ${isPrayed ? 'opacity-60' : ''}`}>
           🙏
@@ -117,11 +269,21 @@ export function PrayerMarker({
           </div>
         )}
 
-        {/* Glow effect for active prayers - using CSS animation for GPU acceleration */}
+        {/* Enhanced glow effect for active prayers - GPU accelerated */}
         {!isPrayed && (
-          <div
-            className="absolute inset-0 rounded-full bg-yellow-300/40 blur-xl animate-pulse"
+          <motion.div
+            className="absolute inset-0 rounded-full bg-gradient-to-r from-yellow-300/50 to-purple-300/50 blur-xl"
             style={{ pointerEvents: 'none' }}
+            animate={{
+              scale: [1, 1.1, 1],
+              opacity: [0.4, 0.7, 0.4]
+            }}
+            transition={{
+              duration: 2,
+              ease: "easeInOut",
+              repeat: Infinity,
+              repeatType: "reverse"
+            }}
           />
         )}
       </motion.button>
@@ -144,6 +306,17 @@ export function PrayerMarker({
                 <button
                   key={p.id}
                   onClick={() => {
+                    markerMonitoringService.trackMarkerInteraction(markerId.current, 'stack_item_click', {
+                      selected_prayer_id: p.id,
+                      stack_position: index,
+                      total_stack_count: stackCount
+                    });
+                    trackEvent('prayer_marker.stack_item_click', {
+                      prayer_id: p.id,
+                      parent_prayer_id: prayer.id,
+                      stack_position: index,
+                      total_stack_count: stackCount
+                    });
                     setShowPrayerList(false);
                     onSelectPrayer?.(p);
                   }}

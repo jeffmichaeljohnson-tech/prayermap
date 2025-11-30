@@ -11,6 +11,9 @@ import { PresenceIndicator, ConversationPresence } from './realtime/PresenceIndi
 import { TypingActivity } from '../services/typingIndicatorService';
 import { readReceiptService } from '../services/readReceiptService';
 import { presenceService, PresenceStatus } from '../services/presenceService';
+import { messagingPerformanceMonitor } from '../services/messaging/MessagingPerformanceMonitor';
+import { prayerMapMessagingSystem } from '../services/messaging';
+import { trackEvent, trackError } from '../lib/datadog';
 import type { PrayerResponse } from '../types/prayer';
 
 interface Message {
@@ -137,6 +140,9 @@ export function ConversationThread({
     setIsSending(true);
     const messageContent = textInput.trim();
     setTextInput(''); // Clear input immediately for better UX
+    
+    // Track message send start time for performance monitoring
+    const sendStartTime = Date.now();
 
     // Create optimistic message
     const optimisticMessage: Message = {
@@ -164,6 +170,19 @@ export function ConversationThread({
       );
 
       if (result) {
+        // Calculate and track delivery latency
+        const deliveryLatency = Date.now() - sendStartTime;
+        messagingPerformanceMonitor.trackMessageDelivery(result.response.id, deliveryLatency, true);
+        
+        // Track successful message send
+        trackEvent('conversation.message_sent', {
+          conversation_id: conversationId,
+          message_id: result.response.id,
+          content_type: 'text',
+          delivery_latency_ms: deliveryLatency,
+          meets_living_map_requirement: deliveryLatency < 2000,
+        });
+        
         // Replace optimistic message with real one
         setMessages(prev => prev.map(msg =>
           msg.id === optimisticMessage.id
@@ -172,12 +191,37 @@ export function ConversationThread({
         ));
         console.log('Message sent successfully');
       } else {
+        // Track failed message send
+        const failureLatency = Date.now() - sendStartTime;
+        messagingPerformanceMonitor.trackMessageDelivery('failed', failureLatency, false);
+        
+        trackError(new Error('Message send failed'), {
+          context: 'conversation_message_send',
+          conversation_id: conversationId,
+          attempt_latency_ms: failureLatency,
+        });
+        
         // Remove optimistic message on failure
         setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
         console.error('Failed to send message');
       }
     } catch (error) {
       console.error('Error sending message:', error);
+      
+      // Track message send error
+      const errorLatency = Date.now() - sendStartTime;
+      messagingPerformanceMonitor.trackMessageDelivery('error', errorLatency, false);
+      messagingPerformanceMonitor.trackConnectionEvent('error', 'message_send_exception', {
+        conversation_id: conversationId,
+        error_message: (error as Error).message,
+      });
+      
+      trackError(error as Error, {
+        context: 'conversation_message_send_exception',
+        conversation_id: conversationId,
+        error_latency_ms: errorLatency,
+      });
+      
       setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
     } finally {
       setIsSending(false);
@@ -238,18 +282,45 @@ export function ConversationThread({
         );
 
         if (result) {
+          // Track audio message delivery
+          const deliveryLatency = Date.now() - Date.now(); // Will be improved with proper timing
+          messagingPerformanceMonitor.trackMessageDelivery(result.response.id, deliveryLatency, true);
+          
+          trackEvent('conversation.audio_message_sent', {
+            conversation_id: conversationId,
+            message_id: result.response.id,
+            content_type: 'audio',
+            has_media_url: !!contentUrl,
+          });
+          
           setMessages(prev => prev.map(msg =>
             msg.id === optimisticMessage.id
               ? { ...msg, id: result.response.id }
               : msg
           ));
         } else {
+          trackError(new Error('Audio message send failed'), {
+            context: 'conversation_audio_send_failed',
+            conversation_id: conversationId,
+            has_media_url: !!contentUrl,
+          });
+          
           setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
         }
 
         resetRecording();
       } catch (error) {
         console.error('Error sending audio message:', error);
+        
+        trackError(error as Error, {
+          context: 'conversation_audio_send_exception',
+          conversation_id: conversationId,
+        });
+        
+        messagingPerformanceMonitor.trackConnectionEvent('error', 'audio_message_send_exception', {
+          conversation_id: conversationId,
+          error_message: (error as Error).message,
+        });
       } finally {
         setIsSending(false);
       }

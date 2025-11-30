@@ -13,6 +13,7 @@
 import { supabase } from '../lib/supabase';
 import { fetchUserInbox } from './prayerService';
 import type { InboxItem } from '../hooks/useInbox';
+import { realtimeMonitor } from '../lib/realtime-monitor';
 
 interface ConnectionState {
   isOnline: boolean;
@@ -114,6 +115,8 @@ class InboxSyncService {
             console.log(`Presence sync for user ${userId}`);
           })
           .subscribe((status) => {
+            // Monitor channel health with Datadog
+            realtimeMonitor.monitorChannel(subscriptionKey, subscription);
             console.log(`Inbox subscription status for ${userId}:`, status);
             
             if (status === 'SUBSCRIBED') {

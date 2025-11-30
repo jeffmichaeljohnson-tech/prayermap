@@ -8,9 +8,10 @@ import type { AgentMemoryEntry, QueryFilter } from './types';
 
 /**
  * Pinecone configuration
+ * Uses environment variable with fallback to actual index name
  */
-const PINECONE_INDEX_NAME = 'prayermap-agent-memory';
-const PINECONE_NAMESPACE = 'memories';
+const PINECONE_INDEX_NAME = process.env.PINECONE_INDEX || process.env.PINECONE_INDEX_NAME || 'ora-prayermap-knowledge';
+const PINECONE_NAMESPACE = process.env.PINECONE_NAMESPACE || 'memories';
 const EMBEDDING_DIMENSION = 3072; // OpenAI text-embedding-3-large dimension
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
@@ -33,7 +34,11 @@ class PineconeClient {
 
     const apiKey = process.env.PINECONE_API_KEY;
     if (!apiKey) {
-      throw new Error('PINECONE_API_KEY environment variable is not set');
+      throw new Error(
+        'PINECONE_API_KEY environment variable is not set. ' +
+        'Please set PINECONE_API_KEY in your .env file. ' +
+        'Get your API key from https://app.pinecone.io/'
+      );
     }
 
     try {
