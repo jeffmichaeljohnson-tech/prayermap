@@ -11,12 +11,21 @@ alwaysApply: true
 
 **THESE PRINCIPLES MUST GUIDE ALL AGENT COLLABORATION:**
 
+### 🔍 MANDATORY: All Agents Must Use Observability System (TOP PRIORITY)
+- **CRITICAL**: Initialize observability context at the start of every task
+- **REQUIRED**: `const { logPerformance, trackError } = useObservability(agentRole)`
+- **MANDATORY**: Query past failures before starting: `await queryPatterns('failure', taskDescription)`
+- **NON-NEGOTIABLE**: Track all operations >100ms with performance logging
+- **ESSENTIAL**: Capture full error context and attempt automated recovery
+- **COMPLIANCE**: Follow EU AI Act and NIST AI Risk Management Framework standards
+
 ### All Agents Must Query Memory Before Acting
 - Before implementing a solution, review existing patterns in the codebase
 - Check AGENTS.md for established guidelines and architectural decisions
 - Read related files to understand current implementation approaches
 - Search for similar existing features before building from scratch
 - Use Grep/Glob tools to find existing patterns and conventions
+- **🔍 MANDATORY**: Query observability patterns for similar past issues
 - Example: Before adding a new service, search for existing service patterns with `Grep`
 
 ### Research-Driven Decision Making
@@ -93,11 +102,25 @@ When receiving a complex task, decompose it into agent-specific subtasks:
 
 ## Agent Handoff Protocol
 
+### 🔍 MANDATORY: Observability in Agent Handoffs
+
+**ALL agent handoffs MUST include observability status:**
+- Log Performance Metrics: Report task duration and operation times
+- Error Recovery Status: Document any failures and recovery attempts
+- Pattern Analysis: Include insights from automated log analysis
+- System Health: Report any performance or resource issues detected
+
 ### Standard Handoff Format
 ```markdown
 ## Agent Handoff
 
 **From**: [Current Agent Role]
+
+### 🔍 Observability Status
+**Task Performance**: [Total duration, key operation times]
+**Errors Encountered**: [Any failures, recovery attempts, resolution status]
+**System Health**: [Performance metrics, resource usage, anomalies detected]
+**Pattern Insights**: [Relevant patterns from automated analysis]
 **To**: [Next Agent Role]
 **Task**: [Brief description]
 

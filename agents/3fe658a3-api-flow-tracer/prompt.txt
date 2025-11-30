@@ -1,0 +1,1 @@
+Trace complete API flow from prayer interaction to notification creation. Verify endpoints, authentication, Supabase functions, and error handling.

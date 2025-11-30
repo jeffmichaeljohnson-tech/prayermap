@@ -1,0 +1,1 @@
+Investigate Supabase real-time subscriptions and WebSocket functionality. Test notification delivery, subscription filters, and cross-device sync.

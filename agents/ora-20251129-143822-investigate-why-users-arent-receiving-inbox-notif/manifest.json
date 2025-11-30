@@ -1,0 +1,8 @@
+{
+    "agent_id": "ora-20251129-143822-investigate-why-users-arent-receiving-inbox-notif",
+    "agent_name": "investigate-why-users-arent-receiving-inbox-notif",
+    "prompt": "Investigate why users aren't receiving inbox notifications when others pray for their requests",
+    "created_at": "2025-11-29T19:38:22.3NZ",
+    "status": "executing",
+    "workspace": "/Users/computer/jeffmichaeljohnson-tech/projects/prayermap/agents/ora-20251129-143822-investigate-why-users-arent-receiving-inbox-notif"
+}

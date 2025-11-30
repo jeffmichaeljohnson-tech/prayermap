@@ -44,4 +44,60 @@ export class InboxModal {
   async hasUnreadBadge(): Promise<boolean> {
     return await this.unreadBadge.isVisible().catch(() => false);
   }
+
+  // Additional methods for persistence testing
+
+  async waitForVisible() {
+    await this.modal.waitFor({ state: 'visible', timeout: 10000 });
+  }
+
+  async getUnreadCount(): Promise<number> {
+    try {
+      const badgeText = await this.unreadBadge.textContent();
+      if (badgeText) {
+        const match = badgeText.match(/(\d+)/);
+        return match ? parseInt(match[1]) : 0;
+      }
+      return 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  async getFirstMessage(): Promise<{ text: string; timestamp: string } | null> {
+    try {
+      const firstMessage = this.page.locator('[data-testid="inbox-message"], [class*="message"]').first();
+      if (await firstMessage.isVisible()) {
+        const text = await firstMessage.textContent() || '';
+        const timestamp = await firstMessage.getAttribute('data-timestamp') || new Date().toISOString();
+        return { text, timestamp };
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  async selectFirstMessage() {
+    const firstMessage = this.page.locator('[data-testid="inbox-message"], [class*="message"]').first();
+    if (await firstMessage.isVisible()) {
+      await firstMessage.click();
+      await this.page.waitForTimeout(1000); // Allow time for mark as read
+    }
+  }
+
+  async getMessageOrder(): Promise<Array<{ text: string; timestamp: string }>> {
+    const messages: Array<{ text: string; timestamp: string }> = [];
+    const messageElements = this.page.locator('[data-testid="inbox-message"], [class*="message"]');
+    const count = await messageElements.count();
+    
+    for (let i = 0; i < count; i++) {
+      const message = messageElements.nth(i);
+      const text = await message.textContent() || '';
+      const timestamp = await message.getAttribute('data-timestamp') || new Date().toISOString();
+      messages.push({ text, timestamp });
+    }
+    
+    return messages;
+  }
 }
