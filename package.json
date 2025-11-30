@@ -36,7 +36,9 @@
     "agents:status": "./scripts/deploy-agents.sh status",
     "agents:results": "./scripts/deploy-agents.sh results",
     "agents:cleanup": "./scripts/deploy-agents.sh cleanup",
-    "ora": "./scripts/deploy-agents.sh deploy"
+    "ora": "./scripts/deploy-agents.sh deploy",
+    "validate:integration": "tsx scripts/validate-integration.ts",
+    "integration:health": "tsx scripts/validate-integration.ts"
   },
   "dependencies": {
     "@capacitor/android": "^7.4.4",

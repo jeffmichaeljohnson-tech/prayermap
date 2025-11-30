@@ -13,7 +13,9 @@ import { AppErrorBoundary } from './components/ErrorBoundary';
 import { OfflineIndicator } from './components/FallbackUI';
 import { useConnectionStatus } from './lib/selfHealing';
 import { trackLayoutShifts } from './lib/layout-shift-tracker';
-// import { MonitoringDashboard } from './components/MonitoringDashboard';
+import { MasterObservabilityDashboard } from './components/MasterObservabilityDashboard';
+import { systemIntegrationValidator } from './services/systemIntegrationValidator';
+import { systemPerformanceOptimizer } from './services/systemPerformanceOptimizer';
 // import { logger as structuredLogger } from './lib/logging/structuredLogger';
 // import { performanceMonitor as newPerformanceMonitor } from './lib/logging/performanceMonitor';
 // import { errorTracker as newErrorTracker } from './lib/logging/errorTracking';
@@ -80,6 +82,9 @@ performanceMonitor.init();
 
 // Start automated monitoring cycle for 100% log coverage
 // monitoringOrchestrator.startAutomation();
+
+// Initialize Agent 5 Integration Orchestrator systems
+systemPerformanceOptimizer.startOptimization(30000); // 30 second optimization cycles
 
 // Log app start
 logger.info('PrayerMap application started', {
@@ -278,6 +283,7 @@ function AppContent() {
       />
       <DebugPanel />
       <DiagnosticOverlay />
+      <MasterObservabilityDashboard />
     </div>
   );
 }
