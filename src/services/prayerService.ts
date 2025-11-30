@@ -10,7 +10,7 @@
  */
 
 import { supabase } from '../lib/supabase';
-import type { Prayer, PrayerResponse } from '../types/prayer';
+import type { Prayer, PrayerResponse, PrayerConnection } from '../types/prayer';
 
 // Database table schemas
 interface PrayerRow {
@@ -51,17 +51,8 @@ interface PrayerConnectionRow {
   expires_at: string;
 }
 
-export interface PrayerConnection {
-  id: string;
-  prayer_id: string;
-  prayer_response_id: string;
-  from_location: { lat: number; lng: number };
-  to_location: { lat: number; lng: number };
-  requester_name: string;
-  replier_name: string;
-  created_at: Date;
-  expires_at: Date;
-}
+// Note: PrayerConnection type is imported from types/prayer.ts
+// This service converts database rows (snake_case) to camelCase for components
 
 // Type guards and converters
 function isPointString(location: any): location is string {
@@ -137,16 +128,17 @@ function rowToPrayerResponse(row: PrayerResponseRow & { responder_name?: string;
 }
 
 function rowToPrayerConnection(row: PrayerConnectionRow): PrayerConnection {
+  // Convert snake_case database columns to camelCase for frontend components
   return {
     id: row.id,
-    prayer_id: row.prayer_id,
-    prayer_response_id: row.prayer_response_id,
-    from_location: convertLocation(row.from_location),
-    to_location: convertLocation(row.to_location),
-    requester_name: row.requester_name,
-    replier_name: row.replier_name,
-    created_at: new Date(row.created_at),
-    expires_at: new Date(row.expires_at),
+    prayerId: row.prayer_id,
+    prayerResponseId: row.prayer_response_id,
+    fromLocation: convertLocation(row.from_location),
+    toLocation: convertLocation(row.to_location),
+    requesterName: row.requester_name,
+    replierName: row.replier_name,
+    createdAt: new Date(row.created_at),
+    expiresAt: new Date(row.expires_at),
   };
 }
 
