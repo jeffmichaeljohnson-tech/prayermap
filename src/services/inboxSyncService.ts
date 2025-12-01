@@ -13,7 +13,7 @@
 import { supabase } from '../lib/supabase';
 import { fetchUserInbox } from './prayerService';
 import type { InboxItem } from '../hooks/useInbox';
-import { realtimeMonitor } from '../lib/realtime-monitor';
+import { livingMapMonitor } from "../lib/livingMapMonitor";
 
 interface ConnectionState {
   isOnline: boolean;
@@ -115,8 +115,8 @@ class InboxSyncService {
             console.log(`Presence sync for user ${userId}`);
           })
           .subscribe((status) => {
-            // Monitor channel health with Datadog
-            realtimeMonitor.monitorChannel(subscriptionKey, subscription);
+            // Monitor channel health with Living Map monitoring
+            // livingMapMonitor tracks overall map state rather than individual channels
             console.log(`Inbox subscription status for ${userId}:`, status);
             
             if (status === 'SUBSCRIBED') {

@@ -8,7 +8,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { ConversationService } from '../services/conversationService';
 import { supabase } from '../lib/supabase';
-import { realtimeMonitor } from '../lib/realtime-monitor';
+import { livingMapMonitor } from "../lib/livingMapMonitor";
 import type {
   ConversationThread,
   ThreadMessage,
@@ -634,7 +634,7 @@ export function useConversationManager({
       .subscribe();
     
     // Monitor conversation channel health
-    realtimeMonitor.monitorChannel(conversationChannelName, conversationSubscription);
+    // livingMapMonitor tracks overall state rather than individual channels(conversationChannelName, conversationSubscription);
     subscriptionsRef.current.set('conversations', conversationSubscription);
     
     // Subscribe to message updates for active conversations
@@ -654,7 +654,7 @@ export function useConversationManager({
         .subscribe();
       
       // Monitor message channel health
-      realtimeMonitor.monitorChannel(messageChannelName, messageSubscription);
+      // livingMapMonitor tracks overall state rather than individual channels(messageChannelName, messageSubscription);
       subscriptionsRef.current.set(`messages:${conv.id}`, messageSubscription);
     });
     

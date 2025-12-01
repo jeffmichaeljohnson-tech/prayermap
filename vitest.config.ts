@@ -13,10 +13,13 @@ export default defineConfig({
     environment: 'jsdom',
 
     // Global setup files
-    setupFiles: ['./src/test/setup.ts'],
+    setupFiles: ['./tests/unit/setup.ts'],
 
-    // Test file patterns
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    // Test file patterns - Updated for unified test structure
+    include: [
+      'tests/unit/**/*.test.ts', 
+      'tests/unit/**/*.test.tsx'
+    ],
 
     // Exclude patterns
     exclude: [
@@ -27,6 +30,7 @@ export default defineConfig({
       '.git',
       '.cache',
       'build',
+      'tests/e2e/**',
       '**/*.config.ts',
     ],
 
@@ -59,7 +63,7 @@ export default defineConfig({
       // Files to exclude from coverage
       exclude: [
         'node_modules/',
-        'src/test/**',
+        'tests/**',
         'src/**/*.test.ts',
         'src/**/*.test.tsx',
         'src/**/*.d.ts',
@@ -90,7 +94,7 @@ export default defineConfig({
       '@/utils': path.resolve(__dirname, './src/utils'),
       '@/pages': path.resolve(__dirname, './src/pages'),
       '@/layouts': path.resolve(__dirname, './src/layouts'),
-      '@/test': path.resolve(__dirname, './src/test'),
+      '@/test': path.resolve(__dirname, './tests'),
     },
   },
 });

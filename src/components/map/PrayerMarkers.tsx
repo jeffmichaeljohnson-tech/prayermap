@@ -15,9 +15,9 @@
 import { useMemo, useEffect, useRef } from 'react';
 import type mapboxgl from 'mapbox-gl';
 import type { Prayer } from '../../types/prayer';
-import { PrayerMarker } from '../PrayerMarker';
+import { PrayerMarker } from '../prayer/PrayerMarker';
 import { trackEvent, trackError, datadogRum } from '../../lib/datadog';
-import { markerMonitoringService } from '../../services/markerMonitoringService';
+import { livingMapMonitor } from '../../lib/livingMapMonitor';
 
 // Helper to group prayers by approximate location
 interface PrayerGroup {
@@ -147,7 +147,8 @@ export function PrayerMarkers({ prayers, map, onMarkerClick }: PrayerMarkersProp
     const duration = performance.now() - startTime;
     
     // Use monitoring service for comprehensive clustering tracking
-    markerMonitoringService.trackClusteringPerformance(prayers.length, groups.length, duration);
+    // Track clustering performance with Living Map monitoring
+    livingMapMonitor.trackMapRenderPerformance(duration, 60);
     
     // Track clustering completion
     trackEvent('prayer_markers.clustering_complete', {
@@ -220,7 +221,9 @@ export function PrayerMarkers({ prayers, map, onMarkerClick }: PrayerMarkersProp
       const renderDuration = performance.now() - renderStartTime.current;
       
       // Use monitoring service for comprehensive sync tracking
-      markerMonitoringService.trackMarkerSync(prayers, prayerGroups.length, {
+      trackEvent('prayer_markers.sync', {
+        prayers: prayers.length,
+        groups: prayerGroups.length,
         clusteringTime: 0, // Will be set by clustering tracking
         renderTime: renderDuration,
         syncLatency: renderDuration
@@ -255,7 +258,8 @@ export function PrayerMarkers({ prayers, map, onMarkerClick }: PrayerMarkersProp
       });
       
       // Update monitoring context for Datadog dashboard
-      markerMonitoringService.setMonitoringContext({
+      // Set monitoring context with Living Map monitoring
+      trackEvent('prayer_markers.context_update', {
         map_loaded: true,
         visible_markers: prayerGroups.length,
         total_prayers: prayers.length,

@@ -17,7 +17,7 @@
  * Date: 2025-11-29
  */
 
-import type { LngLatBounds } from 'mapbox-gl';
+import { LngLatBounds } from 'mapbox-gl';
 import type { PrayerConnection } from '../types/prayer';
 
 /**

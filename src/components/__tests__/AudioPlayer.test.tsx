@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { AudioPlayer } from '../AudioPlayer';
+import { AudioPlayer } from '../media/AudioPlayer';
 
 describe('AudioPlayer', () => {
   const mockSrc = 'https://example.com/audio.mp3';

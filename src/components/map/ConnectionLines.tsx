@@ -18,7 +18,7 @@ import { useMemo, useState, useEffect } from 'react';
 import type mapboxgl from 'mapbox-gl';
 import type { LngLatBounds } from 'mapbox-gl';
 import type { PrayerConnection } from '../../types/prayer';
-import { PrayerConnection as PrayerConnectionComponent } from '../PrayerConnection';
+import { PrayerConnection as PrayerConnectionComponent } from '../prayer/PrayerConnection';
 import { getVisibleConnections } from '../../utils/viewportCulling';
 
 export interface ConnectionLinesProps {

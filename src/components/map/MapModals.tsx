@@ -13,20 +13,20 @@
 import { lazy, Suspense } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import type { Prayer } from '../../types/prayer';
-import type { PrayerReplyData } from '../PrayerDetailModal';
+import type { PrayerReplyData } from '../prayer/PrayerDetailModal';
 
 // CODE SPLITTING: Lazy-load modals
 const PrayerDetailModal = lazy(() =>
-  import('../PrayerDetailModal').then(m => ({ default: m.PrayerDetailModal }))
+  import('../prayer/PrayerDetailModal').then(m => ({ default: m.PrayerDetailModal }))
 );
 const RequestPrayerModal = lazy(() =>
-  import('../RequestPrayerModal').then(m => ({ default: m.RequestPrayerModal }))
+  import('../prayer/RequestPrayerModal').then(m => ({ default: m.RequestPrayerModal }))
 );
 const InboxModal = lazy(() =>
-  import('../InboxModal').then(m => ({ default: m.InboxModal }))
+  import('../modals/InboxModal').then(m => ({ default: m.InboxModal }))
 );
 const InfoModal = lazy(() =>
-  import('../InfoModal').then(m => ({ default: m.InfoModal }))
+  import('../modals/InfoModal').then(m => ({ default: m.InfoModal }))
 );
 
 // Loading component

@@ -9,7 +9,7 @@
 
 import { supabase } from '../lib/supabase';
 import type { Prayer, PrayerConnection } from '../types/prayer';
-import { realtimeMonitor } from './realtimeMonitor';
+import { realtimeManager } from './realtimeManager';
 
 interface FlowTraceOptions {
   enableLogging?: boolean;

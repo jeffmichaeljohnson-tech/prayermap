@@ -1,26 +1,22 @@
 import { useState, useEffect, Component, ReactNode } from 'react';
-import { LoadingScreen } from './components/LoadingScreen';
-import { AuthModal } from './components/AuthModal';
-import { PrayerMap } from './components/PrayerMap';
-import { SettingsScreen } from './components/SettingsScreen';
+import { LoadingScreen } from './components/layout';
+import { AuthModal } from './components/auth';
+import { PrayerMap } from './components/prayer';
+import { SettingsScreen } from './components/layout';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { logger } from './lib/logger';
 import { errorTracker } from './lib/errorTracking.tsx';
 import { performanceMonitor } from './lib/performanceMonitor';
 import { debugMode, DebugPanel } from './lib/debugMode.tsx';
-import { DiagnosticOverlay } from './components/DiagnosticOverlay';
-import { AppErrorBoundary } from './components/ErrorBoundary';
-import { OfflineIndicator } from './components/FallbackUI';
+import { DiagnosticOverlay } from './components/debug';
+import { AppErrorBoundary } from './components/layout';
+import { OfflineIndicator } from './components/layout';
 import { useConnectionStatus } from './lib/selfHealing';
 import { trackLayoutShifts } from './lib/layout-shift-tracker';
-import { MasterObservabilityDashboard } from './components/MasterObservabilityDashboard';
-import { systemIntegrationValidator } from './services/systemIntegrationValidator';
-import { systemPerformanceOptimizer } from './services/systemPerformanceOptimizer';
-// import { logger as structuredLogger } from './lib/logging/structuredLogger';
-// import { performanceMonitor as newPerformanceMonitor } from './lib/logging/performanceMonitor';
-// import { errorTracker as newErrorTracker } from './lib/logging/errorTracking';
-// import { monitoringOrchestrator } from './lib/logging/monitoringOrchestrator';
-// import { useObservability } from './hooks/useObservability';
+import { MasterObservabilityDashboard } from './components/debug';
+import { integrationService } from './services/integrationService';
+import { initializePerformanceServices } from './services/performance';
+import { livingMapMonitor } from './lib/livingMapMonitor';
 
 // Error boundary specifically for lazy loading failures
 class LazyLoadErrorBoundary extends Component<
@@ -76,15 +72,11 @@ class LazyLoadErrorBoundary extends Component<
 errorTracker.init();
 performanceMonitor.init();
 // initLangSmith(); // Initialize LangSmith tracing for AI operations - TODO: Define this function
-// newErrorTracker.init();
-// newPerformanceMonitor.init();
-// monitoringOrchestrator.init();
+livingMapMonitor.init();
 
-// Start automated monitoring cycle for 100% log coverage
-// monitoringOrchestrator.startAutomation();
 
 // Initialize Agent 5 Integration Orchestrator systems
-systemPerformanceOptimizer.startOptimization(30000); // 30 second optimization cycles
+initializePerformanceServices(); // Initialize performance monitoring and optimization
 
 // Log app start
 logger.info('PrayerMap application started', {
@@ -111,17 +103,13 @@ function AppContent() {
     return cleanup;
   }, []);
   
-  // Initialize world-class observability for this component
-  // const { 
-  //   logPerformance, 
-  //   trackError, 
-  //   isHealthy, 
-  //   metrics 
-  // } = useObservability('AppContent');
-  
-  // Temporary mock functions
-  const logPerformance = () => {};
-  const trackError = () => {};
+  // Use Datadog + livingMapMonitor for observability
+  const logPerformance = (operation: string, duration: number) => {
+    livingMapMonitor.trackPrayerWitnessing('app_' + operation, Date.now() - duration);
+  };
+  const trackError = (error: Error, context?: any) => {
+    errorTracker.captureException(error, context);
+  };
   const isHealthy = true;
 
   // Set user context in error tracker

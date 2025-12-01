@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { AudioRecorder } from '../AudioRecorder';
+import { AudioRecorder } from '../media/AudioRecorder';
 import * as useAudioRecorderModule from '../../hooks/useAudioRecorder';
 
 // Mock framer-motion to avoid animation issues in tests

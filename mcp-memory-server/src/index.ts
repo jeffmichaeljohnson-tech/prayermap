@@ -7,6 +7,40 @@
  * Claude Code, Claude Desktop, and Cursor.
  */
 
+// Load environment variables from .env file
+import dotenv from "dotenv";
+import { fileURLToPath } from "url";
+import { dirname, resolve, join } from "path";
+
+// Get the directory of this file, then find project root
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Try multiple possible locations for .env file
+// 1. Project root (two levels up from dist/)
+// 2. Parent directory (one level up)
+// 3. Current directory
+const possiblePaths = [
+  resolve(__dirname, "../..", ".env"),  // Project root
+  resolve(__dirname, "..", ".env"),     // Parent directory
+  resolve(__dirname, ".env"),           // Current directory
+];
+
+// Load first .env file that exists
+let envLoaded = false;
+for (const envPath of possiblePaths) {
+  const result = dotenv.config({ path: envPath });
+  if (!result.error) {
+    envLoaded = true;
+    break;
+  }
+}
+
+// Also try loading from process.cwd() (where the command was run from)
+if (!envLoaded) {
+  dotenv.config({ path: join(process.cwd(), ".env") });
+}
+
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import {

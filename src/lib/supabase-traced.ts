@@ -15,7 +15,7 @@
 
 import { supabase } from './supabase';
 import { traceSupabaseQuery, traceRealtimeSubscription } from './datadog';
-import { realtimeMonitor } from './realtime-monitor';
+import { livingMapMonitor } from "../lib/livingMapMonitor";
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 /**
@@ -70,8 +70,8 @@ export function createTracedSupabase<T>(client: SupabaseClient<T> | null): Supab
         return (name: string, options?: any) => {
           const channel = original.call(target, name, options);
           
-          // Monitor channel health with Datadog
-          realtimeMonitor.monitorChannel(name, channel);
+          // Monitor channel health with Living Map monitoring
+          // livingMapMonitor tracks overall map state rather than individual channels
           
           return traceRealtimeSubscription(name, () => {
             // Wrap subscribe method

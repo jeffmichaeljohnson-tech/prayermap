@@ -8,7 +8,7 @@ import {
   subscribeToNearbyPrayers,
   subscribeToAllPrayers,
 } from '../services/prayerService';
-import { realtimeMonitor } from '../services/realtimeMonitor';
+import { livingMapMonitor } from '../lib/livingMapMonitor';
 import { 
   loadPrayersFromCache, 
   savePrayersToCache 
@@ -136,12 +136,10 @@ export function usePrayers({
       console.log('🔄 Setting up enhanced global prayer monitoring...');
       
       // Ensure monitor is running
-      if (!realtimeMonitor.getStatus().isActive) {
-        realtimeMonitor.start();
-      }
+      // Real-time monitoring handled by Supabase subscriptions
 
       // Subscribe to enhanced monitoring with intelligent state merging
-      unsubscribe = realtimeMonitor.subscribeToPrayers((updatedPrayers) => {
+      unsubscribe = subscribeToAllPrayers((updatedPrayers) => {
         console.log('📥 Enhanced real-time update received:', updatedPrayers.length, 'prayers');
         
         // CRITICAL FIX: Use intelligent merging instead of state replacement

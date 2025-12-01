@@ -15,11 +15,12 @@
  */
 
 import { datadogRum } from '@datadog/browser-rum';
-// import * as datadogRumReact from '@datadog/browser-rum-react';
-// import React from 'react';
+import { reactPlugin } from '@datadog/browser-rum-react';
+import { datadogLogs } from '@datadog/browser-logs';
 
-// Initialize Datadog RUM
+// Initialize Datadog RUM and Logs
 let initialized = false;
+let logsInitialized = false;
 
 export function initDatadog() {
   if (initialized) return;
@@ -32,7 +33,14 @@ export function initDatadog() {
     return;
   }
   
-  datadogRum.init({
+  try {
+    // Get Supabase URL for distributed tracing
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const allowedTracingUrls = supabaseUrl 
+      ? [{ match: supabaseUrl, propagatorTypes: ['datadog'] }]
+      : undefined;
+    
+    datadogRum.init({
     applicationId: appId,
     clientToken: clientToken,
     site: 'datadoghq.com',
@@ -42,15 +50,23 @@ export function initDatadog() {
     
     // Session sampling
     sessionSampleRate: 100, // 100% for debugging (reduce in production)
-    sessionReplaySampleRate: 10, // 10% session replay
+    sessionReplaySampleRate: 20, // 20% session replay (matching Datadog recommendation)
     
     // Performance tracking
     trackResources: true,
     trackLongTasks: true,
     trackUserInteractions: true,
     
-    // Privacy
-    defaultPrivacyLevel: 'allow', // 'allow' for debugging, 'mask' for production
+    // Distributed tracing - enables APM Service Map
+    // This allows RUM traces to appear in APM
+    allowedTracingUrls: allowedTracingUrls,
+    allowedTracingOrigins: supabaseUrl ? [new URL(supabaseUrl).origin] : undefined,
+    
+    // Privacy - mask user input by default (production-ready)
+    defaultPrivacyLevel: 'mask-user-input',
+    
+    // React plugin for component-level tracking
+    plugins: [reactPlugin({ router: false })], // Main app doesn't use React Router
     
     // Custom context
     beforeSend: (event) => {
@@ -78,15 +94,16 @@ export function initDatadog() {
     },
     
     // Error handling - removed duplicate beforeSend
-  });
-  
-  // React integration - temporarily disabled due to import issues
-  // if (typeof window !== 'undefined' && datadogRumReact.setupTracking) {
-  //   datadogRumReact.setupTracking(React);
-  // }
-  
-  initialized = true;
-  console.log('✅ Datadog RUM initialized');
+    });
+    
+    initialized = true;
+    console.log('✅ Datadog RUM initialized');
+  } catch (error) {
+    // Datadog initialization errors shouldn't crash the app
+    console.warn('⚠️ Datadog RUM initialization failed (non-fatal):', error);
+    console.warn('App will continue without Datadog monitoring');
+    // Don't set initialized = true so it can retry later if needed
+  }
 }
 
 /**
@@ -156,8 +173,15 @@ export async function traceSupabaseQuery<T>(
   queryFn: () => Promise<T>,
   metadata?: Record<string, any>
 ): Promise<T> {
+  // Enhanced tracing with APM context for Service Map
   return datadogRum.addAction(`supabase.query.${queryName}`, async () => {
     const startTime = performance.now();
+    
+    // Add APM context for Service Map visualization
+    datadogRum.setGlobalContextProperty('service', 'supabase-api');
+    datadogRum.setGlobalContextProperty('resource', queryName);
+    datadogRum.setGlobalContextProperty('db.type', 'postgresql');
+    datadogRum.setGlobalContextProperty('db.name', 'supabase');
     
     try {
       const result = await queryFn();
@@ -166,12 +190,17 @@ export async function traceSupabaseQuery<T>(
       // Add timing
       datadogRum.addTiming(`supabase.query.${queryName}.duration`, duration);
       
+      // Add APM tags for Service Map
+      datadogRum.setGlobalContextProperty('query.duration', duration);
+      datadogRum.setGlobalContextProperty('query.status', 'success');
+      
       // Log slow queries
       if (duration > 1000) {
         datadogRum.addError(new Error(`Slow query: ${queryName} took ${duration.toFixed(0)}ms`), {
           query: queryName,
           duration,
           type: 'slow_query',
+          service: 'supabase-api',
           ...metadata,
         });
       }
@@ -185,8 +214,13 @@ export async function traceSupabaseQuery<T>(
         query: queryName,
         duration,
         type: 'supabase_error',
+        service: 'supabase-api',
         ...metadata,
       });
+      
+      // Add APM error tags
+      datadogRum.setGlobalContextProperty('query.status', 'error');
+      datadogRum.setGlobalContextProperty('error.type', error instanceof Error ? error.name : 'unknown');
       
       throw error;
     }
@@ -265,10 +299,138 @@ export function trackEvent(name: string, context?: Record<string, any>) {
   datadogRum.addAction(name, () => {}, context);
 }
 
+/**
+ * Initialize Datadog Log Management
+ * 
+ * Captures structured logs for debugging and monitoring during refactoring
+ */
+export function initDatadogLogs() {
+  if (logsInitialized) return;
+  
+  const clientToken = import.meta.env.VITE_DATADOG_CLIENT_TOKEN;
+  
+  if (!clientToken) {
+    console.warn('Datadog Logs not configured - missing VITE_DATADOG_CLIENT_TOKEN');
+    return;
+  }
+  
+  try {
+    datadogLogs.init({
+      clientToken: clientToken,
+      site: 'datadoghq.com',
+      service: 'prayermap',
+      env: import.meta.env.NODE_ENV || 'development',
+      version: import.meta.env.VITE_APP_VERSION || '0.0.0',
+      
+      // Forward console errors to Datadog
+      forwardErrorsToLogs: true,
+      
+      // Forward console logs to Datadog
+      forwardConsoleLogs: ['error', 'warn'],
+      
+      // Sample rate (100% for debugging, reduce in production)
+      sampleRate: 100,
+      
+      // Add user context
+      beforeSend: (log) => {
+        const userId = getCurrentUserId();
+        if (userId) {
+          log.context = {
+            ...log.context,
+            user_id: userId,
+          };
+        }
+        return true;
+      },
+    });
+    
+    logsInitialized = true;
+    console.log('✅ Datadog Logs initialized');
+  } catch (error) {
+    console.warn('⚠️ Datadog Logs initialization failed (non-fatal):', error);
+  }
+}
+
+/**
+ * Structured logging helpers for refactoring and debugging
+ */
+export const logger = {
+  /**
+   * Log refactoring progress
+   */
+  refactoring: (message: string, context?: Record<string, any>) => {
+    datadogLogs.logger.info(message, {
+      type: 'refactoring',
+      ...context,
+    });
+  },
+  
+  /**
+   * Log component changes
+   */
+  component: (component: string, action: string, context?: Record<string, any>) => {
+    datadogLogs.logger.info(`Component ${action}: ${component}`, {
+      type: 'component_change',
+      component,
+      action,
+      ...context,
+    });
+  },
+  
+  /**
+   * Log performance metrics
+   */
+  performance: (metric: string, value: number, context?: Record<string, any>) => {
+    datadogLogs.logger.info(`Performance: ${metric} = ${value}ms`, {
+      type: 'performance',
+      metric,
+      value,
+      ...context,
+    });
+  },
+  
+  /**
+   * Log refactoring milestone
+   */
+  milestone: (milestone: string, context?: Record<string, any>) => {
+    datadogLogs.logger.info(`Milestone: ${milestone}`, {
+      type: 'milestone',
+      milestone,
+      ...context,
+    });
+  },
+  
+  /**
+   * Standard info log
+   */
+  info: (message: string, context?: Record<string, any>) => {
+    datadogLogs.logger.info(message, context);
+  },
+  
+  /**
+   * Warning log
+   */
+  warn: (message: string, context?: Record<string, any>) => {
+    datadogLogs.logger.warn(message, context);
+  },
+  
+  /**
+   * Error log
+   */
+  error: (message: string, error?: Error, context?: Record<string, any>) => {
+    datadogLogs.logger.error(message, {
+      error: error?.message,
+      stack: error?.stack,
+      ...(context || {}),
+    });
+  },
+};
+
 // Auto-initialize in browser
 if (typeof window !== 'undefined') {
   initDatadog();
+  initDatadogLogs();
 }
 
-export { datadogRum };
+export { datadogRum, datadogLogs };
 

@@ -12,7 +12,7 @@
 
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { supabase } from '../../lib/supabase';
-import { realtimeMonitor } from '../../lib/realtime-monitor';
+import { livingMapMonitor } from "../../lib/livingMapMonitor";
 import { traceSupabaseQuery, trackEvent, trackError, datadogRum } from '../../lib/datadog';
 
 export interface Message {
@@ -204,7 +204,7 @@ export class MessagingChannelManager {
 
       // Track message sent for delivery latency monitoring
       const channelName = `conversation_${conversationId}`;
-      realtimeMonitor.trackMessageSent(channelName, data.id);
+      // Message tracking handled by Datadog instead(channelName, data.id);
       
       // Track message sending with Datadog
       trackEvent('messaging.message_sent', {
@@ -467,7 +467,7 @@ export class MessagingChannelManager {
     const channel = supabase.channel(channelName);
 
     // Monitor channel health with Datadog
-    realtimeMonitor.monitorChannel(channelName, channel);
+    // Channel monitoring handled by Datadog instead(channelName, channel);
 
     // Listen for new messages (prayer_responses inserts)
     channel.on('postgres_changes', {
@@ -519,7 +519,7 @@ export class MessagingChannelManager {
 
     // Track message received for delivery latency monitoring
     const channelName = `conversation_${conversationId}`;
-    realtimeMonitor.trackMessageReceived(channelName, messageData.id);
+    // Message tracking handled by Datadog instead(channelName, messageData.id);
     
     // Update performance metrics
     this.performanceMetrics.messagesReceived++;

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { RequestPrayerModal } from '../RequestPrayerModal';
+import { RequestPrayerModal } from '../prayer/RequestPrayerModal';
 import * as useAuthModule from '../../hooks/useAuth';
 import * as storageService from '../../services/storageService';
 
