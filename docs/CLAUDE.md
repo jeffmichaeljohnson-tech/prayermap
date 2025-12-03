@@ -56,7 +56,69 @@ git status && git log -3 --oneline  # Git state
 
 ## ⚠️ CRITICAL PRINCIPLES (Never Forget)
 
-### 🚨 0. THE LIVING MAP PRINCIPLE (ABSOLUTE PRIORITY)
+### 🚨 0. VERIFICATION ENFORCEMENT SYSTEM (ABSOLUTE TRUTH REQUIREMENT)
+
+**A fix is NOT a fix until it's verified working in a deployed environment by a human.**
+
+This principle exists because AI agents can write code, verify it compiles, and even test database queries - but CANNOT verify the actual user experience works. This led to false claims of "fixed" when code wasn't even deployed.
+
+#### The Three States of Code Changes
+
+| State | What It Means | What Agent Can Say |
+|-------|---------------|-------------------|
+| **WRITTEN** | Code modified locally, compiles | "Changes written. NOT tested. NOT deployed." |
+| **DEPLOYED** | Code pushed, Vercel build succeeded, SHA confirmed | "Changes deployed to [URL]. Awaiting human verification." |
+| **VERIFIED** | Human confirmed it works in real app | "Fix VERIFIED by user on [date]." |
+
+#### Mandatory Verification Checklist
+
+Before claiming ANY fix is complete, the agent MUST:
+
+1. **Check deployment status:**
+   ```bash
+   git log -1 --oneline  # Get local SHA
+   # Then verify via Vercel API that this SHA is deployed
+   ```
+
+2. **State explicitly what was verified vs. assumed:**
+   - ✅ "Verified: Code compiles, SQL query returns expected data"
+   - ⚠️ "NOT verified: User-facing functionality, real-time updates"
+
+3. **Request human verification:**
+   - "Please test [specific action] and confirm it works"
+   - Do NOT mark task as complete until human confirms
+
+#### Forbidden Phrases (Until Human Verification)
+
+- ❌ "This is fixed"
+- ❌ "This should now work"
+- ❌ "The bug is resolved"
+- ❌ "Ready for production"
+
+#### Required Phrases (Before Human Verification)
+
+- ✅ "Changes deployed. Please verify [specific test]"
+- ✅ "Code is live at [URL]. Awaiting your confirmation"
+- ✅ "I believe this addresses the issue. Please test and confirm"
+
+#### Verification Workflow
+
+```
+1. Agent writes code → "Changes written, building..."
+2. Agent pushes code → "Pushed to GitHub, awaiting Vercel..."
+3. Agent confirms deploy → "Deployed at [URL] (SHA: abc123). Please test:"
+   - [ ] Test action 1
+   - [ ] Test action 2
+4. Human tests → Reports success or failure
+5. IF success → Agent can mark as VERIFIED
+6. IF failure → Back to step 1, NO claims of progress
+```
+
+This system ensures radical honesty about the state of fixes and prevents false confidence.
+
+---
+
+### 🚨 1. THE LIVING MAP PRINCIPLE (ABSOLUTE PRIORITY)
 **[LIVING-MAP-PRINCIPLE.md](./LIVING-MAP-PRINCIPLE.md)** contains the CORE SPIRITUAL MISSION that overrides ALL other considerations. PrayerMap is the world's first LIVING MAP where users witness prayer happening in real-time and see eternal memorial connections. If ANY technical decision conflicts with the Living Map, THE LIVING MAP WINS.
 
 **Key Requirements:**
@@ -65,19 +127,19 @@ git status && git log -3 --oneline  # Git state
 - **Universal shared map**: Everyone sees the same complete prayer history
 - **Live witnessing**: The spiritual experience of watching prayer happen
 
-### 1. ARTICLE.md is Supreme Authority
+### 2. ARTICLE.md is Supreme Authority
 **ARTICLE.md** contains our foundational philosophy and supersedes everything else. When in doubt, return to ARTICLE.md.
 
-### 2. Automatic Multi-Agent Workflows
+### 3. Automatic Multi-Agent Workflows
 For complex tasks (3+ steps, multiple domains), automatically use autonomous development to deploy specialized agents. See [AI-AGENTS.md](./AI-AGENTS.md) for coordination patterns.
 
-### 3. Mobile-First Always
+### 4. Mobile-First Always
 Every decision must work on iOS, Android, and web. If it breaks on mobile, it's wrong. See [MOBILE-GUIDE.md](./MOBILE-GUIDE.md) for deployment workflows.
 
-### 4. Research-Driven Development
+### 5. Research-Driven Development
 ALWAYS query memory first, then check official documentation before implementing. See [PROJECT-GUIDE.md](./PROJECT-GUIDE.md) for source credibility hierarchy.
 
-### 5. Observability Required
+### 6. Observability Required
 All operations must implement structured logging and monitoring. See [MONITORING-GUIDE.md](./MONITORING-GUIDE.md) for mandatory requirements.
 
 ---
@@ -125,20 +187,24 @@ All operations must implement structured logging and monitoring. See [MONITORING
 ## 🛡️ Never Do / Always Do
 
 ### Never Do
-1. **Never bypass mobile testing** - If it doesn't work on iOS/Android, it's wrong
-2. **Never implement without research** - Memory search first, then official docs
-3. **Never skip observability** - All operations must be logged and monitored
-4. **Never add user friction** - Count and minimize every step
-5. **Never commit secrets** - Environment variables only
+1. **Never claim "fixed" without human verification** - See Principle 0: Verification Enforcement System
+2. **Never say "this should work" before deployment** - Only state facts about what was verified
+3. **Never bypass mobile testing** - If it doesn't work on iOS/Android, it's wrong
+4. **Never implement without research** - Memory search first, then official docs
+5. **Never skip observability** - All operations must be logged and monitored
+6. **Never add user friction** - Count and minimize every step
+7. **Never commit secrets** - Environment variables only
 
 ### Always Do
-1. **Always complete SESSION-CONTEXT.md first** - Before multi-agent workflows
-2. **Always read ARTICLE.md** - Our operational foundation
-3. **Always use multi-agent workflows** - For complex tasks (3+ steps)
-4. **Always verify before declaring done** - Run verification queries, test both positive and negative cases
-5. **Always commit and push** - Don't leave work uncommitted between agents
-6. **Always test on actual devices** - iOS and Android, not just browser
-7. **Always query memory before decisions** - Learn from past work
+1. **Always confirm deployment SHA before requesting verification** - Check Vercel that your commit is live
+2. **Always state what is verified vs. assumed** - "Verified: compiles. NOT verified: works in app"
+3. **Always request human testing with specific test cases** - "Please test X and confirm Y happens"
+4. **Always complete SESSION-CONTEXT.md first** - Before multi-agent workflows
+5. **Always read ARTICLE.md** - Our operational foundation
+6. **Always use multi-agent workflows** - For complex tasks (3+ steps)
+7. **Always commit and push** - Don't leave work uncommitted between agents
+8. **Always test on actual devices** - iOS and Android, not just browser
+9. **Always query memory before decisions** - Learn from past work
 
 ---
 
