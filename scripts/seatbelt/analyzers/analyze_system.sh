@@ -274,11 +274,6 @@ generate_system_recommendations() {
             "Add .nvmrc with Node version to ensure consistency"
     fi
 
-    # Docker not running
-    if command -v docker &> /dev/null && [[ "$DEV_ENV_docker_running" != "true" ]]; then
-        add_optimization "LOW" "System" \
-            "Docker installed but not running" \
-            "Docker is available but the daemon is not running." \
-            "Start Docker if you need local database or containerized services"
-    fi
+    # Note: Docker recommendation removed - PrayerMap uses Supabase hosted services
+    # No local containers needed for this project's workflow
 }

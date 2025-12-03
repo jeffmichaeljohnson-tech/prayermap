@@ -244,11 +244,15 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
       targetLocation: newPrayer.location
     });
 
+    // Get user name from metadata or email
+    const userName = user.user_metadata?.name || user.email?.split('@')[0] || 'Anonymous';
+
     // Create the prayer in the database
     try {
       await createPrayer({
         ...newPrayer,
         user_id: user.id,
+        user_name: newPrayer.is_anonymous ? undefined : userName,
       });
     } catch (error) {
       console.error('Failed to create prayer:', error);

@@ -8,7 +8,7 @@ interface PrayerRow {
   title?: string;
   content: string;
   content_type: 'text' | 'audio' | 'video';
-  content_url?: string;
+  media_url?: string; // Database column name (maps to content_url in Prayer type)
   location: { lat: number; lng: number } | string; // PostGIS POINT or JSON
   user_name?: string;
   is_anonymous: boolean;
@@ -96,7 +96,7 @@ function rowToPrayer(row: PrayerRow): Prayer {
     title: row.title,
     content: row.content,
     content_type: row.content_type,
-    content_url: row.content_url,
+    content_url: row.media_url, // Map database 'media_url' to Prayer 'content_url'
     location: convertLocation(row.location),
     user_name: row.user_name,
     is_anonymous: row.is_anonymous,
@@ -190,6 +190,7 @@ export async function createPrayer(
 
   try {
     // Use direct insert with ST_MakePoint for PostGIS compatibility
+    // Note: database column is 'media_url', but Prayer type uses 'content_url'
     const { data, error } = await supabase
       .from('prayers')
       .insert({
@@ -197,7 +198,7 @@ export async function createPrayer(
         title: prayer.title || null,
         content: prayer.content,
         content_type: prayer.content_type,
-        content_url: prayer.content_url || null,
+        media_url: prayer.content_url || null,
         location: `POINT(${prayer.location.lng} ${prayer.location.lat})`,
         user_name: prayer.user_name || null,
         is_anonymous: prayer.is_anonymous,
