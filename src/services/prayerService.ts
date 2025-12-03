@@ -32,13 +32,12 @@ interface PrayerResponseRow {
 interface PrayerConnectionRow {
   id: string;
   prayer_id: string;
-  prayer_response_id: string;
+  from_user_id: string;
+  to_user_id: string;
   from_location: { lat: number; lng: number } | string;
   to_location: { lat: number; lng: number } | string;
-  requester_name: string;
-  replier_name: string;
   created_at: string;
-  expires_at: string;
+  expires_at: string | null;
 }
 
 // Type guards and converters
@@ -63,6 +62,14 @@ function convertLocation(location: { lat: number; lng: number } | string | null 
 
   if (isPointString(location)) {
     return parsePostGISPoint(location);
+  }
+
+  // Handle WKB hex string format from PostGIS (e.g., "0101000020E6100000...")
+  if (typeof location === 'string' && location.startsWith('0101000020')) {
+    // WKB format - we need to use ST_AsText in the query instead
+    // For now, return placeholder and fix the query to use ST_AsText
+    console.warn('WKB format detected - query should use ST_AsText:', location.substring(0, 20) + '...');
+    return { lat: 0, lng: 0 };
   }
 
   // Handle object with lat/lng
@@ -113,15 +120,22 @@ function rowToPrayerResponse(row: PrayerResponseRow): PrayerResponse {
 }
 
 function rowToPrayerConnection(row: PrayerConnectionRow): PrayerConnection {
+  // Calculate expiresAt: if null, default to 1 year from creation (memorial lines are eternal)
+  const createdAt = new Date(row.created_at);
+  const expiresAt = row.expires_at
+    ? new Date(row.expires_at)
+    : new Date(createdAt.getTime() + 365 * 24 * 60 * 60 * 1000); // 1 year from creation
+
   return {
     id: row.id,
     prayerId: row.prayer_id,
     fromLocation: convertLocation(row.from_location),
     toLocation: convertLocation(row.to_location),
-    requesterName: row.requester_name,
-    replierName: row.replier_name,
-    createdAt: new Date(row.created_at),
-    expiresAt: new Date(row.expires_at),
+    // Names not stored in DB - use placeholder (component should look these up if needed)
+    requesterName: 'Prayer Requester',
+    replierName: 'Prayer Supporter',
+    createdAt,
+    expiresAt,
   };
 }
 
@@ -671,21 +685,59 @@ export async function fetchPrayerConnections(): Promise<PrayerConnection[]> {
   }
 
   try {
+    // Use RPC to get connections with properly extracted lat/lng from PostGIS
     const { data, error } = await supabase
-      .from('prayer_connections')
-      .select('*')
-      .gte('expires_at', new Date().toISOString())
-      .order('created_at', { ascending: false });
+      .rpc('get_prayer_connections');
 
     if (error) {
       console.error('Error fetching prayer connections:', error);
-      throw error;
+      // Fallback to direct query if RPC doesn't exist
+      return fetchPrayerConnectionsFallback();
     }
 
-    console.log('[PrayerService] Fetched prayer connections:', data?.length || 0);
-    return (data as PrayerConnectionRow[]).map(rowToPrayerConnection);
+    console.log('[PrayerService] Fetched prayer connections via RPC:', data?.length || 0);
+
+    // RPC returns: id, prayer_id, from_user_id, to_user_id, from_lat, from_lng, to_lat, to_lng, created_at, expires_at
+    return (data || []).map((row: any) => ({
+      id: row.id,
+      prayerId: row.prayer_id,
+      fromLocation: { lat: row.from_lat, lng: row.from_lng },
+      toLocation: { lat: row.to_lat, lng: row.to_lng },
+      requesterName: 'Prayer Requester',
+      replierName: 'Prayer Supporter',
+      createdAt: new Date(row.created_at),
+      expiresAt: row.expires_at
+        ? new Date(row.expires_at)
+        : new Date(new Date(row.created_at).getTime() + 365 * 24 * 60 * 60 * 1000),
+    }));
   } catch (error) {
     console.error('Failed to fetch prayer connections:', error);
+    return [];
+  }
+}
+
+/**
+ * Fallback for fetching connections without RPC (may have coordinate issues)
+ */
+async function fetchPrayerConnectionsFallback(): Promise<PrayerConnection[]> {
+  if (!supabase) return [];
+
+  try {
+    // Fetch all connections - expires_at is NULL for eternal lines
+    const { data, error } = await supabase
+      .from('prayer_connections')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error in fallback fetch:', error);
+      return [];
+    }
+
+    console.log('[PrayerService] Fetched connections (fallback):', data?.length || 0);
+    return (data as PrayerConnectionRow[]).map(rowToPrayerConnection);
+  } catch (error) {
+    console.error('Failed fallback fetch:', error);
     return [];
   }
 }

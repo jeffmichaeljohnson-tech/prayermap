@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(git:*)",
+      "Bash(supabase:*)",
+      "Bash(vercel:*)",
+      "Bash(gh:*)",
+      "mcp__supabase__*",
+      "mcp__github__*",
+      "mcp__pinecone-prayermap__*",
+      "mcp__pinecone-ora__*",
+      "mcp__figma__*",
+      "mcp__figma-framelink__*",
+      "mcp__slack__*",
+      "mcp__brave-search__*"
+    ],
+    "deny": []
+  },
+  "enabledMcpServers": [
+    "supabase",
+    "github",
+    "pinecone-ora",
+    "pinecone-prayermap",
+    "figma",
+    "figma-framelink",
+    "vercel",
+    "slack",
+    "langsmith",
+    "brave-search",
+    "fetch",
+    "sequential-thinking"
+  ]
+}
