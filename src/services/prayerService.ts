@@ -20,11 +20,10 @@ interface PrayerResponseRow {
   id: string;
   prayer_id: string;
   responder_id: string;
-  responder_name?: string;
-  is_anonymous: boolean;
-  message: string;
+  is_anonymous: boolean | null;
+  message: string | null;
   content_type: 'text' | 'audio' | 'video';
-  content_url?: string;
+  media_url?: string | null; // Database column (maps to content_url in PrayerResponse type)
   created_at: string;
   read_at?: string | null;
 }
@@ -110,11 +109,11 @@ function rowToPrayerResponse(row: PrayerResponseRow): PrayerResponse {
     id: row.id,
     prayer_id: row.prayer_id,
     responder_id: row.responder_id,
-    responder_name: row.responder_name,
+    responder_name: undefined, // Not stored in database - lookup separately if needed
     is_anonymous: row.is_anonymous,
     message: row.message,
     content_type: row.content_type,
-    content_url: row.content_url,
+    content_url: row.media_url ?? undefined, // Map database 'media_url' to PrayerResponse 'content_url'
     created_at: new Date(row.created_at),
   };
 }
@@ -337,16 +336,16 @@ export async function respondToPrayer(
 
   try {
     // Create prayer response
+    // Note: responder_name column doesn't exist in DB, is_anonymous and media_url do
     const { data: responseData, error: responseError } = await supabase
       .from('prayer_responses')
       .insert({
         prayer_id: prayerId,
         responder_id: responderId,
-        responder_name: isAnonymous ? null : responderName,
         is_anonymous: isAnonymous,
         message,
         content_type: contentType,
-        content_url: contentUrl,
+        media_url: contentUrl || null,
       })
       .select()
       .single();
