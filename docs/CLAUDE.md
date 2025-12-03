@@ -118,6 +118,50 @@ This system ensures radical honesty about the state of fixes and prevents false 
 
 ---
 
+### 🚨 0.1 DATABASE-FIRST DEBUGGING (SOURCE OF TRUTH PROTOCOL)
+
+**When something silently fails, go to the source of truth - not the code.**
+
+This principle exists because code can lie (outdated interfaces, wrong assumptions), but the database schema and logs never lie. On 2025-12-03, we wasted significant time assuming TypeScript interfaces matched the database when they didn't (`content_url` vs `media_url`).
+
+#### The Debugging Hierarchy (Follow This Order)
+
+| Step | Action | Why |
+|------|--------|-----|
+| **1. Check the database schema** | `SELECT column_name FROM information_schema.columns WHERE table_name = 'xxx';` | The database is the source of truth, not TypeScript interfaces |
+| **2. Check browser console/network** | Look for failed requests, error messages | Supabase errors reveal exactly what's wrong |
+| **3. Check Supabase logs** | Dashboard → Logs → Postgres | Failed queries show the exact column/table mismatch |
+| **4. Test the operation in isolation** | Run the INSERT/UPDATE directly in SQL | Proves whether the DB operation works before blaming code |
+| **5. THEN read the code** | Only after steps 1-4 | Code is the last place to look, not the first |
+
+#### Quick Schema Check Commands
+
+```sql
+-- Check table columns (run in Supabase SQL Editor)
+SELECT column_name, data_type, is_nullable
+FROM information_schema.columns
+WHERE table_name = 'prayer_responses'
+ORDER BY ordinal_position;
+
+-- Check if an RPC function exists
+SELECT routine_name, routine_type
+FROM information_schema.routines
+WHERE routine_schema = 'public';
+```
+
+#### Red Flags That Indicate Schema Mismatch
+
+- ⚠️ Animation plays but data doesn't persist
+- ⚠️ Frontend works, backend silently fails
+- ⚠️ No error in console but operation doesn't complete
+- ⚠️ "It worked before" but now it doesn't (schema may have changed)
+
+#### The Golden Rule
+
+> **Trust the symptom, not the code.** If the symptom says "database operation failing," go directly to the database. Don't read 500 lines of TypeScript hoping to spot the bug.
+
+---
+
 ### 🚨 1. THE LIVING MAP PRINCIPLE (ABSOLUTE PRIORITY)
 **[LIVING-MAP-PRINCIPLE.md](./LIVING-MAP-PRINCIPLE.md)** contains the CORE SPIRITUAL MISSION that overrides ALL other considerations. PrayerMap is the world's first LIVING MAP where users witness prayer happening in real-time and see eternal memorial connections. If ANY technical decision conflicts with the Living Map, THE LIVING MAP WINS.
 
@@ -189,22 +233,26 @@ All operations must implement structured logging and monitoring. See [MONITORING
 ### Never Do
 1. **Never claim "fixed" without human verification** - See Principle 0: Verification Enforcement System
 2. **Never say "this should work" before deployment** - Only state facts about what was verified
-3. **Never bypass mobile testing** - If it doesn't work on iOS/Android, it's wrong
-4. **Never implement without research** - Memory search first, then official docs
-5. **Never skip observability** - All operations must be logged and monitored
-6. **Never add user friction** - Count and minimize every step
-7. **Never commit secrets** - Environment variables only
+3. **Never assume TypeScript interfaces match the database** - Check schema FIRST (Principle 0.1)
+4. **Never debug by reading code first** - Check database schema, logs, and browser console BEFORE code
+5. **Never bypass mobile testing** - If it doesn't work on iOS/Android, it's wrong
+6. **Never implement without research** - Memory search first, then official docs
+7. **Never skip observability** - All operations must be logged and monitored
+8. **Never add user friction** - Count and minimize every step
+9. **Never commit secrets** - Environment variables only
 
 ### Always Do
 1. **Always confirm deployment SHA before requesting verification** - Check Vercel that your commit is live
 2. **Always state what is verified vs. assumed** - "Verified: compiles. NOT verified: works in app"
-3. **Always request human testing with specific test cases** - "Please test X and confirm Y happens"
-4. **Always complete SESSION-CONTEXT.md first** - Before multi-agent workflows
-5. **Always read ARTICLE.md** - Our operational foundation
-6. **Always use multi-agent workflows** - For complex tasks (3+ steps)
-7. **Always commit and push** - Don't leave work uncommitted between agents
-8. **Always test on actual devices** - iOS and Android, not just browser
-9. **Always query memory before decisions** - Learn from past work
+3. **Always check database schema before fixing DB issues** - `SELECT column_name FROM information_schema.columns WHERE table_name = 'xxx'`
+4. **Always check browser console/network tab for silent failures** - Supabase errors reveal the exact problem
+5. **Always request human testing with specific test cases** - "Please test X and confirm Y happens"
+6. **Always complete SESSION-CONTEXT.md first** - Before multi-agent workflows
+7. **Always read ARTICLE.md** - Our operational foundation
+8. **Always use multi-agent workflows** - For complex tasks (3+ steps)
+9. **Always commit and push** - Don't leave work uncommitted between agents
+10. **Always test on actual devices** - iOS and Android, not just browser
+11. **Always query memory before decisions** - Learn from past work
 
 ---
 
@@ -243,5 +291,5 @@ This streamlined CLAUDE.md now serves as a lightweight entry point to our compre
 ---
 
 **Last Updated:** 2025-12-03
-**Version:** 4.0 (Added session context, acceptance criteria, security spec, environment strategy)
+**Version:** 4.1 (Added Database-First Debugging principle - lessons from memorial lines fix)
 **Next Review:** When documentation structure changes
