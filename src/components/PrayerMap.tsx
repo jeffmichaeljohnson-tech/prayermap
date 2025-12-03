@@ -14,6 +14,7 @@ import { InfoModal } from './InfoModal';
 import { SunMoonIndicator } from './SunMoonIndicator';
 import { Inbox, Settings, Info } from 'lucide-react';
 import { usePrayers } from '../hooks/usePrayers';
+import { usePrayerConnections } from '../hooks/usePrayerConnections';
 import { useAuth } from '../contexts/AuthContext';
 import { useInbox } from '../hooks/useInbox';
 
@@ -97,7 +98,16 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
     enableRealtime: true
   });
 
-  const [connections, setConnections] = useState<PrayerConnection[]>([]);
+  // Use the usePrayerConnections hook for memorial lines
+  // These are loaded from the database and persist across page refreshes
+  const {
+    connections,
+    addConnection,
+    loading: connectionsLoading
+  } = usePrayerConnections({
+    autoFetch: true,
+    enableRealtime: true
+  });
   const [selectedPrayer, setSelectedPrayer] = useState<Prayer | null>(null);
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [showInbox, setShowInbox] = useState(false);
@@ -169,14 +179,15 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
   };
 
   const handleAnimationComplete = useCallback(() => {
-    // Add the pending connection if API call succeeded
+    // Add the pending connection optimistically if API call succeeded
+    // The real connection is already in the database and will sync via real-time
     if (pendingConnectionRef.current) {
-      setConnections(prev => [...prev, pendingConnectionRef.current!]);
+      addConnection(pendingConnectionRef.current);
       pendingConnectionRef.current = null;
     }
     // Clear animation state - do NOT reopen the modal
     setAnimatingPrayer(null);
-  }, []);
+  }, [addConnection]);
 
   const handlePrayerSubmit = async (prayer: Prayer) => {
     if (!user) return;

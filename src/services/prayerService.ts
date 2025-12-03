@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import type { Prayer, PrayerResponse } from '../types/prayer';
+import type { Prayer, PrayerResponse, PrayerConnection } from '../types/prayer';
 
 // Database table schemas
 interface PrayerRow {
@@ -109,6 +109,19 @@ function rowToPrayerResponse(row: PrayerResponseRow): PrayerResponse {
     content_type: row.content_type,
     content_url: row.content_url,
     created_at: new Date(row.created_at),
+  };
+}
+
+function rowToPrayerConnection(row: PrayerConnectionRow): PrayerConnection {
+  return {
+    id: row.id,
+    prayerId: row.prayer_id,
+    fromLocation: convertLocation(row.from_location),
+    toLocation: convertLocation(row.to_location),
+    requesterName: row.requester_name,
+    replierName: row.replier_name,
+    createdAt: new Date(row.created_at),
+    expiresAt: new Date(row.expires_at),
   };
 }
 
@@ -645,4 +658,112 @@ export async function getUnreadCountsByPrayer(userId: string): Promise<
     console.error('Failed to get unread counts by prayer:', error);
     return [];
   }
+}
+
+/**
+ * Fetch all prayer connections (memorial lines) that haven't expired
+ * These are the eternal lines connecting prayers to those who responded
+ */
+export async function fetchPrayerConnections(): Promise<PrayerConnection[]> {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return [];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('prayer_connections')
+      .select('*')
+      .gte('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching prayer connections:', error);
+      throw error;
+    }
+
+    console.log('[PrayerService] Fetched prayer connections:', data?.length || 0);
+    return (data as PrayerConnectionRow[]).map(rowToPrayerConnection);
+  } catch (error) {
+    console.error('Failed to fetch prayer connections:', error);
+    return [];
+  }
+}
+
+/**
+ * Fetch prayer connections within a geographic radius
+ * @param lat - Latitude of center point
+ * @param lng - Longitude of center point
+ * @param radiusKm - Radius in kilometers
+ */
+export async function fetchNearbyPrayerConnections(
+  lat: number,
+  lng: number,
+  radiusKm: number = 50
+): Promise<PrayerConnection[]> {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return [];
+  }
+
+  try {
+    // For now, fetch all connections and filter client-side
+    // TODO: Add PostGIS spatial query for connections if needed for performance
+    const { data, error } = await supabase
+      .from('prayer_connections')
+      .select('*')
+      .gte('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching nearby prayer connections:', error);
+      throw error;
+    }
+
+    console.log('[PrayerService] Fetched nearby connections:', data?.length || 0);
+    return (data as PrayerConnectionRow[]).map(rowToPrayerConnection);
+  } catch (error) {
+    console.error('Failed to fetch nearby prayer connections:', error);
+    return [];
+  }
+}
+
+/**
+ * Subscribe to prayer connections in real-time
+ * Memorial lines should appear instantly when someone prays
+ */
+export function subscribeToPrayerConnections(
+  callback: (connections: PrayerConnection[]) => void
+): () => void {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return () => {};
+  }
+
+  console.log('[PrayerService] Setting up prayer connections subscription');
+
+  const subscription = supabase
+    .channel('prayer_connections_channel')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'prayer_connections',
+      },
+      async (payload) => {
+        console.log('[PrayerService] Prayer connection change detected:', payload.eventType);
+        // Fetch all current connections
+        const connections = await fetchPrayerConnections();
+        callback(connections);
+      }
+    )
+    .subscribe((status) => {
+      console.log('[PrayerService] Prayer connections subscription status:', status);
+    });
+
+  return () => {
+    console.log('[PrayerService] Unsubscribing from prayer connections');
+    subscription.unsubscribe();
+  };
 }

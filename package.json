@@ -7,9 +7,14 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "seatbelt": "./scripts/seatbelt.sh",
+    "seatbelt:quick": "./scripts/seatbelt.sh --quick",
+    "seatbelt:keys": "./scripts/seatbelt.sh --keys-only",
+    "preflight": "./scripts/seatbelt.sh --quick"
   },
   "dependencies": {
+    "@datadog/browser-rum": "^6.24.1",
     "@heroicons/react": "^2.2.0",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
