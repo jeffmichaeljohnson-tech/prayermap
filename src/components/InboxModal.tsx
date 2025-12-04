@@ -13,6 +13,7 @@ interface InboxModalProps {
 
 interface SelectedConversation {
   id: string;
+  prayerResponseId: string; // The prayer_response ID for conversation
   senderName: string;
   message: string;
   date: Date;
@@ -28,29 +29,37 @@ export function InboxModal({ onClose }: InboxModalProps) {
     autoFetch: !!user?.id,
     enableRealtime: true,
   });
-  const [selectedConversation, setSelectedConversation] = useState<SelectedConversation | null>(null);
+  const [selectedConversation, setSelectedConversation] =
+    useState<SelectedConversation | null>(null);
 
   // Transform inbox items to display format
   const getDisplayItems = () => {
-    return inbox.flatMap((item: InboxItem) =>
-      item.responses.map((response) => ({
-        id: response.id,
-        prayerId: item.prayer.id,
-        senderName: response.is_anonymous ? 'Anonymous' : (response.responder_name || 'Someone'),
-        message: response.message,
-        date: response.created_at,
-        prayerTitle: item.prayer.title || item.prayer.content.substring(0, 30) + '...',
-        originalPrayerContent: item.prayer.content,
-        contentType: response.content_type,
-        unread: item.unreadCount > 0, // Simplified - could track per-response
-      }))
-    ).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return inbox
+      .flatMap((item: InboxItem) =>
+        item.responses.map((response) => ({
+          id: response.id,
+          prayerResponseId: response.id, // The prayer_response ID
+          prayerId: item.prayer.id,
+          senderName: response.is_anonymous
+            ? 'Prayer Partner'
+            : response.responder_name || 'Someone',
+          message: response.message,
+          date: response.created_at,
+          prayerTitle:
+            item.prayer.title || item.prayer.content.substring(0, 30) + '...',
+          originalPrayerContent: item.prayer.content,
+          contentType: response.content_type,
+          unread: item.unreadCount > 0, // Simplified - could track per-response
+        }))
+      )
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   };
 
   const displayItems = getDisplayItems();
 
   const getTimeAgo = (date: Date) => {
-    const timestamp = date instanceof Date ? date.getTime() : new Date(date).getTime();
+    const timestamp =
+      date instanceof Date ? date.getTime() : new Date(date).getTime();
     const hours = Math.floor((Date.now() - timestamp) / (1000 * 60 * 60));
     if (hours < 1) return 'Just now';
     if (hours < 24) return `${hours}h ago`;
@@ -58,9 +67,10 @@ export function InboxModal({ onClose }: InboxModalProps) {
     return `${days}d ago`;
   };
 
-  const handleSelectConversation = (item: typeof displayItems[0]) => {
+  const handleSelectConversation = (item: (typeof displayItems)[0]) => {
     setSelectedConversation({
       id: item.id,
+      prayerResponseId: item.prayerResponseId, // Pass the prayer_response ID
       senderName: item.senderName,
       message: item.message,
       date: item.date instanceof Date ? item.date : new Date(item.date),
@@ -83,12 +93,15 @@ export function InboxModal({ onClose }: InboxModalProps) {
       onClick={onClose}
     >
       <motion.div
-        initial={{ y: "100%", opacity: 0 }}
+        initial={{ y: '100%', opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        exit={{ y: "100%", opacity: 0 }}
-        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        exit={{ y: '100%', opacity: 0 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
         onClick={(e) => e.stopPropagation()}
         className="bg-linear-to-br from-white/80 via-white/70 to-purple-50/60 backdrop-blur-2xl rounded-3xl p-6 max-w-md w-full max-h-[80vh] overflow-hidden flex flex-col relative border border-white/60 shadow-xl shadow-purple-200/20"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Prayer Inbox"
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -107,6 +120,7 @@ export function InboxModal({ onClose }: InboxModalProps) {
           <button
             onClick={onClose}
             className="p-2 hover:bg-white/20 rounded-full transition-colors"
+            aria-label="Close inbox"
           >
             <X className="w-5 h-5 text-gray-700" />
           </button>
@@ -163,48 +177,59 @@ export function InboxModal({ onClose }: InboxModalProps) {
               )}
 
               {/* Prayers List */}
-              {!loading && !error && user && displayItems.map((item) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className={`bg-white/50 backdrop-blur-sm rounded-2xl p-4 hover:bg-white/70 transition-all cursor-pointer active:scale-[0.98] relative shadow-sm ${
-                    item.unread ? 'ring-1 ring-blue-300/40' : ''
-                  }`}
-                  onClick={() => handleSelectConversation(item)}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {/* Unread indicator */}
-                  {item.unread && (
-                    <div className="absolute top-4 right-4">
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="w-3 h-3 bg-blue-500 rounded-full shadow-lg shadow-blue-500/50"
-                      />
-                    </div>
-                  )}
+              {!loading &&
+                !error &&
+                user &&
+                displayItems.map((item) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`bg-white/50 backdrop-blur-sm rounded-2xl p-4 hover:bg-white/70 transition-all cursor-pointer active:scale-[0.98] relative shadow-sm ${
+                      item.unread ? 'ring-1 ring-blue-300/40' : ''
+                    }`}
+                    onClick={() => handleSelectConversation(item)}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    {/* Unread indicator */}
+                    {item.unread && (
+                      <div className="absolute top-4 right-4">
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="w-3 h-3 bg-blue-500 rounded-full shadow-lg shadow-blue-500/50"
+                        />
+                      </div>
+                    )}
 
-                  <div className="flex items-start justify-between mb-2 mt-0 mr-[50px] ml-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-2xl">🙏</span>
-                      <div>
-                        <p className={`text-gray-800 ${item.unread ? 'font-semibold' : ''}`}>
-                          {item.senderName}
-                        </p>
-                        <p className="text-xs text-gray-500">{getTimeAgo(item.date)}</p>
+                    <div className="flex items-start justify-between mb-2 mt-0 mr-[50px] ml-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl">🙏</span>
+                        <div>
+                          <p
+                            className={`text-gray-800 ${item.unread ? 'font-semibold' : ''}`}
+                          >
+                            {item.senderName}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {getTimeAgo(item.date)}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <p className="text-xs text-purple-600 mb-1">Re: {item.prayerTitle}</p>
-                  <p className={`text-sm text-gray-700 leading-relaxed ${
-                    item.unread ? 'font-medium' : ''
-                  }`}>
-                    {item.message}
-                  </p>
-                </motion.div>
-              ))}
+                    <p className="text-xs text-purple-600 mb-1">
+                      Re: {item.prayerTitle}
+                    </p>
+                    <p
+                      className={`text-sm text-gray-700 leading-relaxed ${
+                        item.unread ? 'font-medium' : ''
+                      }`}
+                    >
+                      {item.message}
+                    </p>
+                  </motion.div>
+                ))}
             </motion.div>
           )}
         </AnimatePresence>
@@ -213,14 +238,13 @@ export function InboxModal({ onClose }: InboxModalProps) {
         <AnimatePresence>
           {selectedConversation && (
             <ConversationThread
-              conversationId={selectedConversation.id}
+              prayerResponseId={selectedConversation.prayerResponseId}
               otherPersonName={selectedConversation.senderName}
               originalPrayer={{
                 title: selectedConversation.prayerTitle,
                 content: selectedConversation.originalPrayerContent,
-                contentType: selectedConversation.contentType
+                contentType: selectedConversation.contentType,
               }}
-              initialMessage={selectedConversation.message}
               onBack={() => setSelectedConversation(null)}
             />
           )}
