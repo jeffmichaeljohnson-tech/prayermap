@@ -157,12 +157,20 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
         createdAt: data.user.created_at,
         user: data.user,
       }
+
+      // CRITICAL: Update refs IMMEDIATELY before state updates
+      // This prevents race condition where auth listener fires before React re-renders
+      // and sees stale ref values (null user, false isAdmin)
+      userRef.current = adminUser
+      isAdminRef.current = true
+      initCompletedRef.current = true
+
+      // Now update React state (these are batched and async)
       setUser(adminUser)
       setSession(data.session)
       setIsAdmin(true)
 
-      // Mark initialization as complete and clear timeout
-      initCompletedRef.current = true
+      // Clear timeout since initialization is complete
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current)
         timeoutRef.current = null
@@ -238,19 +246,28 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
       if (session?.user) {
         // Skip initialization if:
         // 1. Already initialized this session, OR
-        // 2. User was just set by signIn (check if user.id matches)
+        // 2. User was just set by signIn (check if user.id matches via refs)
         // This prevents race conditions and duplicate RPC calls
         // Uses refs to get current values (not stale closure values)
         const alreadySetBySignIn = userRef.current?.id === session.user.id && isAdminRef.current
 
+        console.log('Admin: Auth check - hasInitialized:', hasInitialized,
+          'alreadySetBySignIn:', alreadySetBySignIn,
+          'userRef.id:', userRef.current?.id,
+          'session.user.id:', session.user.id,
+          'isAdminRef:', isAdminRef.current)
+
         if (!hasInitialized && !alreadySetBySignIn) {
           hasInitialized = true
+          console.log('Admin: Initializing user from auth listener')
           await initializeAdminUser(session.user)
         } else if (event === 'TOKEN_REFRESHED') {
           // Only re-initialize on token refresh (not on SIGNED_IN since signIn handles that)
+          console.log('Admin: Re-initializing due to token refresh')
           await initializeAdminUser(session.user)
         } else {
           // User already initialized, just make sure loading is false
+          console.log('Admin: User already initialized, skipping')
           setLoading(false)
         }
       } else {
