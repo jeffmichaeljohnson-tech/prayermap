@@ -33,12 +33,14 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
   const [isAdmin, setIsAdmin] = useState(false)
 
   // Refs to track state for callbacks (avoids stale closure)
-  const loadingRef = useRef(loading)
-  loadingRef.current = loading
   const userRef = useRef(user)
   userRef.current = user
   const isAdminRef = useRef(isAdmin)
   isAdminRef.current = isAdmin
+
+  // Track initialization completion directly (not relying on state re-render timing)
+  const initCompletedRef = useRef(false)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   /**
    * Check if a user has admin privileges
@@ -100,11 +102,18 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
 
       setUser(adminUser)
       setIsAdmin(true)
+      console.log('Admin: User initialized successfully')
     } catch (error) {
       console.error('Error initializing admin user:', error)
       setUser(null)
       setIsAdmin(false)
     } finally {
+      // Mark initialization as complete and clear timeout
+      initCompletedRef.current = true
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
       setLoading(false)
     }
   }
@@ -152,6 +161,14 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
       setSession(data.session)
       setIsAdmin(true)
 
+      // Mark initialization as complete and clear timeout
+      initCompletedRef.current = true
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
+
+      console.log('Admin: Sign in successful')
       return { success: true }
     } catch (error) {
       console.error('Sign in error:', error)
@@ -245,18 +262,21 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
       }
     })
 
-    // Safety timeout - ensure loading is false after 5 seconds (reduced from 10)
-    // Uses ref to avoid stale closure capturing initial loading value
-    const timeout = setTimeout(() => {
-      if (mounted && loadingRef.current) {
-        console.warn('Admin: Auth initialization timed out')
+    // Safety timeout - ensure loading is false after 5 seconds
+    // Only fires if initialization hasn't completed yet
+    timeoutRef.current = setTimeout(() => {
+      if (mounted && !initCompletedRef.current) {
+        console.warn('Admin: Auth initialization timed out - forcing loading to false')
         setLoading(false)
       }
     }, 5000)
 
     return () => {
       mounted = false
-      clearTimeout(timeout)
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+        timeoutRef.current = null
+      }
       subscription.unsubscribe()
     }
   }, [])
