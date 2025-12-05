@@ -193,8 +193,28 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Admin: Auth state changed:', event)
+      console.log('Admin: Auth state changed:', event, 'session:', !!session)
       if (!mounted) return
+
+      // IMPORTANT: Only process SIGNED_OUT event for logout
+      // Other events with null session should be ignored if we have a valid user
+      // This prevents spurious logout from browser timing issues
+      if (event === 'SIGNED_OUT') {
+        console.log('Admin: User signed out')
+        hasInitialized = false
+        setSession(null)
+        setUser(null)
+        setIsAdmin(false)
+        setLoading(false)
+        return
+      }
+
+      // If session is null but we already have a user, ignore this event
+      // This protects against browser quirks and timing issues
+      if (!session?.user && userRef.current && isAdminRef.current) {
+        console.log('Admin: Ignoring null session event - user already authenticated')
+        return
+      }
 
       setSession(session)
 
@@ -217,6 +237,7 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
           setLoading(false)
         }
       } else {
+        // No session and no existing user - this is initial state
         hasInitialized = false
         setUser(null)
         setIsAdmin(false)
