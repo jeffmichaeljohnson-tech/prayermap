@@ -3,6 +3,7 @@ import { LoadingScreen } from './components/LoadingScreen';
 import { AuthModal } from './components/AuthModal';
 import { PrayerMap } from './components/PrayerMap';
 import { SettingsScreen } from './components/SettingsScreen';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 function AppContent() {
@@ -89,10 +90,12 @@ function AppContent() {
   // Show main app
   return (
     <div className="w-full h-screen overflow-hidden">
-      <PrayerMap
-        userLocation={userLocation}
-        onOpenSettings={() => setShowSettings(true)}
-      />
+      <ErrorBoundary>
+        <PrayerMap
+          userLocation={userLocation}
+          onOpenSettings={() => setShowSettings(true)}
+        />
+      </ErrorBoundary>
     </div>
   );
 }

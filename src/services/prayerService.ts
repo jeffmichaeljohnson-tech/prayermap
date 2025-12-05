@@ -427,7 +427,7 @@ export async function fetchUserInbox(userId: string): Promise<
   }
 
   try {
-    // Get all prayers created by the user that have responses
+    // Get all prayers created by the user with their responses
     const { data: prayers, error: prayersError } = await supabase
       .from('prayers')
       .select(`
@@ -435,27 +435,35 @@ export async function fetchUserInbox(userId: string): Promise<
         prayer_responses (*)
       `)
       .eq('user_id', userId)
-      .not('prayer_responses', 'is', null);
+      .order('created_at', { ascending: false });
 
     if (prayersError) {
       console.error('Error fetching inbox:', prayersError);
       throw prayersError;
     }
 
-    // Transform the data
-    return (prayers as any[]).map((row) => {
-      const prayer = rowToPrayer(row as PrayerRow);
-      const responses = (row.prayer_responses as PrayerResponseRow[]).map(rowToPrayerResponse);
+    console.log('[Inbox] Raw prayers data:', prayers?.length, 'prayers for user', userId);
 
-      // Calculate unread count based on read_at being NULL
-      const unreadCount = responses.filter((r: any) => !r.read_at).length;
+    // Filter to only prayers that have responses and transform the data
+    const inboxItems = (prayers as any[])
+      .filter((row) => row.prayer_responses && row.prayer_responses.length > 0)
+      .map((row) => {
+        const prayer = rowToPrayer(row as PrayerRow);
+        const responses = (row.prayer_responses as PrayerResponseRow[]).map(rowToPrayerResponse);
 
-      return {
-        prayer,
-        responses,
-        unreadCount,
-      };
-    });
+        // Calculate unread count based on read_at being NULL
+        const unreadCount = responses.filter((r: any) => !r.read_at).length;
+
+        return {
+          prayer,
+          responses,
+          unreadCount,
+        };
+      });
+
+    console.log('[Inbox] Prayers with responses:', inboxItems.length);
+
+    return inboxItems;
   } catch (error) {
     console.error('Failed to fetch user inbox:', error);
     return [];
