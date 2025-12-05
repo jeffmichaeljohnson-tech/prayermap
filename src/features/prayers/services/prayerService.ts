@@ -427,7 +427,12 @@ export async function fetchUserInbox(userId: string): Promise<
   }
 
   try {
-    // Get all prayers created by the user that have responses
+    console.log('Inbox: Fetching inbox for user:', userId);
+
+    // Get all prayers created by the user with their responses
+    // NOTE: The .not('prayer_responses', 'is', null) filter doesn't work as expected
+    // in PostgREST - it doesn't filter out prayers without responses.
+    // Instead, we filter in JavaScript after fetching.
     const { data: prayers, error: prayersError } = await supabase
       .from('prayers')
       .select(`
@@ -435,20 +440,32 @@ export async function fetchUserInbox(userId: string): Promise<
         prayer_responses (*)
       `)
       .eq('user_id', userId)
-      .not('prayer_responses', 'is', null);
+      .order('created_at', { ascending: false });
 
     if (prayersError) {
-      console.error('Error fetching inbox:', prayersError);
+      console.error('Inbox: Error fetching prayers:', prayersError);
       throw prayersError;
     }
 
+    console.log('Inbox: Raw prayers fetched:', prayers?.length || 0);
+    console.log('Inbox: Prayer data sample:', prayers?.slice(0, 2));
+
+    // Filter to only prayers that have responses (non-empty array)
+    const prayersWithResponses = (prayers as any[]).filter(
+      (row) => row.prayer_responses && row.prayer_responses.length > 0
+    );
+
+    console.log('Inbox: Prayers with responses:', prayersWithResponses.length);
+
     // Transform the data
-    return (prayers as any[]).map((row) => {
+    return prayersWithResponses.map((row) => {
       const prayer = rowToPrayer(row as PrayerRow);
       const responses = (row.prayer_responses as PrayerResponseRow[]).map(rowToPrayerResponse);
 
       // Calculate unread count based on read_at being NULL
       const unreadCount = responses.filter((r: any) => !r.read_at).length;
+
+      console.log('Inbox: Prayer', prayer.id, 'has', responses.length, 'responses,', unreadCount, 'unread');
 
       return {
         prayer,
@@ -457,7 +474,7 @@ export async function fetchUserInbox(userId: string): Promise<
       };
     });
   } catch (error) {
-    console.error('Failed to fetch user inbox:', error);
+    console.error('Inbox: Failed to fetch user inbox:', error);
     return [];
   }
 }
