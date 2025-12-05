@@ -5,7 +5,7 @@
  * Verifies users have admin privileges by checking the admin_roles table.
  */
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react'
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 import { AdminUser, AdminRole } from '../types/admin'
@@ -31,6 +31,10 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
   const [isAdmin, setIsAdmin] = useState(false)
+
+  // Ref to track loading state for timeout (avoids stale closure)
+  const loadingRef = useRef(loading)
+  loadingRef.current = loading
 
   /**
    * Check if a user has admin privileges
@@ -194,8 +198,9 @@ export function AdminAuthProvider({ children }: AdminAuthProviderProps) {
     })
 
     // Safety timeout - ensure loading is false after 5 seconds (reduced from 10)
+    // Uses ref to avoid stale closure capturing initial loading value
     const timeout = setTimeout(() => {
-      if (mounted && loading) {
+      if (mounted && loadingRef.current) {
         console.warn('Admin: Auth initialization timed out')
         setLoading(false)
       }
