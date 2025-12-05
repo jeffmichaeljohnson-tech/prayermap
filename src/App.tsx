@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { LoadingScreen } from './components/LoadingScreen';
-import { AuthModal } from './components/AuthModal';
-import { PrayerMap } from './components/PrayerMap';
-import { SettingsScreen } from './components/SettingsScreen';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthModal } from './features/authentication';
+import { PrayerMap } from './features/prayers';
+import { SettingsScreen } from './features/settings';
+import { AuthProvider, useAuth } from './features/authentication';
 
 function AppContent() {
   const { user, loading: authLoading } = useAuth();

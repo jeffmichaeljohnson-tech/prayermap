@@ -11,7 +11,7 @@
  * - Real-time updates via Supabase Realtime
  */
 
-import { supabase } from '../lib/supabase';
+import { supabase } from '../../../lib/supabase';
 import type {
   Message,
   MessageRow,

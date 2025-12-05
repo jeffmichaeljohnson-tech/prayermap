@@ -1,13 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Send, Mic, Video, Loader2 } from 'lucide-react';
-import { AudioRecorder } from './AudioRecorder';
-import { VideoRecorder } from './VideoRecorder';
-import { AudioMessagePlayer } from './AudioMessagePlayer';
-import { VideoMessagePlayer } from './VideoMessagePlayer';
-import { uploadMessageMedia, uploadThumbnail } from '../services/storageService';
+import { AudioRecorder } from '../../media/components/AudioRecorder';
+import { VideoRecorder } from '../../media/components/VideoRecorder';
+import { AudioMessagePlayer } from '../../media/components/AudioMessagePlayer';
+import { VideoMessagePlayer } from '../../media/components/VideoMessagePlayer';
+import { uploadMessageMedia, uploadThumbnail } from '../../media/services/storageService';
 import { useConversation } from '../hooks/useConversation';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../../authentication/hooks/useAuth';
 import type { Message as DBMessage } from '../types/messaging';
 
 // Display message interface (transformed from DB message)

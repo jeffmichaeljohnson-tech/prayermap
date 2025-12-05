@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { supabase } from '../../../lib/supabase';
 import type { Prayer, PrayerResponse, PrayerConnection } from '../types/prayer';
 
 // Database table schemas

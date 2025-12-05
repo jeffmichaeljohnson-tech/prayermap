@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Type, Mic, Video, Loader2 } from 'lucide-react';
 import type { Prayer } from '../types/prayer';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
-import { Textarea } from './ui/textarea';
-import { Switch } from './ui/switch';
-import { AudioRecorder } from './AudioRecorder';
-import { uploadAudio } from '../services/storageService';
-import { useAuth } from '../hooks/useAuth';
-import { formatDuration } from '../hooks/useAudioRecorder';
+import { Button } from '../../../components/ui/button';
+import { Input } from '../../../components/ui/input';
+import { Textarea } from '../../../components/ui/textarea';
+import { Switch } from '../../../components/ui/switch';
+import { AudioRecorder } from '../../media/components/AudioRecorder';
+import { uploadAudio } from '../../media/services/storageService';
+import { useAuth } from '../../authentication/hooks/useAuth';
+import { formatDuration } from '../../media/hooks/useAudioRecorder';
 
 interface RequestPrayerModalProps {
   userLocation: { lat: number; lng: number };

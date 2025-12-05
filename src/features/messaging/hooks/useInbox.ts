@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { Prayer, PrayerResponse } from '../types/prayer';
-import { fetchUserInbox, subscribeToUserInbox } from '../services/prayerService';
+import type { Prayer, PrayerResponse } from '../../prayers/types/prayer';
+import { fetchUserInbox, subscribeToUserInbox } from '../../prayers/services/prayerService';
 
 export interface InboxItem {
   prayer: Prayer;

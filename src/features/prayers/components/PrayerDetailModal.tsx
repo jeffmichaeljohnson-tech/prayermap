@@ -2,11 +2,11 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Type, Mic, Video, Heart } from 'lucide-react';
 import type { Prayer } from '../types/prayer';
-import { Button } from './ui/button';
-import { Textarea } from './ui/textarea';
-import { Switch } from './ui/switch';
-import { AudioPlayer } from './AudioPlayer';
-import { AudioRecorder } from './AudioRecorder';
+import { Button } from '../../../components/ui/button';
+import { Textarea } from '../../../components/ui/textarea';
+import { Switch } from '../../../components/ui/switch';
+import { AudioPlayer } from '../../media/components/AudioPlayer';
+import { AudioRecorder } from '../../media/components/AudioRecorder';
 
 interface PrayerDetailModalProps {
   prayer: Prayer;

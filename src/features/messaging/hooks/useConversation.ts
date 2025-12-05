@@ -7,7 +7,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useAuth } from './useAuth';
+import { useAuth } from '../../authentication/hooks/useAuth';
 import {
   getOrCreateConversation,
   getConversationMessages,

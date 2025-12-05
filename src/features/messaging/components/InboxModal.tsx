@@ -5,7 +5,7 @@ import { AnimatePresence } from 'framer-motion';
 import { ConversationThread } from './ConversationThread';
 import { useInbox } from '../hooks/useInbox';
 import type { InboxItem } from '../hooks/useInbox';
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from '../../authentication/hooks/useAuth';
 
 interface InboxModalProps {
   onClose: () => void;

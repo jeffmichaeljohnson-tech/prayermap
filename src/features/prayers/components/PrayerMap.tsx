@@ -9,14 +9,14 @@ import { RequestPrayerModal } from './RequestPrayerModal';
 import { PrayerAnimationLayer } from './PrayerAnimationLayer';
 import { PrayerCreationAnimation } from './PrayerCreationAnimation';
 import { PrayerConnection as PrayerConnectionComponent } from './PrayerConnection';
-import { InboxModal } from './InboxModal';
-import { InfoModal } from './InfoModal';
-import { SunMoonIndicator } from './SunMoonIndicator';
+import { InboxModal } from '../../messaging/components/InboxModal';
+import { InfoModal } from '../../../components/InfoModal';
+import { SunMoonIndicator } from '../../map/components/SunMoonIndicator';
 import { Inbox, Settings, Info } from 'lucide-react';
 import { usePrayers } from '../hooks/usePrayers';
 import { usePrayerConnections } from '../hooks/usePrayerConnections';
-import { useAuth } from '../contexts/AuthContext';
-import { useInbox } from '../hooks/useInbox';
+import { useAuth } from '../../authentication/contexts/AuthContext';
+import { useInbox } from '../../messaging/hooks/useInbox';
 
 // Helper to group prayers by approximate location
 interface PrayerGroup {

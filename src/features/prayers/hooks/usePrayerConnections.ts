@@ -4,7 +4,7 @@ import {
   fetchPrayerConnections,
   subscribeToPrayerConnections,
 } from '../services/prayerService';
-import { datadogActions } from '../lib/datadog';
+import { datadogActions } from '../../../lib/datadog';
 
 interface UsePrayerConnectionsOptions {
   autoFetch?: boolean;
