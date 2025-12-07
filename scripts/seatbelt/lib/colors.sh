@@ -7,7 +7,7 @@
 
 # Check if we should use colors
 use_colors() {
-    [[ -t 1 ]] && [[ -z "$NO_COLOR" ]] && [[ "$TERM" != "dumb" ]]
+    [[ -t 1 ]] && [[ -z "${NO_COLOR:-}" ]] && [[ "${TERM:-dumb}" != "dumb" ]]
 }
 
 # Define colors (only if terminal supports them)
