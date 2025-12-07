@@ -119,7 +119,7 @@ function rowToPrayerResponse(row: PrayerResponseRow): PrayerResponse {
 }
 
 function rowToPrayerConnection(row: PrayerConnectionRow): PrayerConnection {
-  // Calculate expiresAt: if null, default to 1 year from creation (memorial lines are eternal)
+  // Calculate expiresAt: if null, default to 1 year from creation (admin-configurable duration)
   const createdAt = new Date(row.created_at);
   const expiresAt = row.expires_at
     ? new Date(row.expires_at)
@@ -335,6 +335,29 @@ export async function respondToPrayer(
   }
 
   try {
+    // CRITICAL: Validate session before INSERT to prevent RLS violations
+    // The RLS policy requires auth.uid() = responder_id, so we must ensure
+    // the Supabase session matches the passed responderId
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError) {
+      console.error('Error getting session:', sessionError);
+      throw new Error('Failed to verify authentication session');
+    }
+
+    if (!session) {
+      console.error('No active session - user must be logged in to respond to prayers');
+      throw new Error('Not authenticated - please sign in again');
+    }
+
+    if (session.user.id !== responderId) {
+      console.error('Session user mismatch:', {
+        sessionUserId: session.user.id,
+        passedResponderId: responderId,
+      });
+      throw new Error('Session mismatch - please refresh and try again');
+    }
+
     // Create prayer response
     // Note: responder_name column doesn't exist in DB, is_anonymous and media_url do
     const { data: responseData, error: responseError } = await supabase
@@ -693,7 +716,7 @@ export async function getUnreadCountsByPrayer(userId: string): Promise<
 
 /**
  * Fetch all prayer connections (memorial lines) that haven't expired
- * These are the eternal lines connecting prayers to those who responded
+ * These lines persist for 1 year (admin-configurable) connecting prayers to responders
  */
 export async function fetchPrayerConnections(): Promise<PrayerConnection[]> {
   if (!supabase) {
