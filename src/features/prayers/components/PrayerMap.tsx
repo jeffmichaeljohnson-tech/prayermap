@@ -84,7 +84,8 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
     prayers,
     loading: prayersLoading,
     createPrayer,
-    respondToPrayer
+    respondToPrayer,
+    fetchByBounds
   } = usePrayers({
     location: userLocation,
     radiusKm: 50,
@@ -149,7 +150,7 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
     map.current.on('load', () => {
       console.log('Map loaded successfully');
       if (!map.current) return;
-      
+
       // Customize map colors for ethereal theme
       try {
         if (map.current.getLayer('water')) {
@@ -161,6 +162,27 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
       } catch (e) {
         console.log('Layer customization:', e);
       }
+
+      // Initial fetch for current viewport
+      const bounds = map.current.getBounds();
+      fetchByBounds({
+        minLng: bounds.getWest(),
+        minLat: bounds.getSouth(),
+        maxLng: bounds.getEast(),
+        maxLat: bounds.getNorth()
+      });
+    });
+
+    // Fetch prayers when map stops moving (pan/zoom)
+    map.current.on('moveend', () => {
+      if (!map.current) return;
+      const bounds = map.current.getBounds();
+      fetchByBounds({
+        minLng: bounds.getWest(),
+        minLat: bounds.getSouth(),
+        maxLng: bounds.getEast(),
+        maxLat: bounds.getNorth()
+      });
     });
 
     map.current.on('error', (e) => {
@@ -171,7 +193,7 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
       map.current?.remove();
       map.current = null;
     };
-  }, [userLocation]);
+  }, [userLocation, fetchByBounds]);
 
   const handlePrayerClick = (prayer: Prayer) => {
     // Show modal immediately without animation

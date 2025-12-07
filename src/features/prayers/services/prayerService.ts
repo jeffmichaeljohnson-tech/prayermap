@@ -177,6 +177,42 @@ export async function fetchNearbyPrayers(
 }
 
 /**
+ * Fetch prayers within map viewport bounds
+ * @param bounds - Map bounding box { minLng, minLat, maxLng, maxLat }
+ */
+export async function fetchPrayersInBounds(bounds: {
+  minLng: number;
+  minLat: number;
+  maxLng: number;
+  maxLat: number;
+}): Promise<Prayer[]> {
+  if (!supabase) {
+    console.warn('Supabase client not initialized');
+    return [];
+  }
+
+  try {
+    const { data, error } = await supabase
+      .rpc('get_prayers_in_bounds', {
+        min_lng: bounds.minLng,
+        min_lat: bounds.minLat,
+        max_lng: bounds.maxLng,
+        max_lat: bounds.maxLat,
+      });
+
+    if (error) {
+      console.error('Error fetching prayers in bounds:', error);
+      throw error;
+    }
+
+    return (data as PrayerRow[]).map(rowToPrayer);
+  } catch (error) {
+    console.error('Failed to fetch prayers in bounds:', error);
+    return [];
+  }
+}
+
+/**
  * Create a new prayer using direct table insert with PostGIS point
  */
 export async function createPrayer(

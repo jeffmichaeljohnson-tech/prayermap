@@ -2,14 +2,24 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Prayer } from '../types/prayer';
 import {
   fetchNearbyPrayers,
+  fetchPrayersInBounds,
   createPrayer as createPrayerService,
   respondToPrayer as respondToPrayerService,
   subscribeToNearbyPrayers,
 } from '../services/prayerService';
+import { supabase } from '../../../lib/supabase';
+
+interface MapBounds {
+  minLng: number;
+  minLat: number;
+  maxLng: number;
+  maxLat: number;
+}
 
 interface UsePrayersOptions {
   location: { lat: number; lng: number };
   radiusKm?: number;
+  bounds?: MapBounds;
   autoFetch?: boolean;
   enableRealtime?: boolean;
 }
@@ -19,6 +29,7 @@ interface UsePrayersReturn {
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
+  fetchByBounds: (bounds: MapBounds) => Promise<void>;
   createPrayer: (prayer: Omit<Prayer, 'id' | 'created_at' | 'updated_at'>) => Promise<Prayer | null>;
   respondToPrayer: (
     prayerId: string,
@@ -34,10 +45,12 @@ interface UsePrayersReturn {
 
 /**
  * Hook to manage prayers state with real-time updates
+ * Supports both radius-based and bounds-based fetching
  */
 export function usePrayers({
   location,
   radiusKm = 50,
+  bounds,
   autoFetch = true,
   enableRealtime = true,
 }: UsePrayersOptions): UsePrayersReturn {
@@ -45,9 +58,28 @@ export function usePrayers({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const unsubscribeRef = useRef<(() => void) | null>(null);
+  const currentBoundsRef = useRef<MapBounds | null>(bounds || null);
 
-  // Fetch prayers from the database
-  const fetchPrayers = useCallback(async () => {
+  // Fetch prayers by bounds (for map viewport)
+  const fetchByBounds = useCallback(async (newBounds: MapBounds) => {
+    setLoading(true);
+    setError(null);
+    currentBoundsRef.current = newBounds;
+
+    try {
+      const fetchedPrayers = await fetchPrayersInBounds(newBounds);
+      setPrayers(fetchedPrayers);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch prayers';
+      setError(errorMessage);
+      console.error('Error fetching prayers by bounds:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Fetch prayers by radius (legacy/fallback)
+  const fetchByRadius = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -63,35 +95,62 @@ export function usePrayers({
     }
   }, [location.lat, location.lng, radiusKm]);
 
-  // Fetch prayers on mount and when location changes
+  // Main fetch function - uses bounds if available, otherwise radius
+  const fetchPrayers = useCallback(async () => {
+    if (currentBoundsRef.current) {
+      await fetchByBounds(currentBoundsRef.current);
+    } else if (bounds) {
+      await fetchByBounds(bounds);
+    } else {
+      await fetchByRadius();
+    }
+  }, [bounds, fetchByBounds, fetchByRadius]);
+
+  // Initial fetch on mount
   useEffect(() => {
     if (autoFetch) {
       fetchPrayers();
     }
   }, [autoFetch, fetchPrayers]);
 
-  // Set up real-time subscription
+  // Set up real-time subscription for prayer changes
   useEffect(() => {
-    if (!enableRealtime) return;
+    if (!enableRealtime || !supabase) return;
 
     // Clean up existing subscription
     if (unsubscribeRef.current) {
       unsubscribeRef.current();
     }
 
-    // Subscribe to updates
-    const unsubscribe = subscribeToNearbyPrayers(
-      location.lat,
-      location.lng,
-      radiusKm,
-      (updatedPrayers) => {
-        setPrayers(updatedPrayers);
-      }
-    );
+    // Subscribe to all prayer changes (insert, update, delete)
+    // When a change occurs, refetch using current bounds or radius
+    const subscription = supabase
+      .channel('prayers_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'prayers',
+        },
+        async () => {
+          // Refetch prayers when any change occurs
+          if (currentBoundsRef.current) {
+            const fetchedPrayers = await fetchPrayersInBounds(currentBoundsRef.current);
+            setPrayers(fetchedPrayers);
+          } else {
+            const fetchedPrayers = await fetchNearbyPrayers(location.lat, location.lng, radiusKm);
+            setPrayers(fetchedPrayers);
+          }
+        }
+      )
+      .subscribe();
 
-    unsubscribeRef.current = unsubscribe;
+    unsubscribeRef.current = () => {
+      subscription.unsubscribe();
+    };
 
-    // Cleanup on unmount or when location changes
+    // Cleanup on unmount
     return () => {
       if (unsubscribeRef.current) {
         unsubscribeRef.current();
@@ -178,6 +237,7 @@ export function usePrayers({
     loading,
     error,
     refetch: fetchPrayers,
+    fetchByBounds,
     createPrayer,
     respondToPrayer,
   };
