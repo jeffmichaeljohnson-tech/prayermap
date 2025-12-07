@@ -1,6 +1,6 @@
 /**
  * Settings Page
- * Admin settings including password change
+ * Admin settings including password change and app configuration
  */
 
 import { useState } from 'react'
@@ -9,6 +9,14 @@ import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { toast } from 'sonner'
 import { useAdminAuth } from '../contexts/AdminAuthContext'
+import { 
+  usePrayerExpirationSetting, 
+  useMemorialLineDurationSetting 
+} from '../hooks/useAppSettings'
+import { 
+  useExpiredPrayersCount, 
+  useTriggerArchive 
+} from '../hooks/useArchivedPrayers'
 
 export function SettingsPage() {
   const { user } = useAdminAuth()
@@ -17,7 +25,7 @@ export function SettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-600">Manage your admin account settings</p>
+        <p className="text-gray-600">Manage your admin account and app settings</p>
       </div>
 
       {/* Account Info */}
@@ -39,11 +47,147 @@ export function SettingsPage() {
         </div>
       </div>
 
+      {/* Prayer Expiration Settings */}
+      <PrayerExpirationSection />
+
+      {/* Memorial Line Duration Settings */}
+      <MemorialLineDurationSection />
+
       {/* Password Change */}
       <PasswordChangeSection />
 
       {/* Password Reset via Email */}
       <PasswordResetSection email={user?.email} />
+    </div>
+  )
+}
+
+function PrayerExpirationSection() {
+  const { expirationDays, isLoading, updateExpirationDays, isUpdating } = usePrayerExpirationSetting()
+  const { data: expiredCount } = useExpiredPrayersCount()
+  const triggerArchive = useTriggerArchive()
+  const [localDays, setLocalDays] = useState<number | null>(null)
+
+  // Use local state if set, otherwise use fetched value
+  const displayDays = localDays ?? expirationDays
+
+  const handleSave = () => {
+    if (localDays !== null && localDays >= 1 && localDays <= 365) {
+      updateExpirationDays(localDays)
+      setLocalDays(null)
+    }
+  }
+
+  const hasChanges = localDays !== null && localDays !== expirationDays
+
+  return (
+    <div className="bg-white rounded-lg shadow p-6">
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">Prayer Expiration</h2>
+      
+      <div className="space-y-4">
+        <div className="flex items-center gap-4 flex-wrap">
+          <label className="text-sm text-gray-600">Prayers expire after</label>
+          <Input
+            type="number"
+            value={displayDays}
+            onChange={(e) => setLocalDays(Number(e.target.value))}
+            min={1}
+            max={365}
+            className="w-24"
+            disabled={isLoading}
+          />
+          <span className="text-sm text-gray-600">days</span>
+          <Button
+            onClick={handleSave}
+            disabled={!hasChanges || isUpdating}
+            isLoading={isUpdating}
+            size="sm"
+          >
+            Save
+          </Button>
+        </div>
+        
+        <p className="text-xs text-gray-500">
+          Expired prayers are archived, not deleted. They can be restored from the Archived Prayers page.
+        </p>
+
+        {/* Expired Prayers Alert */}
+        {expiredCount !== undefined && expiredCount > 0 && (
+          <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-amber-800 font-medium">
+                  {expiredCount} prayer{expiredCount !== 1 ? 's' : ''} pending archive
+                </p>
+                <p className="text-amber-600 text-sm">
+                  These prayers have passed their expiration date.
+                </p>
+              </div>
+              <Button
+                onClick={() => triggerArchive.mutate({})}
+                disabled={triggerArchive.isPending}
+                isLoading={triggerArchive.isPending}
+                variant="outline"
+                size="sm"
+              >
+                Archive Now
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function MemorialLineDurationSection() {
+  const { durationDays, isLoading, updateDurationDays, isUpdating } = useMemorialLineDurationSetting()
+  const [localDays, setLocalDays] = useState<number | null>(null)
+
+  // Use local state if set, otherwise use fetched value
+  const displayDays = localDays ?? durationDays
+
+  const handleSave = () => {
+    if (localDays !== null && localDays >= 1 && localDays <= 730) {
+      updateDurationDays(localDays)
+      setLocalDays(null)
+    }
+  }
+
+  const hasChanges = localDays !== null && localDays !== durationDays
+
+  return (
+    <div className="bg-white rounded-lg shadow p-6">
+      <h2 className="text-lg font-semibold text-gray-900 mb-4">Memorial Lines</h2>
+      
+      <div className="space-y-4">
+        <div className="flex items-center gap-4 flex-wrap">
+          <label className="text-sm text-gray-600">Memorial lines persist for</label>
+          <Input
+            type="number"
+            value={displayDays}
+            onChange={(e) => setLocalDays(Number(e.target.value))}
+            min={1}
+            max={730}
+            className="w-24"
+            disabled={isLoading}
+          />
+          <span className="text-sm text-gray-600">days</span>
+          <Button
+            onClick={handleSave}
+            disabled={!hasChanges || isUpdating}
+            isLoading={isUpdating}
+            size="sm"
+          >
+            Save
+          </Button>
+        </div>
+        
+        <p className="text-xs text-gray-500">
+          Memorial lines connect prayer locations with response locations on the Living Map. 
+          Default is 365 days (1 year).
+        </p>
+      </div>
     </div>
   )
 }

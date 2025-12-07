@@ -5,6 +5,7 @@
 
 import { useState } from 'react'
 import { usePrayers, useUpdatePrayer, useDeletePrayer, type AdminPrayer } from '../hooks/usePrayers'
+import { useArchivePrayer } from '../hooks/useArchivedPrayers'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Dialog, DialogHeader, DialogTitle, DialogContent, DialogFooter } from '../components/ui/dialog'
@@ -16,12 +17,14 @@ export function PrayersPage() {
   const [searchInput, setSearchInput] = useState('')
   const [editingPrayer, setEditingPrayer] = useState<AdminPrayer | null>(null)
   const [deletingPrayer, setDeletingPrayer] = useState<AdminPrayer | null>(null)
+  const [archivingPrayer, setArchivingPrayer] = useState<AdminPrayer | null>(null)
   const [viewingPrayer, setViewingPrayer] = useState<AdminPrayer | null>(null)
 
   const pageSize = 10
   const { data, isLoading, error } = usePrayers({ page, pageSize, search })
   const updatePrayer = useUpdatePrayer()
   const deletePrayer = useDeletePrayer()
+  const archivePrayer = useArchivePrayer()
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -37,10 +40,34 @@ export function PrayersPage() {
     setDeletingPrayer(prayer)
   }
 
+  const handleArchive = (prayer: AdminPrayer) => {
+    setArchivingPrayer(prayer)
+  }
+
   const confirmDelete = async () => {
     if (!deletingPrayer) return
     await deletePrayer.mutateAsync(deletingPrayer.id)
     setDeletingPrayer(null)
+  }
+
+  const confirmArchive = async () => {
+    if (!archivingPrayer) return
+    await archivePrayer.mutateAsync({ id: archivingPrayer.id, reason: 'manual' })
+    setArchivingPrayer(null)
+  }
+
+  // Helper to check if prayer is expiring soon (within 7 days)
+  const isExpiringSoon = (expiresAt: string | null) => {
+    if (!expiresAt) return false
+    const expDate = new Date(expiresAt)
+    const now = new Date()
+    const daysUntilExpiry = (expDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+    return daysUntilExpiry <= 7 && daysUntilExpiry > 0
+  }
+
+  const isExpired = (expiresAt: string | null) => {
+    if (!expiresAt) return false
+    return new Date(expiresAt) < new Date()
   }
 
   return (
@@ -91,8 +118,8 @@ export function PrayersPage() {
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">ID</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Title</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">User</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Location</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Created</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Expires</th>
                 <th className="px-4 py-3 text-left text-sm font-medium text-gray-500">Actions</th>
               </tr>
             </thead>
@@ -113,7 +140,10 @@ export function PrayersPage() {
                 data?.prayers.map((prayer) => (
                   <tr
                     key={prayer.id}
-                    className="border-b hover:bg-gray-50 cursor-pointer"
+                    className={`border-b hover:bg-gray-50 cursor-pointer ${
+                      isExpired(prayer.expires_at) ? 'bg-red-50' : 
+                      isExpiringSoon(prayer.expires_at) ? 'bg-amber-50' : ''
+                    }`}
                     onClick={() => setViewingPrayer(prayer)}
                   >
                     <td className="px-4 py-3 text-sm font-mono text-gray-500">
@@ -132,15 +162,27 @@ export function PrayersPage() {
                       )}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-500">
-                      {prayer.latitude.toFixed(4)}, {prayer.longitude.toFixed(4)}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-500">
                       {new Date(prayer.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      {prayer.expires_at ? (
+                        <span className={`${
+                          isExpired(prayer.expires_at) ? 'text-red-600 font-medium' :
+                          isExpiringSoon(prayer.expires_at) ? 'text-amber-600' : 'text-gray-500'
+                        }`}>
+                          {isExpired(prayer.expires_at) ? 'Expired' : new Date(prayer.expires_at).toLocaleDateString()}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
                     </td>
                     <td className="px-4 py-3 text-sm">
                       <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                         <Button size="sm" variant="outline" onClick={() => handleEdit(prayer)}>
                           Edit
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => handleArchive(prayer)}>
+                          Archive
                         </Button>
                         <Button size="sm" variant="destructive" onClick={() => handleDelete(prayer)}>
                           Delete
@@ -217,9 +259,27 @@ export function PrayersPage() {
                   Lat: {viewingPrayer.latitude}, Lng: {viewingPrayer.longitude}
                 </p>
               </div>
-              <div>
-                <label className="text-sm font-medium text-gray-500">Created</label>
-                <p>{new Date(viewingPrayer.created_at).toLocaleString()}</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Created</label>
+                  <p className="text-sm">{new Date(viewingPrayer.created_at).toLocaleString()}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-500">Expires</label>
+                  <p className={`text-sm ${
+                    viewingPrayer.expires_at && isExpired(viewingPrayer.expires_at) 
+                      ? 'text-red-600 font-medium' 
+                      : viewingPrayer.expires_at && isExpiringSoon(viewingPrayer.expires_at)
+                      ? 'text-amber-600'
+                      : ''
+                  }`}>
+                    {viewingPrayer.expires_at 
+                      ? isExpired(viewingPrayer.expires_at) 
+                        ? `Expired ${new Date(viewingPrayer.expires_at).toLocaleDateString()}`
+                        : new Date(viewingPrayer.expires_at).toLocaleString()
+                      : '(No expiration)'}
+                  </p>
+                </div>
               </div>
               {viewingPrayer.media_url && (
                 <div>
@@ -233,6 +293,17 @@ export function PrayersPage() {
         <DialogFooter>
           <Button variant="outline" onClick={() => setViewingPrayer(null)}>
             Close
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (viewingPrayer) {
+                setArchivingPrayer(viewingPrayer)
+                setViewingPrayer(null)
+              }
+            }}
+          >
+            Archive
           </Button>
           <Button
             onClick={() => {
@@ -269,6 +340,17 @@ export function PrayersPage() {
         confirmText="Delete"
         isDestructive
         isLoading={deletePrayer.isPending}
+      />
+
+      {/* Archive Confirmation */}
+      <ConfirmDialog
+        isOpen={!!archivingPrayer}
+        onClose={() => setArchivingPrayer(null)}
+        onConfirm={confirmArchive}
+        title="Archive Prayer"
+        description={`Are you sure you want to archive this prayer? It will be removed from the map but can be restored later from the Archived Prayers page.`}
+        confirmText="Archive"
+        isLoading={archivePrayer.isPending}
       />
     </div>
   )

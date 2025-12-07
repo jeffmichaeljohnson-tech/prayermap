@@ -9,8 +9,10 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/admin', icon: '📊' },
+  { label: 'Analytics', href: '/admin/analytics', icon: '📈' },
   { label: 'Moderation', href: '/admin/moderation', icon: '🛡️' },
   { label: 'Prayers', href: '/admin/prayers', icon: '🙏' },
+  { label: 'Archived', href: '/admin/archived', icon: '📦' },
   { label: 'Messages', href: '/admin/messages', icon: '💬' },
   { label: 'Users', href: '/admin/users', icon: '👥' },
   { label: 'Audit Logs', href: '/admin/audit-logs', icon: '📋' },

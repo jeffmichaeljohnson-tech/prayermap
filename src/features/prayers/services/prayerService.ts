@@ -9,6 +9,7 @@ interface PrayerRow {
   content: string;
   content_type: 'text' | 'audio' | 'video';
   media_url?: string; // Database column name (maps to content_url in Prayer type)
+  category?: string; // Prayer category
   location: { lat: number; lng: number } | string; // PostGIS POINT or JSON
   user_name?: string;
   is_anonymous: boolean;
@@ -96,6 +97,7 @@ function rowToPrayer(row: PrayerRow): Prayer {
     content: row.content,
     content_type: row.content_type,
     content_url: row.media_url, // Map database 'media_url' to Prayer 'content_url'
+    category: row.category as Prayer['category'], // Prayer category
     location: convertLocation(row.location),
     user_name: row.user_name,
     is_anonymous: row.is_anonymous,
@@ -234,6 +236,7 @@ export async function createPrayer(
         content: prayer.content,
         content_type: prayer.content_type,
         media_url: prayer.content_url || null,
+        category: prayer.category || 'other', // Default to 'other' if not specified
         location: `POINT(${prayer.location.lng} ${prayer.location.lat})`,
         user_name: prayer.user_name || null,
         is_anonymous: prayer.is_anonymous,

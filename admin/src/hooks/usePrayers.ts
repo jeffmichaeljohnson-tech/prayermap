@@ -22,6 +22,9 @@ export interface AdminPrayer {
   is_anonymous: boolean
   created_at: string
   updated_at: string
+  expires_at: string | null
+  archived_at: string | null
+  archive_reason: string | null
   total_count: number
 }
 

@@ -1,13 +1,15 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import type { Prayer } from '../types/prayer';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import type { Prayer, PrayerCategory } from '../types/prayer';
 import {
   fetchNearbyPrayers,
   fetchPrayersInBounds,
   createPrayer as createPrayerService,
   respondToPrayer as respondToPrayerService,
+  deletePrayer as deletePrayerService,
   subscribeToNearbyPrayers,
 } from '../services/prayerService';
 import { supabase } from '../../../lib/supabase';
+import { getBlockedUsers } from '../../../services/moderationService';
 
 interface MapBounds {
   minLng: number;
@@ -20,14 +22,17 @@ interface UsePrayersOptions {
   location: { lat: number; lng: number };
   radiusKm?: number;
   bounds?: MapBounds;
+  categories?: PrayerCategory[]; // Filter by prayer categories
   autoFetch?: boolean;
   enableRealtime?: boolean;
+  userId?: string; // For blocked user filtering
 }
 
 interface UsePrayersReturn {
   prayers: Prayer[];
   loading: boolean;
   error: string | null;
+  blockedUsers: string[];
   refetch: () => Promise<void>;
   fetchByBounds: (bounds: MapBounds) => Promise<void>;
   createPrayer: (prayer: Omit<Prayer, 'id' | 'created_at' | 'updated_at'>) => Promise<Prayer | null>;
@@ -41,6 +46,8 @@ interface UsePrayersReturn {
     isAnonymous?: boolean,
     responderLocation?: { lat: number; lng: number }
   ) => Promise<boolean>;
+  deletePrayer: (prayerId: string, userId: string) => Promise<boolean>;
+  addBlockedUser: (userId: string) => void;
 }
 
 /**
@@ -51,14 +58,49 @@ export function usePrayers({
   location,
   radiusKm = 50,
   bounds,
+  categories,
   autoFetch = true,
   enableRealtime = true,
+  userId,
 }: UsePrayersOptions): UsePrayersReturn {
-  const [prayers, setPrayers] = useState<Prayer[]>([]);
+  const [allPrayers, setAllPrayers] = useState<Prayer[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const currentBoundsRef = useRef<MapBounds | null>(bounds || null);
+
+  // Fetch blocked users on mount and when userId changes
+  useEffect(() => {
+    if (!userId) {
+      setBlockedUsers([]);
+      return;
+    }
+
+    getBlockedUsers(userId).then(setBlockedUsers);
+  }, [userId]);
+
+  // Add a blocked user to local state (for immediate UI feedback)
+  const addBlockedUser = useCallback((blockedId: string) => {
+    setBlockedUsers((prev) => [...prev, blockedId]);
+  }, []);
+
+  // Filter prayers by category and blocked users (client-side for responsiveness)
+  const prayers = useMemo(() => {
+    let filtered = allPrayers;
+
+    // Filter out blocked users' prayers
+    if (blockedUsers.length > 0) {
+      filtered = filtered.filter((p) => !blockedUsers.includes(p.user_id));
+    }
+
+    // Filter by category if specified
+    if (categories && categories.length > 0) {
+      filtered = filtered.filter((p) => categories.includes(p.category || 'other'));
+    }
+
+    return filtered;
+  }, [allPrayers, categories, blockedUsers]);
 
   // Fetch prayers by bounds (for map viewport)
   const fetchByBounds = useCallback(async (newBounds: MapBounds) => {
@@ -68,7 +110,7 @@ export function usePrayers({
 
     try {
       const fetchedPrayers = await fetchPrayersInBounds(newBounds);
-      setPrayers(fetchedPrayers);
+      setAllPrayers(fetchedPrayers);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch prayers';
       setError(errorMessage);
@@ -85,7 +127,7 @@ export function usePrayers({
 
     try {
       const fetchedPrayers = await fetchNearbyPrayers(location.lat, location.lng, radiusKm);
-      setPrayers(fetchedPrayers);
+      setAllPrayers(fetchedPrayers);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch prayers';
       setError(errorMessage);
@@ -137,10 +179,10 @@ export function usePrayers({
           // Refetch prayers when any change occurs
           if (currentBoundsRef.current) {
             const fetchedPrayers = await fetchPrayersInBounds(currentBoundsRef.current);
-            setPrayers(fetchedPrayers);
+            setAllPrayers(fetchedPrayers);
           } else {
             const fetchedPrayers = await fetchNearbyPrayers(location.lat, location.lng, radiusKm);
-            setPrayers(fetchedPrayers);
+            setAllPrayers(fetchedPrayers);
           }
         }
       )
@@ -169,7 +211,7 @@ export function usePrayers({
 
         if (newPrayer) {
           // Optimistically add to local state
-          setPrayers((prev) => [newPrayer, ...prev]);
+          setAllPrayers((prev) => [newPrayer, ...prev]);
         }
 
         return newPrayer;
@@ -211,7 +253,7 @@ export function usePrayers({
 
         if (result) {
           // Update the prayer in local state to mark it as prayed
-          setPrayers((prev) =>
+          setAllPrayers((prev) =>
             prev.map((p) =>
               p.id === prayerId
                 ? { ...p, prayedBy: [...(p.prayedBy || []), responderId] }
@@ -232,13 +274,40 @@ export function usePrayers({
     []
   );
 
+  // Delete a prayer (only owner can delete)
+  const deletePrayer = useCallback(
+    async (prayerId: string, userId: string): Promise<boolean> => {
+      setError(null);
+
+      try {
+        const success = await deletePrayerService(prayerId, userId);
+
+        if (success) {
+          // Remove from local state
+          setAllPrayers((prev) => prev.filter((p) => p.id !== prayerId));
+        }
+
+        return success;
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Failed to delete prayer';
+        setError(errorMessage);
+        console.error('Error deleting prayer:', err);
+        return false;
+      }
+    },
+    []
+  );
+
   return {
     prayers,
     loading,
     error,
+    blockedUsers,
     refetch: fetchPrayers,
     fetchByBounds,
     createPrayer,
     respondToPrayer,
+    deletePrayer,
+    addBlockedUser,
   };
 }

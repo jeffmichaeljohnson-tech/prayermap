@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button } from '../ui/button';
+import { SearchBar } from '../SearchBar';
 
 export interface HeaderProps {
   userEmail?: string;
@@ -21,12 +22,12 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 shadow-sm lg:px-6">
-      {/* Left side - Mobile menu button */}
-      <div className="flex items-center">
+      {/* Left side - Mobile menu button and Search */}
+      <div className="flex items-center gap-4">
         {onMenuClick && (
           <button
             onClick={onMenuClick}
-            className="mr-4 rounded-lg p-2 text-gray-600 hover:bg-gray-100 lg:hidden"
+            className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 lg:hidden"
             aria-label="Open menu"
           >
             <svg
@@ -46,6 +47,11 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         )}
         <h2 className="text-lg font-semibold text-gray-900 lg:hidden">PrayerMap Admin</h2>
+        
+        {/* Global Search Bar - hidden on small screens */}
+        <div className="hidden md:block">
+          <SearchBar />
+        </div>
       </div>
 
       {/* Right side - User info and sign out */}

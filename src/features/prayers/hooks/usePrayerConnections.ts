@@ -22,7 +22,7 @@ interface UsePrayerConnectionsReturn {
 /**
  * Hook to manage prayer connections (memorial lines) with real-time updates
  *
- * Memorial lines are ETERNAL (12 months) - they should NEVER disappear unexpectedly.
+ * Memorial lines persist for 1 year (admin-configurable) - they should NEVER disappear unexpectedly.
  * This hook ensures connections persist across page refreshes and component remounts.
  */
 export function usePrayerConnections({

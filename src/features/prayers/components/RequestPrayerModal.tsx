@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { X, Type, Mic, Video, Loader2 } from 'lucide-react';
 import type { Prayer } from '../types/prayer';
+import { PRAYER_CATEGORIES, type PrayerCategory } from '../types/prayer';
 import { Button } from '../../../components/ui/button';
 import { Input } from '../../../components/ui/input';
 import { Textarea } from '../../../components/ui/textarea';
 import { Switch } from '../../../components/ui/switch';
 import { AudioRecorder } from '../../media/components/AudioRecorder';
-import { uploadAudio } from '../../media/services/storageService';
+import { VideoRecorder } from '../../media/components/VideoRecorder';
+import { uploadAudio, uploadVideo } from '../../media/services/storageService';
 import { useAuth } from '../../authentication/hooks/useAuth';
 import { formatDuration } from '../../media/hooks/useAudioRecorder';
 
@@ -22,9 +24,12 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
   const [contentType, setContentType] = useState<'text' | 'audio' | 'video'>('text');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [category, setCategory] = useState<PrayerCategory>('other');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioDuration, setAudioDuration] = useState(0);
+  const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
+  const [videoDuration, setVideoDuration] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -32,6 +37,13 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
     setAudioBlob(blob);
     setAudioDuration(duration);
     setContent(`Audio prayer (${formatDuration(duration)})`);
+    setUploadError(null);
+  };
+
+  const handleVideoRecordingComplete = (blob: Blob, duration: number, _thumbnailUrl: string | null) => {
+    setVideoBlob(blob);
+    setVideoDuration(duration);
+    setContent(`Video prayer (${formatDuration(duration)})`);
     setUploadError(null);
   };
 
@@ -43,6 +55,7 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
         title: title.trim() || undefined,
         content: content.trim(),
         content_type: contentType,
+        category,
         location: userLocation,
         is_anonymous: isAnonymous
       });
@@ -69,6 +82,7 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
           content: `Audio prayer (${formatDuration(audioDuration)})`,
           content_type: 'audio',
           content_url: audioUrl,
+          category,
           location: userLocation,
           is_anonymous: isAnonymous
         });
@@ -81,9 +95,36 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
       return;
     }
 
-    // For video prayers (placeholder for now)
-    if (contentType === 'video') {
-      // Video recording will be implemented later
+    // For video prayers
+    if (contentType === 'video' && videoBlob) {
+      setIsUploading(true);
+      setUploadError(null);
+
+      try {
+        const userId = user?.id || 'anonymous';
+        const videoUrl = await uploadVideo(videoBlob, userId);
+
+        if (!videoUrl) {
+          setUploadError('Failed to upload video. Please try again.');
+          setIsUploading(false);
+          return;
+        }
+
+        onSubmit({
+          title: title.trim() || undefined,
+          content: `Video prayer (${formatDuration(videoDuration)})`,
+          content_type: 'video',
+          content_url: videoUrl,
+          category,
+          location: userLocation,
+          is_anonymous: isAnonymous
+        });
+      } catch (error) {
+        console.error('Error uploading video:', error);
+        setUploadError('Failed to upload video. Please try again.');
+      } finally {
+        setIsUploading(false);
+      }
       return;
     }
   };
@@ -92,15 +133,20 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
     if (isUploading) return false;
     if (contentType === 'text') return content.trim().length > 0;
     if (contentType === 'audio') return audioBlob !== null;
+    if (contentType === 'video') return videoBlob !== null;
     return false;
   };
 
-  // Reset audio when switching content types
+  // Reset media when switching content types
   const handleContentTypeChange = (type: 'text' | 'audio' | 'video') => {
     setContentType(type);
     if (type !== 'audio') {
       setAudioBlob(null);
       setAudioDuration(0);
+    }
+    if (type !== 'video') {
+      setVideoBlob(null);
+      setVideoDuration(0);
     }
     if (type !== 'text') {
       setContent('');
@@ -257,6 +303,30 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
             />
           </div>
 
+          {/* Category Selector */}
+          <div>
+            <label className="block text-sm text-gray-700 mb-2">
+              Category
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {PRAYER_CATEGORIES.map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setCategory(cat.id)}
+                  className={`py-2 px-3 rounded-xl text-sm flex items-center justify-center gap-1.5 transition-all ${
+                    category === cat.id
+                      ? 'bg-gradient-to-r from-yellow-300 to-purple-300 text-gray-800 ring-2 ring-purple-300'
+                      : 'glass text-gray-600 hover:glass-strong'
+                  }`}
+                >
+                  <span>{cat.emoji}</span>
+                  <span className="truncate">{cat.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
           {contentType === 'text' && (
             <div>
               <label className="block text-sm text-gray-700 mb-2">
@@ -291,10 +361,20 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
           )}
 
           {contentType === 'video' && (
-            <div className="glass rounded-xl p-6 text-center">
-              <Video className="w-12 h-12 mx-auto mb-3 text-gray-400" />
-              <p className="text-lg text-gray-700 mb-2">Coming Soon</p>
-              <p className="text-sm text-gray-500">Video prayers will be available in a future update. For now, please use text or audio.</p>
+            <div className="glass rounded-xl p-4">
+              <p className="text-sm text-gray-700 mb-4 text-center">Record your video prayer request</p>
+              <VideoRecorder
+                onRecordingComplete={handleVideoRecordingComplete}
+                maxDuration={60}
+              />
+              {uploadError && (
+                <p className="text-sm text-red-500 mt-3 text-center">{uploadError}</p>
+              )}
+              {videoBlob && (
+                <p className="text-sm text-green-600 mt-3 text-center">
+                  Recording ready ({formatDuration(videoDuration)})
+                </p>
+              )}
             </div>
           )}
 

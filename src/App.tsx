@@ -3,12 +3,19 @@ import { LoadingScreen } from './components/LoadingScreen';
 import { AuthModal } from './features/authentication';
 import { PrayerMap } from './features/prayers';
 import { SettingsScreen } from './features/settings';
+import { OnboardingFlow } from './features/onboarding';
 import { AuthProvider, useAuth } from './features/authentication';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { pushNotificationService } from './services/pushNotificationService';
+import { initializeReminderListeners, removeReminderListeners } from './services/reminderService';
 
 function AppContent() {
   const { user, loading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    return !localStorage.getItem('prayermap-onboarding-complete');
+  });
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
 
@@ -47,6 +54,22 @@ function AppContent() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Initialize push notifications when user is authenticated
+  useEffect(() => {
+    if (user?.id) {
+      pushNotificationService.initialize(user.id);
+    }
+  }, [user?.id]);
+
+  // Initialize local notification listeners for reminders
+  useEffect(() => {
+    initializeReminderListeners();
+
+    return () => {
+      removeReminderListeners();
+    };
+  }, []);
+
   // Show loading screen while initial loading or checking auth
   if (isLoading || authLoading) {
     return <LoadingScreen />;
@@ -55,6 +78,11 @@ function AppContent() {
   // Show auth modal if not authenticated
   if (!user) {
     return <AuthModal />;
+  }
+
+  // Show onboarding for new users (after auth, before main app)
+  if (showOnboarding) {
+    return <OnboardingFlow onComplete={() => setShowOnboarding(false)} />;
   }
 
   // Show location error
@@ -99,8 +127,10 @@ function AppContent() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AppContent />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

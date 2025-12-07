@@ -12,10 +12,12 @@ import { AdminLayout } from './components/layout/AdminLayout'
 import { DashboardPage } from './pages/DashboardPage'
 import { ModerationPage } from './pages/ModerationPage'
 import { PrayersPage } from './pages/PrayersPage'
+import { ArchivedPrayersPage } from './pages/ArchivedPrayersPage'
 import { MessagesPage } from './pages/MessagesPage'
 import { UsersPage } from './pages/UsersPage'
 import { AuditLogsPage } from './pages/AuditLogsPage'
 import { SettingsPage } from './pages/SettingsPage'
+import { AnalyticsPage } from './pages/AnalyticsPage'
 
 // NOTE: QueryClient is now only in main.tsx to prevent duplicate instances
 
@@ -174,8 +176,10 @@ function AppRoutes() {
         }
       >
         <Route index element={<DashboardPage />} />
+        <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="moderation" element={<ModerationPage />} />
         <Route path="prayers" element={<PrayersPage />} />
+        <Route path="archived" element={<ArchivedPrayersPage />} />
         <Route path="messages" element={<MessagesPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="audit-logs" element={<AuditLogsPage />} />

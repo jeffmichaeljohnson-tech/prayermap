@@ -17,9 +17,11 @@ export {
   useActiveBans,
   useFlagPrayer,
 } from './useModeration'
+export { useSearch } from './useSearch'
 
 export type { AdminPrayer } from './usePrayers'
 export type { AdminUser } from './useUsers'
 export type { AdminStats } from './useStats'
 export type { AuditLog } from './useAuditLogs'
 export type { ModerationPrayer, UserBan, UserBanStatus } from './useModeration'
+export type { SearchResult } from './useSearch'
