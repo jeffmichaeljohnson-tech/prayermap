@@ -41,8 +41,8 @@ export function InboxModal({ onClose }: InboxModalProps) {
           prayerResponseId: response.id, // The prayer_response ID
           prayerId: item.prayer.id,
           senderName: response.is_anonymous
-            ? 'Prayer Partner'
-            : response.responder_name || 'Someone',
+            ? 'Anonymous'
+            : response.responder_name || 'Anonymous',
           message: response.message,
           date: response.created_at,
           prayerTitle:

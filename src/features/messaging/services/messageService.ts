@@ -30,8 +30,8 @@ import type {
 
 const DEFAULT_MESSAGE_LIMIT = 50;
 const MAX_CONTENT_LENGTH = 2000;
-const ANONYMOUS_NAME = 'Prayer Partner';
-const DEFAULT_NAME = 'Someone';
+const ANONYMOUS_NAME = 'Anonymous';
+const DEFAULT_NAME = 'Anonymous';
 
 // ============================================
 // CONVERSATION OPERATIONS

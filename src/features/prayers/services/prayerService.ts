@@ -21,6 +21,7 @@ interface PrayerResponseRow {
   id: string;
   prayer_id: string;
   responder_id: string;
+  responder_name?: string | null; // Display name of responder (NULL if anonymous)
   is_anonymous: boolean | null;
   message: string | null;
   content_type: 'text' | 'audio' | 'video';
@@ -111,7 +112,7 @@ function rowToPrayerResponse(row: PrayerResponseRow): PrayerResponse {
     id: row.id,
     prayer_id: row.prayer_id,
     responder_id: row.responder_id,
-    responder_name: undefined, // Not stored in database - lookup separately if needed
+    responder_name: row.responder_name ?? undefined, // From database - NULL if anonymous
     is_anonymous: row.is_anonymous,
     message: row.message,
     content_type: row.content_type,
@@ -398,12 +399,13 @@ export async function respondToPrayer(
     }
 
     // Create prayer response
-    // Note: responder_name column doesn't exist in DB, is_anonymous and media_url do
+    // Include responder_name for display in inbox (NULL if anonymous)
     const { data: responseData, error: responseError } = await supabase
       .from('prayer_responses')
       .insert({
         prayer_id: prayerId,
         responder_id: responderId,
+        responder_name: isAnonymous ? null : responderName,
         is_anonymous: isAnonymous,
         message,
         content_type: contentType,
