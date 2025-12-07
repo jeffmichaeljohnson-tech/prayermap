@@ -1,0 +1,89 @@
+---
+description: Testing standards and patterns
+globs: ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "src/**/__tests__/**/*"]
+alwaysApply: false
+---
+
+# Testing Standards
+
+## Test Framework
+- **Vitest** for unit and integration tests
+- **React Testing Library** for component tests
+- **Playwright** for E2E tests (if needed)
+
+## Test File Location
+```
+src/
+├── components/
+│   ├── PrayerCard.tsx
+│   └── PrayerCard.test.tsx  # Co-located
+├── hooks/
+│   ├── usePrayers.ts
+│   └── usePrayers.test.ts
+└── utils/
+    ├── formatters.ts
+    └── formatters.test.ts
+```
+
+## Component Testing
+```typescript
+import { render, screen, fireEvent } from '@testing-library/react';
+import { PrayerCard } from './PrayerCard';
+
+describe('PrayerCard', () => {
+  const mockPrayer = {
+    id: '1',
+    content: 'Test prayer',
+    created_at: new Date().toISOString(),
+  };
+
+  it('renders prayer content', () => {
+    render(<PrayerCard prayer={mockPrayer} onPray={vi.fn()} />);
+    expect(screen.getByText('Test prayer')).toBeInTheDocument();
+  });
+
+  it('calls onPray when pray button clicked', () => {
+    const onPray = vi.fn();
+    render(<PrayerCard prayer={mockPrayer} onPray={onPray} />);
+    fireEvent.click(screen.getByRole('button', { name: /pray/i }));
+    expect(onPray).toHaveBeenCalledWith('1');
+  });
+});
+```
+
+## Hook Testing
+```typescript
+import { renderHook, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { usePrayersNearby } from './usePrayersNearby';
+
+const wrapper = ({ children }) => (
+  <QueryClientProvider client={new QueryClient()}>
+    {children}
+  </QueryClientProvider>
+);
+
+it('fetches prayers for given location', async () => {
+  const { result } = renderHook(
+    () => usePrayersNearby(40.7128, -74.006),
+    { wrapper }
+  );
+
+  await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  expect(result.current.data).toBeDefined();
+});
+```
+
+## What to Test
+- User interactions
+- Conditional rendering
+- Error states
+- Loading states
+- Form validation
+- Critical business logic
+
+## What NOT to Test
+- Implementation details
+- Third-party libraries
+- Static content
+- CSS styling

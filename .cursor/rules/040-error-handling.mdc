@@ -1,0 +1,89 @@
+---
+description: Error handling patterns and conventions
+globs: ["**/*.ts", "**/*.tsx", "src/services/**/*", "src/hooks/**/*"]
+alwaysApply: false
+---
+
+# Error Handling Patterns
+
+## Core Principle
+Provide graceful degradation with meaningful user feedback.
+
+## API Error Handling
+```typescript
+// Standard pattern for Supabase calls
+const { data, error } = await supabase
+  .from('prayers')
+  .select('*');
+
+if (error) {
+  console.error('Failed to fetch prayers:', error);
+  throw new Error(`Database error: ${error.message}`);
+}
+return data;
+```
+
+## TanStack Query Error Handling
+```typescript
+const { data, error, isLoading, isError } = useQuery({
+  queryKey: ['prayers'],
+  queryFn: fetchPrayers,
+  retry: 3,
+  retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+});
+
+// Always handle all states
+if (isLoading) return <Skeleton />;
+if (isError) return <ErrorMessage error={error} />;
+if (!data) return null;
+```
+
+## Component Error Boundaries
+```typescript
+// Use error boundaries for component-level errors
+<ErrorBoundary fallback={<ErrorFallback />}>
+  <PrayerMap />
+</ErrorBoundary>
+```
+
+## Form Validation
+```typescript
+// Use Zod for runtime validation
+import { z } from 'zod';
+
+const prayerSchema = z.object({
+  content: z.string().min(1).max(500),
+  location: z.object({
+    lat: z.number().min(-90).max(90),
+    lng: z.number().min(-180).max(180),
+  }),
+});
+
+// Validate before submission
+const result = prayerSchema.safeParse(formData);
+if (!result.success) {
+  setErrors(result.error.flatten().fieldErrors);
+  return;
+}
+```
+
+## User-Facing Errors
+```typescript
+// Toast for transient errors
+toast.error('Unable to submit prayer. Please try again.');
+
+// Inline for form errors
+<span className="text-red-500 text-sm">{fieldError}</span>
+
+// Full-page for critical errors
+<ErrorPage
+  title="Something went wrong"
+  message="Please refresh the page or try again later."
+  retry={onRetry}
+/>
+```
+
+## Logging
+- Log errors to console in development
+- Use structured logging for production
+- NEVER log sensitive data (passwords, tokens, PII)

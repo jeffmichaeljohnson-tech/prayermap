@@ -1,0 +1,106 @@
+---
+description: Core rules that override all other considerations - verification, Living Map, JJ standards
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Core Rules - The Non-Negotiables
+
+## 1. VERIFICATION ENFORCEMENT (PRINCIPLE 0)
+
+**A fix is NOT a fix until verified working by a human.**
+
+### The Three States
+
+| State | Meaning | Allowed Phrases |
+|-------|---------|-----------------|
+| WRITTEN | Code exists | "Changes written. NOT tested." |
+| TESTED | Compiles, tests pass | "Tests pass. Awaiting deployment." |
+| DEPLOYED | Live on Vercel | "Deployed. Please verify at [URL]." |
+
+### Forbidden Phrases (Before Human Verification)
+
+- "This is fixed"
+- "This should now work"
+- "The bug is resolved"
+- "Complete" or "Done"
+
+### Required Verification Checklist
+
+```markdown
+## Verification
+- [ ] Files exist (ls proof)
+- [ ] TypeScript compiles (npx tsc --noEmit)
+- [ ] Build succeeds (npm run build)
+- [ ] Tests pass (npm run test)
+- [ ] NOT VERIFIED: Browser functionality
+- [ ] NOT VERIFIED: Mobile responsiveness
+Status:  ➡️  [progress note]
+```
+
+---
+
+## 2. DATABASE-FIRST DEBUGGING (PRINCIPLE 0.1)
+
+**When something silently fails, check the database FIRST.**
+
+### Debugging Hierarchy
+
+1. Check database schema: `SELECT column_name FROM information_schema.columns WHERE table_name = 'xxx'`
+2. Check browser console for Supabase errors
+3. Check Supabase logs (Dashboard → Logs)
+4. Test operation in SQL directly
+5. THEN read the code
+
+**TypeScript interfaces can LIE. Database columns NEVER lie.**
+
+---
+
+## 3. THE LIVING MAP PRINCIPLE (ABSOLUTE PRIORITY)
+
+**If ANY technical decision conflicts with the Living Map, THE LIVING MAP WINS.**
+
+| Requirement | Target | Non-Negotiable |
+|-------------|--------|----------------|
+| Real-time updates | < 2 seconds | Users SEE prayer happen |
+| Memorial lines | ETERNAL | Never expire, never delete |
+| Universal map | Same for all | Shared spiritual space |
+| Animations | 60fps | Spiritual beauty |
+
+---
+
+## 4. THE  ➡️  SYMBOL
+
+**NEVER use green checkmarks (). Nothing is ever "done."**
+
+- Use ` ➡️ ` for progress
+- Every task reveals the next improvement
+- The work continues, growth follows
+
+---
+
+## 5. PROVE EVERY CLAIM
+
+```bash
+# Claim: "I created the file"
+# Proof required:
+ls -la path/to/file
+cat path/to/file | head -20
+
+# Claim: "This works"
+# Proof required:
+npm run build  # Show output
+npm run test   # Show results
+```
+
+---
+
+## 6. ASK BEFORE BUILDING
+
+Before writing code:
+- Is this the simplest solution?
+- Do we actually need this?
+- What would break this?
+- What already exists?
+
+**Three similar lines > premature abstraction**

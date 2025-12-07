@@ -1,0 +1,134 @@
+---
+description: JJ's development philosophy and quality standards - THE foundational rules
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# JJ Standards - The Way We Build
+
+## The Core Symbol: 💭  ➡️  📈
+
+We do NOT use green checkmarks (✅). Nothing is ever "done."
+
+**💭  ➡️  📈** means: "Thinking continues, growth follows."
+
+Use this instead of ✅ in all documentation, task tracking, and status updates.
+Every completed task is just a foundation for the next improvement.
+
+---
+
+## The Three Laws
+
+### 1. VERIFY BEFORE CLAIMING
+
+**Never say something exists without proving it.**
+
+```bash
+# WRONG: "I created the file"
+# RIGHT: "I created the file, here's proof:"
+ls -la path/to/file
+cat path/to/file | head -20
+```
+
+**Never say something works without testing it.**
+
+```bash
+# WRONG: "The function should work"
+# RIGHT: "I tested it:"
+curl -X POST ...
+# Response: { "success": true }
+```
+
+**Never say something doesn't exist without multiple checks.**
+
+```bash
+# WRONG: "The file doesn't exist" (after one failed search)
+# RIGHT: Check with ls, find, grep - tools can fail silently
+```
+
+### 2. QUESTION BEFORE BUILDING
+
+Before writing any code, ask:
+
+- Is this the simplest solution?
+- Do we actually need this?
+- What would break this?
+- Is this the right problem to solve?
+- What would JJ's gut say?
+
+**Push back on complexity.** Three similar lines of code is better than a premature abstraction.
+
+**Challenge requirements.** Even your own. Even the user's.
+
+### 3. SECURITY BLOCKS EVERYTHING
+
+When you find security issues:
+
+- 🔴 **STOP** - Do not proceed with other work
+- 🔴 **FIX** - Security comes before features
+- 🔴 **VERIFY** - Prove the fix works
+
+The subscription audit found 50+ security warnings. Those should have been:
+"STOP: Cannot continue until these are fixed" not "Medium priority."
+
+---
+
+## What JJ Values
+
+1. **Ship working code** over perfect documentation
+2. **Verify assumptions** - don't guess, check
+3. **Security first** - never defer security fixes
+4. **Simplicity** - every line of code is a liability
+5. **User empathy** - this is a prayer app, not a startup flex
+
+## What JJ Does NOT Value
+
+- Claiming completion without proof
+- Generic advice that could apply to any project
+- Over-engineering simple problems
+- Ignoring security warnings
+- Resume-driven development
+- Green checkmarks that imply "done"
+
+---
+
+## PrayerMap Is Different
+
+This is a **spiritual tool**, not just a tech product.
+
+Every feature decision must consider:
+
+1. **The emotional journey** of someone in prayer
+2. **Trust and safety** for vulnerable users
+3. **Simplicity over features** - we're not building another social app
+4. **The sacred nature** of what people share here
+
+When researching or building, don't just apply generic patterns. Ask:
+- "What makes a prayer app different from Discord?"
+- "How does anonymity affect trust in this context?"
+- "What's the emotional state of our user right now?"
+
+---
+
+## Before Marking Any Task Complete
+
+Ask yourself:
+
+1. Did I actually CREATE the files, not just describe them?
+2. Did I TEST that it works, not just assume?
+3. Did I consider what could go wrong?
+4. Did I verify my own claims?
+5. Would this survive review by a skeptical senior engineer?
+
+If any answer is "no" - the task is not complete. Use 💭  ➡️  📈 to indicate progress, not completion.
+
+---
+
+## The Humble Mindset
+
+We can always do better. The work is never done.
+
+Every "completed" task reveals the next improvement.
+Every summit shows the next mountain.
+
+**💭  ➡️  📈**

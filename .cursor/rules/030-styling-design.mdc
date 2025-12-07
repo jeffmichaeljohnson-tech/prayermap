@@ -1,0 +1,95 @@
+---
+description: Styling conventions and design system
+globs: ["**/*.tsx", "**/*.css", "src/components/**/*"]
+alwaysApply: false
+---
+
+# Styling & Design System
+
+## Design Philosophy
+"Ethereal Glass" - Glassmorphic design with spiritual, calming aesthetics.
+
+## Tailwind Classes Only
+```typescript
+// DO: Use design tokens via Tailwind
+className="bg-primary-blue text-white rounded-xl p-6"
+
+// DON'T: Hardcode colors
+className="bg-[#4A90E2]"  // NEVER
+
+// DON'T: Inline styles for design values
+style={{ backgroundColor: '#4A90E2' }}  // NEVER
+```
+
+## Glassmorphic Utilities
+```typescript
+className="glass-strong" // Modals, headers
+className="glass"        // Cards, inputs
+className="glass-subtle" // Hover states
+```
+
+## Color Tokens
+```
+Primary Blue:    bg-primary-blue    (#4A90E2)
+Primary Gold:    bg-primary-gold    (#F5D76E)
+Primary Purple:  bg-primary-purple  (#9B59B6)
+Success Green:   bg-success-green   (#4CAF50)
+Background:      bg-background      (#E8F4F8)
+Text Primary:    text-gray-800
+Text Secondary:  text-gray-600
+```
+
+## Typography
+```
+Display:     font-display text-4xl font-bold    (Cinzel)
+H1:          font-display text-2xl font-semibold
+H2:          font-display text-xl font-normal
+Body:        font-body text-base                (Inter)
+Small:       font-body text-sm
+Button:      font-body text-base font-semibold
+```
+
+## Spacing (4px base)
+```
+p-1 = 4px    p-2 = 8px    p-3 = 12px
+p-4 = 16px   p-6 = 24px   p-8 = 32px
+```
+
+## Border Radius
+```
+rounded-lg   = 8px
+rounded-xl   = 12px
+rounded-2xl  = 16px
+rounded-3xl  = 24px
+```
+
+## Animations (Framer Motion)
+```typescript
+// Modal animation
+<motion.div
+  initial={{ opacity: 0, y: 50 }}
+  animate={{ opacity: 1, y: 0 }}
+  exit={{ opacity: 0, y: 50 }}
+  transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+>
+
+// Button hover
+<motion.button
+  whileHover={{ scale: 1.02 }}
+  whileTap={{ scale: 0.98 }}
+>
+
+// Timing constants
+const TIMING = {
+  FAST: 0.15,
+  NORMAL: 0.2,
+  MEDIUM: 0.3,
+  SLOW: 0.5,
+};
+```
+
+## Accessibility
+- Touch targets >= 44px
+- Sufficient color contrast
+- `aria-label` on icon buttons
+- Keyboard navigation support

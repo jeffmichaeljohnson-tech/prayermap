@@ -1,0 +1,412 @@
+# Cursor Rules for PrayerMap
+
+This file provides specific guidance for Cursor AI when working on PrayerMap.
+
+---
+
+## Project Context
+
+You are working on **PrayerMap**, a location-based spiritual platform built with:
+
+- **Frontend:** React 18, TypeScript, Vite, TailwindCSS, Framer Motion
+- **Backend:** Supabase (PostgreSQL + PostGIS), AWS S3
+- **Maps:** MapBox GL JS v3
+- **Design:** "Ethereal Glass" glassmorphic design system
+
+**Mission:** 100% non-profit ministry connecting people through prayer.
+
+---
+
+## Critical Files to Reference
+
+Before making changes, always check:
+
+1. **`RULES.md`** — Constraints and do-not-do list
+2. **`PRD.md`** — Feature requirements and specifications
+3. **`02-DESIGN-SYSTEM.md`** — Design tokens and visual specs
+4. **`06-TECHNICAL-IMPLEMENTATION.md`** — Code patterns and examples
+
+---
+
+## Code Style Requirements
+
+### TypeScript
+
+```typescript
+// ✅ ALWAYS use explicit types
+interface PrayerCardProps {
+  prayer: Prayer;
+  onPray: (id: string) => void;
+  isPrayed?: boolean;
+}
+
+// ❌ NEVER use `any`
+const data: any = response; // BAD
+
+// ✅ Use proper typing
+const data: Prayer[] = response.data;
+```
+
+### Components
+
+```typescript
+// ✅ ALWAYS follow this structure
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import type { Prayer } from '@/types/prayer';
+
+interface Props {
+  prayer: Prayer;
+}
+
+export function PrayerCard({ prayer }: Props) {
+  // 1. Hooks
+  const [isHovered, setIsHovered] = useState(false);
+  
+  // 2. Derived state
+  const timeAgo = formatRelativeTime(prayer.createdAt);
+  
+  // 3. Handlers
+  const handleClick = () => {
+    // ...
+  };
+  
+  // 4. Render
+  return (
+    <motion.div
+      className={cn(
+        'glass rounded-xl p-4',
+        isHovered && 'glass-strong'
+      )}
+      whileHover={{ scale: 1.02 }}
+    >
+      {/* Content */}
+    </motion.div>
+  );
+}
+```
+
+### Styling
+
+```typescript
+// ✅ Use design tokens via Tailwind
+className="bg-primary-blue text-white rounded-xl p-6"
+
+// ❌ NEVER hardcode colors
+className="bg-[#4A90E2]"
+
+// ❌ NEVER use inline styles for design system values
+style={{ backgroundColor: '#4A90E2' }}
+
+// ✅ Use glassmorphic utilities
+className="glass-strong" // For modals, headers
+className="glass"        // For cards, inputs
+className="glass-subtle" // For hover states
+```
+
+### Animations
+
+```typescript
+// ✅ Use Framer Motion with consistent timing
+import { motion } from 'framer-motion';
+
+// Modal animation
+<motion.div
+  initial={{ opacity: 0, y: 50 }}
+  animate={{ opacity: 1, y: 0 }}
+  exit={{ opacity: 0, y: 50 }}
+  transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+>
+
+// Button hover
+<motion.button
+  whileHover={{ scale: 1.02 }}
+  whileTap={{ scale: 0.98 }}
+>
+
+// ❌ NEVER use arbitrary timing values
+transition={{ duration: 0.37 }} // BAD
+
+// ✅ Use timing constants
+const TIMING = {
+  FAST: 0.15,
+  NORMAL: 0.2,
+  MEDIUM: 0.3,
+  SLOW: 0.5,
+};
+```
+
+---
+
+## File Organization
+
+When creating new files, follow this structure:
+
+```
+src/
+├── components/
+│   ├── ui/          # Reusable UI primitives (Button, Input, etc.)
+│   ├── map/         # Map-related components
+│   ├── modals/      # Modal components
+│   ├── animation/   # Animation-specific components
+│   └── layout/      # Layout components
+├── hooks/           # Custom hooks
+├── stores/          # Zustand stores
+├── types/           # TypeScript types/interfaces
+├── lib/             # Library configurations (supabase, mapbox)
+├── utils/           # Utility functions
+└── styles/          # Global styles
+```
+
+---
+
+## Common Patterns
+
+### Supabase Query
+
+```typescript
+// ✅ Correct pattern for prayers within radius
+const { data, error } = await supabase
+  .rpc('get_prayers_within_radius', {
+    user_lat: location.lat,
+    user_lng: location.lng,
+    radius_km: 48, // 30 miles
+    limit_count: 50
+  });
+
+if (error) throw error;
+return data as Prayer[];
+```
+
+### MapBox Integration
+
+```typescript
+// ✅ Correct MapBox initialization
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
+
+mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_ACCESS_TOKEN;
+
+const map = new mapboxgl.Map({
+  container: mapRef.current!,
+  style: 'mapbox://styles/mapbox/light-v11',
+  center: [lng, lat],
+  zoom: 12,
+});
+```
+
+### Modal Pattern
+
+```typescript
+// ✅ Modal with AnimatePresence
+import { AnimatePresence, motion } from 'framer-motion';
+
+function Modal({ isOpen, onClose, children }) {
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <motion.div
+            className="fixed inset-0 bg-black/50 z-40"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+          />
+          
+          {/* Modal */}
+          <motion.div
+            className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 max-w-md mx-auto glass-strong rounded-3xl p-6"
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+          >
+            {children}
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+```
+
+### Custom Hook Pattern
+
+```typescript
+// ✅ Hook for prayers with React Query
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
+
+export function usePrayersNearby(lat: number, lng: number) {
+  return useQuery({
+    queryKey: ['prayers', 'nearby', lat, lng],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .rpc('get_prayers_within_radius', {
+          user_lat: lat,
+          user_lng: lng,
+          radius_km: 48,
+          limit_count: 50
+        });
+      
+      if (error) throw error;
+      return data as Prayer[];
+    },
+    staleTime: 30 * 1000, // 30 seconds
+    enabled: Boolean(lat && lng),
+  });
+}
+```
+
+---
+
+## Do Not List (Critical)
+
+When generating code, **NEVER:**
+
+1. ❌ Use `any` type
+2. ❌ Hardcode colors (use design tokens)
+3. ❌ Create components > 100 lines without splitting
+4. ❌ Skip TypeScript interfaces
+5. ❌ Use inline styles for design system values
+6. ❌ Add monetization or payment code
+7. ❌ Change database schema without explicit approval
+8. ❌ Use external state management (Redux, MobX)
+9. ❌ Add social features beyond prayer support
+10. ❌ Skip accessibility attributes
+
+---
+
+## Accessibility Checklist
+
+Every component should have:
+
+- [ ] `aria-label` on buttons without visible text
+- [ ] `role="dialog"` and `aria-modal="true"` on modals
+- [ ] Keyboard navigation support (Tab, Enter, Escape)
+- [ ] Focus trapping in modals
+- [ ] Sufficient color contrast
+- [ ] Touch targets ≥ 44px
+
+---
+
+## Testing Requirements
+
+When creating new features:
+
+```typescript
+// ✅ Include basic tests
+import { render, screen } from '@testing-library/react';
+import { PrayerCard } from './PrayerCard';
+
+describe('PrayerCard', () => {
+  it('renders prayer content', () => {
+    render(<PrayerCard prayer={mockPrayer} onPray={() => {}} />);
+    expect(screen.getByText(mockPrayer.text_body)).toBeInTheDocument();
+  });
+  
+  it('handles pray button click', () => {
+    const onPray = vi.fn();
+    render(<PrayerCard prayer={mockPrayer} onPray={onPray} />);
+    fireEvent.click(screen.getByRole('button', { name: /pray/i }));
+    expect(onPray).toHaveBeenCalledWith(mockPrayer.prayer_id);
+  });
+});
+```
+
+---
+
+## Quick References
+
+### Color Tokens
+
+```
+Primary Blue:    bg-primary-blue    (#4A90E2)
+Primary Gold:    bg-primary-gold    (#F5D76E)
+Primary Purple:  bg-primary-purple  (#9B59B6)
+Success Green:   bg-success-green   (#4CAF50)
+Background:      bg-background      (#E8F4F8)
+Text Primary:    text-gray-800      (#333333)
+Text Secondary:  text-gray-600      (#666666)
+```
+
+### Typography
+
+```
+Display:     font-display text-4xl font-bold    (Cinzel)
+H1:          font-display text-2xl font-semibold
+H2:          font-display text-xl font-normal
+Body:        font-body text-base                (Inter)
+Small:       font-body text-sm
+Button:      font-body text-base font-semibold
+```
+
+### Spacing Scale
+
+```
+4px:   p-1, m-1, gap-1
+8px:   p-2, m-2, gap-2
+12px:  p-3, m-3, gap-3
+16px:  p-4, m-4, gap-4
+20px:  p-5, m-5, gap-5
+24px:  p-6, m-6, gap-6
+32px:  p-8, m-8, gap-8
+```
+
+### Border Radius
+
+```
+8px:     rounded-lg
+12px:    rounded-xl
+16px:    rounded-2xl
+24px:    rounded-3xl
+Circle:  rounded-full
+```
+
+---
+
+## When Asked to...
+
+### Create a new component
+1. Check if similar component exists
+2. Follow file structure guidelines
+3. Use design tokens only
+4. Add TypeScript types
+5. Include accessibility attributes
+6. Keep under 100 lines
+
+### Fix a bug
+1. Identify root cause
+2. Check if it violates RULES.md
+3. Implement minimal fix
+4. Add test to prevent regression
+
+### Add a feature
+1. Check PRD.md for requirements
+2. Check RULES.md for constraints
+3. Follow existing patterns
+4. Update documentation if needed
+
+### Refactor code
+1. Ensure tests exist first
+2. Make incremental changes
+3. Verify design system compliance
+4. Keep file sizes under limits
+
+---
+
+## Environment Variables
+
+Required in `.env.local`:
+
+```env
+VITE_MAPBOX_ACCESS_TOKEN=pk.xxx
+VITE_SUPABASE_URL=https://xxx.supabase.co
+VITE_SUPABASE_ANON_KEY=xxx
+```
+
+---
+
+*This file helps Cursor AI understand PrayerMap's specific requirements. Keep it updated as the project evolves.*

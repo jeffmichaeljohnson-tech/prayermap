@@ -1,0 +1,172 @@
+---
+description: Standards for research tasks - be opinionated, not encyclopedic
+globs: ["**/*.md", "**/research/**", "**/outputs/**"]
+alwaysApply: false
+---
+
+# Research Standards
+
+## Research Is Not Wikipedia
+
+Don't compile information. **Form opinions.**
+
+### ❌ Bad Research Output
+
+```markdown
+## Caching Options
+
+There are several caching options available:
+- Redis: An in-memory data store
+- Memcached: A distributed memory caching system
+- Local caching: Storing data in application memory
+
+Each has trade-offs depending on your needs.
+```
+
+### ✅ Good Research Output
+
+```markdown
+## Caching Recommendation for PrayerMap
+
+**Use React Query's built-in cache. Don't add Redis.**
+
+Why:
+1. PrayerMap's data is user-specific and session-scoped
+2. Our Supabase Pro plan includes connection pooling
+3. Adding Redis adds infrastructure complexity for <500K users
+4. React Query gives us optimistic updates for free
+
+Redis makes sense when:
+- You have shared data across users (we don't)
+- You're at 1M+ concurrent users (we're not)
+- You need sub-10ms reads (Supabase is fine at 50ms)
+
+**Decision: No Redis. Use React Query staleTime of 30s for conversations.**
+```
+
+---
+
+## The Opinion Requirement
+
+Every research document MUST include:
+
+### 1. A Clear Recommendation
+
+```markdown
+## Recommendation
+
+For PrayerMap, use [X] because [specific reasons tied to our context].
+```
+
+### 2. What We Should NOT Do
+
+```markdown
+## What to Avoid
+
+Don't use [Y] because:
+- [PrayerMap-specific reason]
+- [Our scale doesn't justify it]
+- [Adds complexity without proportional benefit]
+```
+
+### 3. The "PrayerMap Is Different" Section
+
+```markdown
+## Why Generic Advice Doesn't Apply
+
+Standard messaging apps optimize for [X].
+PrayerMap is different because:
+- Users are in vulnerable emotional states
+- Anonymous prayer partners need trust signals
+- The spiritual context changes UX expectations
+- [Other PrayerMap-specific factors]
+
+Therefore, we should [specific adaptation].
+```
+
+---
+
+## Source Requirements
+
+### Minimum Sources
+
+- **Research tasks:** 10+ sources with URLs
+- **Architecture decisions:** 5+ sources
+- **Quick investigations:** 3+ sources
+
+### Source Quality
+
+Prefer in order:
+1. Official documentation
+2. Engineering blogs from companies at scale (Discord, Stripe, etc.)
+3. Conference talks with code examples
+4. Well-maintained open source implementations
+5. Technical books
+
+Avoid:
+- Medium articles without credentials
+- Stack Overflow answers (fine for syntax, not architecture)
+- AI-generated summaries (including your own previous outputs)
+
+### Citation Format
+
+```markdown
+**Source:** [Title](URL) - [Organization] - [Why it's relevant]
+
+Example:
+**Source:** [How Discord Stores Trillions of Messages](https://discord.com/blog/...) - Discord Engineering - Relevant because they solved message ordering at scale, which informs our cursor pagination approach.
+```
+
+---
+
+## Research Output Structure
+
+```markdown
+# [Topic] Research - PrayerMap
+
+## Executive Summary
+[3-5 sentences with THE recommendation, not a menu of options]
+
+## The Recommendation
+[Clear, opinionated guidance specific to PrayerMap]
+
+## Why This Fits PrayerMap
+[Connect to our mission, scale, and user context]
+
+## What We Considered But Rejected
+[Options that don't fit and why]
+
+## Implementation Guidance
+[Specific, actionable steps - not vague "consider X"]
+
+## Risks and Mitigations
+[What could go wrong, how we'd handle it]
+
+## Sources
+[Numbered list with URLs and relevance notes]
+
+## Status: 💭  ➡️  📈
+[What this research enables, what questions remain]
+```
+
+---
+
+## The Anti-Encyclopedic Test
+
+Before submitting research, ask:
+
+1. **Could this apply to any app?** If yes, it's too generic. Add PrayerMap context.
+
+2. **Does it make a decision?** If it presents options without choosing, choose one.
+
+3. **Would JJ have to do more research?** If yes, you haven't finished.
+
+4. **Is there a "just do this" section?** If not, add one.
+
+---
+
+## Remember
+
+Research exists to enable action, not to demonstrate knowledge.
+
+**💭  ➡️  📈**

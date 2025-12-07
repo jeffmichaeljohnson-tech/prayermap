@@ -1,0 +1,208 @@
+---
+description: How to execute tasks with rigor and verification
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Task Execution Standards
+
+## Before Starting Any Task
+
+### 1. Understand the Context
+
+```markdown
+Before writing code, answer:
+- What problem are we solving?
+- Who is affected?
+- What already exists that I should know about?
+- What are the constraints?
+```
+
+### 2. Check What Already Exists
+
+```bash
+# Search for related code
+grep -r "keyword" src/
+ls -la path/to/relevant/directory/
+
+# Read existing implementations
+cat src/related/file.ts
+```
+
+**Never duplicate what already exists.** PrayerMap already has:
+- `useAudioRecorder.ts` - Audio recording hook
+- `AudioRecorder.tsx` - Audio recording component
+- `storageService.ts` - File uploads to Supabase Storage
+
+### 3. Plan Before Coding
+
+For any task with 3+ steps:
+- Write out the steps first
+- Identify dependencies between steps
+- Note which steps can fail and how to handle it
+
+---
+
+## During Task Execution
+
+### Show Your Work
+
+When you create a file:
+```bash
+# Prove it exists
+ls -la path/to/new/file.ts
+
+# Show key content
+head -30 path/to/new/file.ts
+```
+
+When you modify a file:
+```bash
+# Show the change
+git diff path/to/modified/file.ts
+```
+
+When you run a command:
+```bash
+# Show the output
+npm run build
+# Output: ✓ Built successfully in 4.2s
+```
+
+### Handle Errors Immediately
+
+When something fails:
+1. **Stop** - Don't continue hoping it'll work later
+2. **Diagnose** - Read the actual error message
+3. **Fix** - Address the root cause
+4. **Verify** - Prove the fix worked
+5. **Document** - Note what went wrong for future reference
+
+### Keep Context Focused
+
+- One task at a time
+- Finish what you start before moving on
+- If blocked, document why and what's needed
+
+---
+
+## Completing a Task
+
+### The Verification Checklist
+
+Before claiming any task is done:
+
+```markdown
+## Verification for [Task Name]
+
+### Files Created/Modified
+- [ ] `path/to/file.ts` - [purpose] - VERIFIED EXISTS
+- [ ] `path/to/other.ts` - [purpose] - VERIFIED EXISTS
+
+### Functionality Tested
+- [ ] [Feature 1] - Tested how: [method] - Result: [pass/fail]
+- [ ] [Feature 2] - Tested how: [method] - Result: [pass/fail]
+
+### Edge Cases Considered
+- [ ] What if [scenario]? Handled by [solution]
+- [ ] What if [scenario]? Handled by [solution]
+
+### Security Reviewed
+- [ ] No secrets in code
+- [ ] RLS policies in place (if database)
+- [ ] Input validation present
+
+### Status: 💭  ➡️  📈
+[What's working, what could be improved, what's next]
+```
+
+### Output Format
+
+End every task with:
+
+```markdown
+## Task Complete: 💭  ➡️  📈
+
+### What Was Done
+- [Concrete deliverable 1]
+- [Concrete deliverable 2]
+
+### What Was Verified
+- [Proof of functionality]
+
+### What Could Be Improved
+- [Honest assessment of gaps]
+
+### Recommended Next Steps
+- [Logical follow-up work]
+```
+
+---
+
+## Anti-Patterns to Avoid
+
+### ❌ "Implementation Complete" Without Proof
+
+```markdown
+# BAD
+✅ Created messaging system
+✅ All files in place
+✅ Ready for production
+
+# GOOD
+💭  ➡️  📈 Messaging System Progress
+
+Created:
+- `migrations/add_messaging.sql` (verified: ls shows 20KB file)
+- `services/messageService.ts` (verified: TypeScript compiles)
+
+Not Yet Verified:
+- Database migration not applied to remote
+- No end-to-end test of message flow
+- RLS policies not tested with actual users
+
+Next: Apply migration and test with real Supabase instance
+```
+
+### ❌ Skipping to "Done"
+
+```markdown
+# BAD
+Task: Add video recording
+Status: ✅ Complete
+
+# GOOD
+Task: Add video recording
+Status: 💭  ➡️  📈
+
+Completed:
+- useVideoRecorder hook created
+- VideoRecorder component created
+- Compiles without errors
+
+Remaining:
+- Not tested on iOS Safari (known quirks)
+- Not tested with actual Supabase Storage upload
+- No error handling for permission denied
+```
+
+### ❌ Generic Recommendations
+
+```markdown
+# BAD
+"Consider implementing caching for better performance"
+
+# GOOD
+"The `getConversations` query runs on every mount.
+For PrayerMap's expected 50 messages/conversation average,
+add React Query with 30-second staleTime:
+queryClient.setQueryDefaults(['conversations'], { staleTime: 30000 })"
+```
+
+---
+
+## Remember
+
+Every task is a step on the mountain, not the summit.
+
+**💭  ➡️  📈**

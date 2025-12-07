@@ -1,0 +1,240 @@
+---
+description: Code quality standards - simplicity, verification, no over-engineering
+globs: ["**/*.ts", "**/*.tsx", "**/*.sql"]
+alwaysApply: true
+---
+
+# Code Quality Standards
+
+## The Simplicity Principle
+
+**Every line of code is a liability.**
+
+Before adding code, ask:
+- Can I solve this with existing code?
+- Can I solve this with less code?
+- Will future-me understand this in 6 months?
+
+---
+
+## What We Write
+
+### ✅ Simple, Direct Code
+
+```typescript
+// GOOD: Clear, one purpose
+async function getConversation(id: string) {
+  const { data, error } = await supabase
+    .from('conversations')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error) throw new Error(`Failed to get conversation: ${error.message}`);
+  return data;
+}
+```
+
+### ✅ Obvious Names
+
+```typescript
+// GOOD: Names describe exactly what they are
+const unreadMessageCount = messages.filter(m => !m.read_at).length;
+const isAnonymousResponder = conversation.participant_2_anonymous;
+const shouldShowTypingIndicator = isOtherUserTyping && !isLoading;
+```
+
+### ✅ Early Returns
+
+```typescript
+// GOOD: Handle edge cases first, then happy path
+function processMessage(message: Message | null) {
+  if (!message) return null;
+  if (message.deleted_at) return null;
+  if (!message.content.trim()) return null;
+
+  return {
+    ...message,
+    displayContent: formatContent(message.content),
+  };
+}
+```
+
+---
+
+## What We Don't Write
+
+### ❌ Premature Abstractions
+
+```typescript
+// BAD: Abstraction for one use case
+class MessageProcessor {
+  private strategies: Map<string, ProcessingStrategy>;
+
+  constructor() {
+    this.strategies = new Map();
+    this.registerStrategy('text', new TextStrategy());
+    this.registerStrategy('audio', new AudioStrategy());
+  }
+
+  process(message: Message) {
+    return this.strategies.get(message.type)?.process(message);
+  }
+}
+
+// GOOD: Just handle the cases
+function processMessage(message: Message) {
+  switch (message.content_type) {
+    case 'text': return message.content;
+    case 'audio': return `[Audio: ${message.media_duration_seconds}s]`;
+    case 'video': return `[Video: ${message.media_duration_seconds}s]`;
+    default: return message.content;
+  }
+}
+```
+
+### ❌ Config for Everything
+
+```typescript
+// BAD: Configurable when we only use one value
+const MESSAGE_CONFIG = {
+  maxLength: 2000,
+  minLength: 1,
+  allowedTypes: ['text', 'audio', 'video'],
+  defaultType: 'text',
+  truncatePreviewAt: 100,
+};
+
+// GOOD: Constants where needed
+const MAX_MESSAGE_LENGTH = 2000;
+```
+
+### ❌ Types That Don't Help
+
+```typescript
+// BAD: Type that adds nothing
+type MessageId = string;
+type UserId = string;
+
+function getMessage(id: MessageId, userId: UserId) { ... }
+
+// GOOD: Just use the primitive
+function getMessage(messageId: string, userId: string) { ... }
+
+// GOOD: Type that actually adds safety
+type ContentType = 'text' | 'audio' | 'video';
+```
+
+### ❌ Comments That Repeat Code
+
+```typescript
+// BAD: Comment says what code already says
+// Get the user's conversations
+const conversations = await getConversations(userId);
+
+// GOOD: Comment explains WHY
+// Fetch conversations before checking unread count to ensure cache is warm
+const conversations = await getConversations(userId);
+```
+
+---
+
+## Error Handling
+
+### Do Handle
+
+- Network failures (Supabase calls)
+- User input validation
+- Permission denied scenarios
+- Missing data that should exist
+
+### Don't Handle
+
+- Impossible states (trust TypeScript)
+- Internal function contracts (if types are right, don't check again)
+- Hypothetical future errors
+
+```typescript
+// GOOD: Handle real errors at boundaries
+async function sendMessage(conversationId: string, content: string) {
+  if (!content.trim()) {
+    throw new Error('Message cannot be empty');
+  }
+
+  if (content.length > MAX_MESSAGE_LENGTH) {
+    throw new Error(`Message too long (max ${MAX_MESSAGE_LENGTH} characters)`);
+  }
+
+  const { data, error } = await supabase
+    .from('messages')
+    .insert({ conversation_id: conversationId, content })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Failed to send message:', error);
+    throw new Error('Failed to send message. Please try again.');
+  }
+
+  return data;
+}
+```
+
+---
+
+## SQL Standards
+
+### Migrations Must Be Idempotent
+
+```sql
+-- GOOD: Safe to run multiple times
+CREATE TABLE IF NOT EXISTS messages ( ... );
+
+DROP POLICY IF EXISTS "policy_name" ON table_name;
+CREATE POLICY "policy_name" ON table_name ...;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'constraint_name') THEN
+    ALTER TABLE table_name ADD CONSTRAINT constraint_name ...;
+  END IF;
+END $$;
+```
+
+### Always Add Comments
+
+```sql
+-- GOOD: Future you will thank present you
+COMMENT ON TABLE conversations IS 'Threaded conversations between prayer requesters and responders';
+COMMENT ON COLUMN conversations.participant_2_anonymous IS 'If true, responder identity hidden from requester';
+```
+
+### RLS Is Not Optional
+
+```sql
+-- Every table that holds user data
+ALTER TABLE table_name ENABLE ROW LEVEL SECURITY;
+
+-- And must have policies
+CREATE POLICY "Users can view own data"
+  ON table_name FOR SELECT
+  USING (auth.uid() = user_id);
+```
+
+---
+
+## The Review Question
+
+Before submitting code, ask:
+
+**"Would I mass-produce this code?"**
+
+If the answer is "I'd be embarrassed if this pattern spread" - refactor first.
+
+---
+
+## Remember
+
+Simple code that works beats clever code that might work.
+
+**💭  ➡️  📈**

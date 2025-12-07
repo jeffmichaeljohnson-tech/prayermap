@@ -1,0 +1,92 @@
+---
+description: Project file structure and organization
+globs: ["src/**/*"]
+alwaysApply: false
+---
+
+# File Structure
+
+## Project Layout
+```
+prayermap/
+├── .cursor/
+│   └── rules/              # Cursor IDE rules
+├── docs/                   # Project documentation
+│   ├── ARCHITECTURE.md
+│   ├── PRD.md
+│   └── LIVING-MAP-PRINCIPLE.md
+├── public/                 # Static assets
+├── scripts/                # Build/deploy scripts
+│   └── seatbelt/          # SEATBELT audit system
+├── src/
+│   ├── components/        # React components
+│   │   ├── common/        # Shared components
+│   │   ├── map/           # Map-related components
+│   │   ├── prayer/        # Prayer-related components
+│   │   └── ui/            # Base UI components
+│   ├── hooks/             # Custom React hooks
+│   ├── lib/               # Utilities and helpers
+│   ├── services/          # API and external services
+│   ├── styles/            # Global styles
+│   ├── types/             # TypeScript type definitions
+│   ├── App.tsx            # Root component
+│   └── main.tsx           # Entry point
+├── supabase/
+│   ├── functions/         # Edge Functions
+│   └── migrations/        # Database migrations
+├── ios/                   # iOS native project
+├── android/               # Android native project
+└── ...config files
+```
+
+## Component Organization
+```typescript
+// Single component file (< 100 lines)
+src/components/prayer/PrayerCard.tsx
+
+// Multi-file component (> 100 lines)
+src/components/prayer/PrayerModal/
+├── index.tsx              # Main export
+├── PrayerModalHeader.tsx  # Subcomponent
+├── PrayerModalBody.tsx    # Subcomponent
+├── usePrayerModal.ts      # Hook
+└── types.ts               # Local types
+```
+
+## Naming Conventions
+- **Components:** PascalCase (`PrayerCard.tsx`)
+- **Hooks:** camelCase with `use` prefix (`usePrayers.ts`)
+- **Utils:** camelCase (`formatDate.ts`)
+- **Types:** PascalCase (`Prayer.ts` or in `types/`)
+- **Constants:** SCREAMING_SNAKE_CASE
+
+## Import Order
+```typescript
+// 1. React and core libraries
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+
+// 2. Third-party libraries
+import mapboxgl from 'mapbox-gl';
+
+// 3. Internal aliases (@/)
+import { supabase } from '@/lib/supabase';
+import { usePrayers } from '@/hooks/usePrayers';
+
+// 4. Relative imports
+import { PrayerCardHeader } from './PrayerCardHeader';
+
+// 5. Types (last)
+import type { Prayer } from '@/types';
+```
+
+## Path Aliases
+```typescript
+// tsconfig.json paths
+{
+  "@/*": ["./src/*"]
+}
+
+// Usage
+import { Button } from '@/components/ui/Button';
+```

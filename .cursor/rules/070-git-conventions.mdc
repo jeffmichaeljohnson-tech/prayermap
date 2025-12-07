@@ -1,0 +1,63 @@
+---
+description: Git workflow and commit conventions
+globs: [".git/**/*", "**/*.md"]
+alwaysApply: false
+---
+
+# Git Conventions
+
+## Branch Naming
+```
+feature/add-prayer-moderation
+fix/map-marker-positioning
+chore/update-dependencies
+docs/api-documentation
+```
+
+## Commit Message Format
+```
+<type>: <short description>
+
+<optional body>
+
+<optional footer>
+```
+
+## Commit Types
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation only
+- `style`: Formatting, no code change
+- `refactor`: Code change without feature/fix
+- `test`: Adding/updating tests
+- `chore`: Build, deps, config changes
+
+## Examples
+```
+feat: add prayer expiration countdown
+
+fix: correct marker position on map zoom
+
+chore: upgrade mapbox-gl to v3.0
+
+docs: update API documentation for prayers endpoint
+```
+
+## Rules
+- Write in imperative mood ("add" not "added")
+- Keep subject line under 72 characters
+- Capitalize first letter
+- No period at end of subject
+- Separate subject from body with blank line
+- Reference issues in footer: `Closes #123`
+
+## PR Guidelines
+- One feature per PR
+- Include screenshots for UI changes
+- Update docs if adding features
+- Ensure tests pass
+- Request review from team
+
+## Protected Branches
+- `main` - Production, requires PR
+- `develop` - Integration branch

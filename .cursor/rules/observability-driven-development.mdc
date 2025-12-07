@@ -1,0 +1,285 @@
+---
+description: Observability requirements - all operations must be logged, measured, and monitored
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: true
+---
+
+# Observability-Driven Development
+
+## Core Principle
+
+**You cannot manage what you cannot measure.**
+
+All operations MUST be observable through:
+- Structured logging
+- Performance monitoring
+- Error tracking
+- Real-time metrics
+
+---
+
+## Required Infrastructure
+
+### LangSmith
+
+**Purpose:** Agent performance tracking
+
+**URL:** https://smith.langchain.com
+
+**Use for:**
+- Agent execution traces
+- Decision history
+- Quality metrics
+- Performance analysis
+
+### Datadog
+
+**Purpose:** Security, debugging, performance measurement
+
+**Use for:**
+- Application monitoring
+- Error tracking
+- Security alerts
+- Performance dashboards
+
+### Pinecone
+
+**Purpose:** Memory and knowledge persistence
+
+**Namespaces:**
+- `prayermap` - Project-specific knowledge
+- `ora` - Framework patterns
+
+---
+
+## Logging Standards
+
+### Structured Logger
+
+```typescript
+import { structuredLogger } from '@/shared/lib/logger';
+
+// DO: Use structured logging
+structuredLogger.info('Prayer created', {
+  prayerId: prayer.id,
+  userId: user.id,
+  contentType: prayer.content_type,
+  duration: processingTime
+});
+
+// DON'T: Use console.log
+console.log('Created prayer');  // NO CONTEXT
+```
+
+### Log Levels
+
+| Level | Use For |
+|-------|---------|
+| ERROR | Errors requiring immediate attention |
+| WARN | Potential issues, degraded states |
+| INFO | Normal operations, business events |
+| DEBUG | Development troubleshooting |
+
+### Required Context
+
+Every log MUST include:
+- Timestamp (automatic)
+- User ID (when available)
+- Request ID / Trace ID
+- Operation name
+- Relevant entity IDs
+
+---
+
+## Performance Monitoring
+
+### Track These Metrics
+
+| Metric | Target | Alert Threshold |
+|--------|--------|-----------------|
+| API Response Time (p95) | < 300ms | > 500ms |
+| Map Load Time | < 2s | > 3s |
+| Prayer Animation FPS | 60fps | < 30fps |
+| Real-time Update Latency | < 2s | > 5s |
+| First Contentful Paint | < 1.5s | > 2s |
+
+### Performance Wrapper
+
+```typescript
+import { performanceMonitor } from '@/shared/lib/performance';
+
+// Wrap async operations
+const result = await performanceMonitor.track(
+  'fetchPrayers',
+  () => prayerService.fetchPrayers(filters)
+);
+
+// Track component renders
+performanceMonitor.trackRender('PrayerCard', renderTime);
+```
+
+---
+
+## Error Tracking
+
+### Error Boundaries
+
+```typescript
+// Every major component tree needs error boundary
+<ErrorBoundary
+  fallback={<ErrorFallback />}
+  onError={(error, errorInfo) => {
+    errorTracking.capture(error, {
+      componentStack: errorInfo.componentStack,
+      userId: currentUser?.id
+    });
+  }}
+>
+  <MapView />
+</ErrorBoundary>
+```
+
+### Error Context
+
+Always include:
+- Stack trace
+- User context (ID, session)
+- Application state
+- Recent actions
+- Device/browser info
+
+---
+
+## Real-Time Metrics
+
+### Living Map Metrics (Critical)
+
+```typescript
+// Track real-time update latency
+const startTime = Date.now();
+supabase
+  .channel('prayers')
+  .on('postgres_changes', { event: 'INSERT' }, (payload) => {
+    const latency = Date.now() - payload.commit_timestamp;
+    metrics.track('realtime_latency', latency);
+
+    if (latency > 2000) {
+      alerting.warn('Real-time latency exceeded 2s', { latency });
+    }
+  });
+```
+
+### Memorial Line Persistence
+
+```typescript
+// Verify memorial lines are persisted
+async function verifyMemorialLine(responseId: string) {
+  const exists = await checkMemorialLineExists(responseId);
+
+  if (!exists) {
+    errorTracking.critical('Memorial line not persisted', {
+      responseId,
+      severity: 'CRITICAL' // Living Map violation
+    });
+  }
+
+  metrics.track('memorial_line_persistence', exists ? 1 : 0);
+}
+```
+
+---
+
+## Dashboard Requirements
+
+### Development Dashboard
+
+Monitor during development:
+- Build times
+- Test coverage
+- Type errors
+- Bundle size
+
+### Production Dashboard
+
+Monitor in production:
+- Active users
+- Prayer activity
+- Error rates
+- Performance percentiles
+- Real-time latency
+
+---
+
+## Alerting Rules
+
+### Critical (Page immediately)
+
+- Real-time updates > 5s latency
+- Memorial lines not persisting
+- Authentication failures spike
+- Error rate > 5%
+
+### Warning (Slack notification)
+
+- Real-time updates > 2s latency
+- API response time > 500ms
+- Build failures
+- Test failures
+
+### Info (Daily digest)
+
+- New deployments
+- Performance trends
+- Usage statistics
+
+---
+
+## Implementation Checklist
+
+When adding new features:
+
+- [ ] Structured logging added
+- [ ] Performance tracking implemented
+- [ ] Error boundary in place
+- [ ] Metrics defined
+- [ ] Alert thresholds set
+- [ ] Dashboard updated
+
+---
+
+## Anti-Patterns
+
+### DON'T
+
+```typescript
+// No context
+console.log('Error');
+
+// No measurement
+await someOperation();
+
+// Silent failure
+try { await risky(); } catch (e) { /* swallow */ }
+```
+
+### DO
+
+```typescript
+// Rich context
+structuredLogger.error('Operation failed', {
+  operation: 'createPrayer',
+  userId,
+  error: error.message
+});
+
+// Measured
+await performanceMonitor.track('createPrayer', operation);
+
+// Tracked failure
+try {
+  await risky();
+} catch (e) {
+  errorTracking.capture(e, { context });
+  throw e; // Re-throw after tracking
+}
+```

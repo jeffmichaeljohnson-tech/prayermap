@@ -1,0 +1,43 @@
+---
+description: PrayerMap project overview and core principles
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# PrayerMap Project Overview
+
+## Identity
+PrayerMap is a location-based spiritual platform enabling users to share prayer requests and support one another through a beautifully designed map interface.
+
+**Mission:** "See where prayer is needed. Send prayer where you are."
+**Live Site:** https://prayermap.net
+**Status:** 100% non-profit ministry
+
+## The Living Map Principle (ABSOLUTE PRIORITY)
+PrayerMap is the world's first LIVING MAP where users witness prayer in real-time and see eternal memorial connections.
+
+**Non-Negotiable Requirements:**
+- Real-time updates <2 seconds
+- Memorial lines are ETERNAL (never expire, never delete)
+- Universal shared map (everyone sees same prayer history)
+- Live witnessing experience is THE product
+
+## Tech Stack
+- **Frontend:** React 18 + TypeScript + Vite
+- **Styling:** Tailwind CSS + shadcn/ui + Framer Motion
+- **Maps:** Mapbox GL JS
+- **State:** TanStack Query (React Query)
+- **Backend:** Supabase (PostgreSQL + Auth + Realtime + Edge Functions)
+- **Deployment:** Vercel (web) + Capacitor (iOS/Android)
+
+## Project IDs
+- **Supabase:** oomrmfhvsxtxgqqthisz
+- **Vercel:** prj_BQSwcoLuVg6U0DmpeBrO0gmEwwEU
+
+## Critical Documentation
+Before making changes, read in order:
+1. `docs/CLAUDE.md` - Entry point
+2. `docs/LIVING-MAP-PRINCIPLE.md` - Core mission
+3. `docs/ARTICLE.md` - Philosophy
+4. `docs/RULES.md` - Constraints
+5. `docs/SECURITY-SPEC.md` - RLS requirements

@@ -1,0 +1,199 @@
+---
+description: Multi-agent orchestration patterns from the Ora framework - how Claude directs autonomous agents
+globs: ["**/*"]
+alwaysApply: false
+---
+
+# Agent Orchestration - The Ora Framework
+
+## Overview
+
+Claude serves as **Director** orchestrating specialized agents for research, implementation, QA, and documentation. This pattern enabled 150+ hours of work in 7 hours on MCP-WP.
+
+---
+
+## The Director Pattern
+
+### Claude's Role
+
+```
+Director (Claude)
+    ↓ Assigns tasks via structured prompts
+Specialized Agents (Cursor)
+    ↓ Execute autonomously
+    ↓ Report back with deliverables
+Director reviews → Next assignment
+```
+
+### 15-Minute Review Cycle
+
+1. **Read agent outputs** - What did they deliver?
+2. **Query memory** - Check Pinecone for context
+3. **Make strategic decisions** - Assign next tasks
+4. **Post summary** - Update status
+5. **Wait** - Agents work autonomously
+
+---
+
+## Agent Types
+
+### Research Agent
+
+**Purpose:** Deep research, best practices, competitive analysis
+
+**Template prompt:**
+```markdown
+You are Research Agent [N] for PrayerMap.
+
+## MISSION
+Research [TOPIC] with world-class standards.
+
+## RESEARCH FOCUS
+1. [Specific area 1]
+2. [Specific area 2]
+3. [Specific area 3]
+
+## OUTPUT REQUIREMENTS
+- Minimum 15 sources with URLs
+- Clear recommendation for PrayerMap
+- Code examples included
+
+## SUCCESS CRITERIA
+- 15+ credible sources
+- Actionable guidance
+- Written to [file path]
+```
+
+### Implementation Agent
+
+**Purpose:** Build features, write code, create infrastructure
+
+### QA Agent
+
+**Purpose:** Test deliverables, validate quality
+
+### Documentation Agent
+
+**Purpose:** Write guides, create tutorials
+
+---
+
+## Communication Protocol
+
+### Task Assignment Format
+
+```json
+{
+  "agentId": "agent-1",
+  "priority": "HIGH",
+  "messageType": "NEW_TASK_ASSIGNMENT",
+  "task": {
+    "title": "Task title",
+    "description": "What to do",
+    "objective": "What we want to achieve",
+    "successCriteria": {
+      "mustHave": ["Criterion 1", "Criterion 2"]
+    }
+  }
+}
+```
+
+### Completion Format
+
+```markdown
+## Task Complete:  ➡️
+
+### What Was Done
+- [Concrete deliverable 1]
+- [Concrete deliverable 2]
+
+### What Was Verified
+- [Proof of functionality]
+
+### What Could Be Improved
+- [Honest assessment]
+
+### Recommended Next Steps
+- [Follow-up work]
+```
+
+---
+
+## Quality Gates
+
+| Metric | Target |
+|--------|--------|
+| Quality | 85%+ |
+| Accuracy | 90%+ |
+| Documentation | 95%+ coverage |
+| Citations | All claims backed |
+| Testing | Verification notes required |
+
+---
+
+## Parallel Execution
+
+**Run multiple agents simultaneously when tasks are independent:**
+
+```
+Agent 1: Research modular architecture ──┐
+                                          ├──→ Director synthesizes
+Agent 2: Research code organization ─────┘
+
+Agent 3: Implement feature A ────────────┐
+                                          ├──→ Director integrates
+Agent 4: Implement feature B ─────────────┘
+```
+
+---
+
+## Escalation Rules
+
+Agents escalate immediately when:
+- Security vulnerabilities discovered
+- Breaking changes detected
+- Blocked for 30+ minutes
+- Research depends on other findings
+- Strategic decision needed
+
+---
+
+## Memory Integration
+
+### Before Starting Work
+
+```
+1. Query Pinecone: mcp__pinecone-prayermap__search_nodes
+2. Read relevant docs
+3. Check for existing implementations
+4. THEN start work
+```
+
+### After Completing Work
+
+```
+1. Update Pinecone with findings
+2. Document decisions made
+3. Note what was learned
+4. Store in memory, NOT files
+```
+
+---
+
+## Anti-Patterns
+
+### DON'T
+
+- Claim work is done without verification
+- Skip the memory check
+- Work sequentially when parallel is possible
+- Forget to document findings in Pinecone
+- Leave work uncommitted between agents
+
+### DO
+
+- Verify every claim with proof
+- Query memory before starting
+- Parallelize independent tasks
+- Store learnings in Pinecone
+- Commit and push after each session

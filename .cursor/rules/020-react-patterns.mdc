@@ -1,0 +1,77 @@
+---
+description: React component patterns and conventions
+globs: ["**/*.tsx", "src/components/**/*", "src/hooks/**/*"]
+alwaysApply: false
+---
+
+# React Patterns
+
+## Component Structure
+```typescript
+import { useState, useCallback } from 'react';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import type { Prayer } from '@/types';
+
+interface PrayerCardProps {
+  prayer: Prayer;
+  onPray: (id: string) => void;
+}
+
+export function PrayerCard({ prayer, onPray }: PrayerCardProps) {
+  // 1. Hooks first
+  const [isHovered, setIsHovered] = useState(false);
+
+  // 2. Derived state
+  const timeAgo = formatRelativeTime(prayer.createdAt);
+
+  // 3. Handlers
+  const handleClick = useCallback(() => {
+    onPray(prayer.id);
+  }, [prayer.id, onPray]);
+
+  // 4. Render
+  return (
+    <motion.div
+      className={cn('glass rounded-xl p-4', isHovered && 'glass-strong')}
+      whileHover={{ scale: 1.02 }}
+    >
+      {/* Content */}
+    </motion.div>
+  );
+}
+```
+
+## Rules
+- Functional components ONLY (no classes)
+- Always use TypeScript interfaces for props
+- Prefer named exports over default exports
+- Keep components under 100 lines - split if larger
+- Custom hooks for reusable logic (`use` prefix)
+
+## Hooks Best Practices
+```typescript
+// Custom hook pattern
+export function usePrayersNearby(lat: number, lng: number) {
+  return useQuery({
+    queryKey: ['prayers', 'nearby', lat, lng],
+    queryFn: () => fetchPrayersNearby(lat, lng),
+    staleTime: 30 * 1000,
+    enabled: Boolean(lat && lng),
+  });
+}
+```
+
+## State Management
+- TanStack Query for server state
+- useState for local UI state
+- NO Redux, MobX, or external state libraries
+- Lift state only when necessary
+
+## Error & Loading States
+ALWAYS implement for async operations:
+```typescript
+if (isLoading) return <Skeleton />;
+if (error) return <ErrorMessage error={error} />;
+if (!data) return null;
+```

@@ -1,0 +1,109 @@
+---
+description: Capacitor mobile integration patterns
+globs: ["capacitor.config.ts", "ios/**/*", "android/**/*", "src/**/*"]
+alwaysApply: false
+---
+
+# Capacitor Mobile Integration
+
+## Configuration
+```typescript
+// capacitor.config.ts
+import type { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: 'app.prayermap',
+  appName: 'PrayerMap',
+  webDir: 'dist',
+  server: {
+    androidScheme: 'https'
+  },
+  plugins: {
+    Geolocation: {
+      // iOS requires usage description
+    },
+    PushNotifications: {
+      presentationOptions: ['badge', 'sound', 'alert']
+    }
+  }
+};
+```
+
+## Platform Detection
+```typescript
+import { Capacitor } from '@capacitor/core';
+
+const isNative = Capacitor.isNativePlatform();
+const platform = Capacitor.getPlatform(); // 'ios' | 'android' | 'web'
+```
+
+## Native Geolocation
+```typescript
+import { Geolocation } from '@capacitor/geolocation';
+
+// Request permissions first on native
+if (Capacitor.isNativePlatform()) {
+  const permission = await Geolocation.requestPermissions();
+  if (permission.location !== 'granted') {
+    // Handle denied permission
+  }
+}
+
+// Get current position
+const position = await Geolocation.getCurrentPosition({
+  enableHighAccuracy: true,
+  timeout: 10000,
+});
+
+const { latitude, longitude } = position.coords;
+```
+
+## Push Notifications
+```typescript
+import { PushNotifications } from '@capacitor/push-notifications';
+
+// Register for push
+await PushNotifications.requestPermissions();
+await PushNotifications.register();
+
+// Listen for token
+PushNotifications.addListener('registration', (token) => {
+  // Send token to server
+});
+```
+
+## Deep Linking
+```typescript
+import { App } from '@capacitor/app';
+
+App.addListener('appUrlOpen', ({ url }) => {
+  // Handle deep link: prayermap://prayer/123
+  const prayerId = new URL(url).pathname.split('/')[2];
+  navigateToPrayer(prayerId);
+});
+```
+
+## Build Commands
+```bash
+# Build web assets
+npm run build
+
+# Sync to native projects
+npx cap sync
+
+# Open in Xcode
+npx cap open ios
+
+# Open in Android Studio
+npx cap open android
+```
+
+## iOS Considerations
+- Add location usage descriptions in Info.plist
+- Handle notch/safe areas with CSS env()
+- Test on physical device for accurate geolocation
+
+## Android Considerations
+- Handle back button with App.addListener('backButton')
+- Request runtime permissions
+- Test on various screen sizes

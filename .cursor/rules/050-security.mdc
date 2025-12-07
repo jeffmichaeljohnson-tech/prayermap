@@ -1,0 +1,63 @@
+---
+description: Security guidelines and best practices
+globs: ["**/*.ts", "**/*.tsx", "supabase/**/*", ".env*"]
+alwaysApply: false
+---
+
+# Security Guidelines
+
+## CRITICAL: Environment Variables
+```bash
+# NEVER prefix with VITE_ for sensitive keys
+SUPABASE_SERVICE_ROLE_KEY=xxx  # Server-side only
+HIVE_API_KEY=xxx               # Server-side only
+
+# ONLY use VITE_ for truly public values
+VITE_SUPABASE_URL=xxx          # Public API endpoint
+VITE_SUPABASE_ANON_KEY=xxx     # Public anon key (RLS protects data)
+VITE_MAPBOX_TOKEN=xxx          # Public, restricted by domain
+```
+
+## Row Level Security (RLS)
+**ALL Supabase tables MUST have RLS enabled.** No exceptions.
+
+```sql
+-- Enable RLS on every table
+ALTER TABLE prayers ENABLE ROW LEVEL SECURITY;
+
+-- Example policies
+CREATE POLICY "Anyone can read active prayers"
+  ON prayers FOR SELECT
+  USING (status = 'active');
+
+CREATE POLICY "Users can only modify own prayers"
+  ON prayers FOR UPDATE
+  USING (auth.uid() = user_id);
+```
+
+## Input Validation
+- ALWAYS validate user input server-side
+- Use parameterized queries (Supabase does this automatically)
+- Sanitize content before display
+- Limit text lengths at DB and form level
+
+## Authentication
+```typescript
+// Always check auth state before sensitive operations
+const { data: { user } } = await supabase.auth.getUser();
+if (!user) {
+  throw new Error('Authentication required');
+}
+```
+
+## Content Security
+- Use TheHive.ai for content moderation (server-side)
+- Filter profanity and inappropriate content
+- Rate limit submissions
+
+## NEVER Do
+- Store passwords in plain text
+- Log sensitive data
+- Expose service role keys to client
+- Trust client-side validation alone
+- Disable RLS "temporarily"

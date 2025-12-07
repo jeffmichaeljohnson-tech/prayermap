@@ -1,0 +1,118 @@
+---
+description: Supabase database, auth, and integration patterns
+globs: ["**/*.ts", "**/*.tsx", "supabase/**/*"]
+alwaysApply: false
+---
+
+# Supabase Integration
+
+## Project Info
+- **Project ID:** oomrmfhvsxtxgqqthisz
+- **Region:** US East
+
+## Client Setup
+```typescript
+// Client-side (React) - uses anon key
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON_KEY
+);
+```
+
+```typescript
+// Server-side (Edge Functions) - can use service role
+const supabase = createClient(
+  Deno.env.get('SUPABASE_URL')!,
+  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+);
+```
+
+## SECURITY: Row Level Security (RLS)
+**ALL tables MUST have RLS enabled.** No exceptions.
+
+```sql
+-- Enable RLS
+ALTER TABLE prayers ENABLE ROW LEVEL SECURITY;
+
+-- Example policies
+CREATE POLICY "Anyone can read prayers"
+  ON prayers FOR SELECT
+  USING (true);
+
+CREATE POLICY "Users can create own prayers"
+  ON prayers FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+```
+
+## Query Patterns
+```typescript
+// Fetch with error handling
+const { data, error } = await supabase
+  .from('prayers')
+  .select('*')
+  .eq('status', 'active')
+  .order('created_at', { ascending: false });
+
+if (error) throw error;
+return data;
+
+// RPC for complex queries
+const { data } = await supabase.rpc('get_prayers_within_radius', {
+  user_lat: location.lat,
+  user_lng: location.lng,
+  radius_km: 48,
+  limit_count: 50
+});
+```
+
+## Realtime Subscriptions
+```typescript
+// Subscribe to new prayers
+const channel = supabase
+  .channel('prayers')
+  .on('postgres_changes',
+    { event: 'INSERT', schema: 'public', table: 'prayers' },
+    (payload) => {
+      // Handle new prayer
+    }
+  )
+  .subscribe();
+
+// Cleanup
+return () => supabase.removeChannel(channel);
+```
+
+## Environment Variables
+```bash
+# Client-side (VITE_ prefix = exposed to browser)
+VITE_SUPABASE_URL=https://xxx.supabase.co
+VITE_SUPABASE_ANON_KEY=xxx
+
+# Server-side only (NO VITE_ prefix)
+SUPABASE_SERVICE_ROLE_KEY=xxx  # NEVER prefix with VITE_
+```
+
+## Edge Functions
+Location: `supabase/functions/`
+
+```typescript
+// supabase/functions/my-function/index.ts
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+serve(async (req) => {
+  const { data } = await req.json();
+
+  return new Response(
+    JSON.stringify({ success: true }),
+    { headers: { "Content-Type": "application/json" } }
+  );
+});
+```
+
+## Migrations
+- Location: `supabase/migrations/`
+- Format: `YYYYMMDDHHMMSS_description.sql`
+- Apply: `supabase db push`
+- Generate types: `supabase gen types typescript`
