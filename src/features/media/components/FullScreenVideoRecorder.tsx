@@ -211,6 +211,7 @@ export function FullscreenVideoRecorder({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 z-[100] bg-black flex flex-col"
+      onClick={(e) => e.stopPropagation()}
     >
       <canvas ref={canvasRef} className="hidden" />
 
