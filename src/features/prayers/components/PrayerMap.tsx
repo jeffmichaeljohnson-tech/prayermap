@@ -565,7 +565,7 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
       </div>
 
       {/* Category Filter Bar */}
-      <div className="absolute top-24 left-0 right-0 px-4 pointer-events-none" style={{ zIndex: 25 }}>
+      <div className="absolute top-28 left-0 right-0 px-4 pointer-events-none" style={{ zIndex: 25 }}>
         <div className="pointer-events-auto">
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {/* All button */}
@@ -623,26 +623,26 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
       {user && (
         <motion.button
           onClick={() => setShowSavedPrayers(true)}
-          className="absolute bottom-28 left-6 glass-strong rounded-full p-4 shadow-xl hover:shadow-2xl transition-shadow"
+          className="absolute bottom-28 left-6 glass-strong rounded-full p-4 shadow-xl hover:shadow-2xl transition-shadow group"
           style={{ zIndex: 40 }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           aria-label="View saved prayers"
         >
-          <Bookmark className="w-6 h-6 text-gray-700 dark:text-gray-300" aria-hidden="true" />
+          <Bookmark className="w-6 h-6 text-purple-500 dark:text-purple-400 group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors drop-shadow-sm" aria-hidden="true" />
         </motion.button>
       )}
 
       {/* Info Button - lower right corner */}
       <motion.button
         onClick={() => setShowInfo(true)}
-        className="absolute bottom-28 right-6 glass-strong rounded-full p-4 shadow-xl hover:shadow-2xl transition-shadow"
+        className="absolute bottom-28 right-6 glass-strong rounded-full p-4 shadow-xl hover:shadow-2xl transition-shadow group"
         style={{ zIndex: 40 }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
         aria-label="App information"
       >
-        <Info className="w-6 h-6 text-gray-700 dark:text-gray-300" aria-hidden="true" />
+        <Info className="w-6 h-6 text-blue-500 dark:text-blue-400 group-hover:text-blue-600 dark:group-hover:text-blue-300 transition-colors drop-shadow-sm" aria-hidden="true" />
       </motion.button>
 
       {/* Prayer Detail Modal */}

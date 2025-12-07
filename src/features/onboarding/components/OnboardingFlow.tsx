@@ -155,7 +155,7 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
           onClick={handleSkip}
-          className="text-gray-600 text-sm px-4 py-2 rounded-full glass hover:bg-white/30 transition-colors"
+          className="text-gray-600 dark:text-gray-300 text-sm px-4 py-2 rounded-full glass hover:bg-white/30 dark:hover:bg-white/10 transition-colors"
         >
           Skip
         </motion.button>
@@ -217,14 +217,14 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
                 </motion.span>
               </div>
               
-              {/* Floating small icon */}
+              {/* Floating small icon with ethereal glow */}
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
-                className="absolute -bottom-2 -right-2 p-2 glass-strong rounded-xl shadow-lg"
+                className="absolute -bottom-2 -right-2 p-2.5 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-xl shadow-lg border border-white/50 dark:border-gray-600/50"
               >
-                <SlideIcon className={`w-5 h-5 ${slide.iconColor}`} />
+                <SlideIcon className={`w-5 h-5 ${slide.iconColor} drop-shadow-sm`} />
               </motion.div>
             </motion.div>
 
@@ -233,7 +233,7 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="font-display text-3xl font-bold text-gray-800 mb-4 tracking-tight"
+              className="font-display text-3xl font-bold text-gray-800 dark:text-white mb-4 tracking-tight"
             >
               {slide.title}
             </motion.h1>
@@ -243,7 +243,7 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="text-gray-600 text-lg leading-relaxed font-body"
+              className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed font-body"
             >
               {slide.description}
             </motion.p>
@@ -256,7 +256,7 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 0.5 }}
             transition={{ delay: 1 }}
-            className="absolute bottom-4 text-xs text-gray-500"
+            className="absolute bottom-4 text-xs text-gray-500 dark:text-gray-400"
           >
             Swipe or tap to continue
           </motion.p>
