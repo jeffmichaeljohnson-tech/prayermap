@@ -183,19 +183,19 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
         exit={{ y: "100%", opacity: 0 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
         onClick={(e) => e.stopPropagation()}
-        className="bg-gradient-to-br from-white/80 via-white/70 to-purple-50/60 backdrop-blur-2xl rounded-3xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto border border-white/60 shadow-xl shadow-purple-200/20"
+        className="bg-gradient-to-br from-white/80 via-white/70 to-purple-50/60 dark:from-gray-800/90 dark:via-gray-900/85 dark:to-purple-900/70 backdrop-blur-2xl rounded-3xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto border border-white/60 dark:border-white/10 shadow-xl shadow-purple-200/20 dark:shadow-purple-900/30"
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <span className="text-3xl">🙏</span>
-            <h3 className="text-gray-800">Request Prayer</h3>
+            <h3 className="text-gray-800 dark:text-white">Request Prayer</h3>
           </div>
           <button
             onClick={onClose}
             className="p-2 hover:bg-white/20 rounded-full transition-colors"
           >
-            <X className="w-5 h-5 text-gray-700" />
+            <X className="w-5 h-5 text-gray-700 dark:text-gray-300" />
           </button>
         </div>
 
@@ -307,20 +307,20 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
         {/* Form */}
         <div className="space-y-4 mb-6">
           <div>
-            <label className="block text-sm text-gray-700 mb-2">
+            <label className="block text-sm text-gray-700 dark:text-gray-200 mb-2">
               Title (optional)
             </label>
             <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g., Health and healing"
-              className="glass border-white/30 text-gray-800 placeholder:text-gray-500"
+              className="glass border-white/30 text-gray-800 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
             />
           </div>
 
           {/* Category Selector */}
           <div>
-            <label className="block text-sm text-gray-700 mb-2">
+            <label className="block text-sm text-gray-700 dark:text-gray-200 mb-2">
               Category
             </label>
             <div className="grid grid-cols-3 gap-2">
@@ -332,7 +332,7 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
                   className={`py-2 px-3 rounded-xl text-sm flex items-center justify-center gap-1.5 transition-all ${
                     category === cat.id
                       ? 'bg-gradient-to-r from-yellow-300 to-purple-300 text-on-gradient ring-2 ring-purple-300'
-                      : 'glass text-gray-600 hover:glass-strong'
+                      : 'glass text-gray-600 dark:text-gray-300 hover:glass-strong'
                   }`}
                 >
                   <span>{cat.emoji}</span>
@@ -344,7 +344,7 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
 
           {contentType === 'text' && (
             <div>
-              <label className="block text-sm text-gray-700 mb-2">
+              <label className="block text-sm text-gray-700 dark:text-gray-200 mb-2">
                 Prayer Request
               </label>
               <Textarea
@@ -352,14 +352,14 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
                 onChange={(e) => setContent(e.target.value)}
                 placeholder="Share what's on your heart..."
                 rows={4}
-                className="glass border-white/30 text-gray-800 placeholder:text-gray-500 resize-none"
+                className="glass border-white/30 text-gray-800 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 resize-none"
               />
             </div>
           )}
 
           {contentType === 'audio' && (
             <div className="glass rounded-xl p-4">
-              <p className="text-sm text-gray-700 mb-4 text-center">Record your prayer request</p>
+              <p className="text-sm text-gray-700 dark:text-gray-200 mb-4 text-center">Record your prayer request</p>
               <AudioRecorder
                 onRecordingComplete={handleAudioRecordingComplete}
                 maxDuration={120}
@@ -393,7 +393,7 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
                 </div>
               ) : (
                 <div className="text-center">
-                  <p className="text-sm text-gray-500">Tap Video above to record</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Tap Video above to record</p>
                 </div>
               )}
               {uploadError && (
@@ -404,8 +404,8 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
 
           <div className="flex items-center justify-between glass rounded-xl p-4">
             <div>
-              <p className="text-sm text-gray-700">Post anonymously</p>
-              <p className="text-xs text-gray-600">Hide your identity</p>
+              <p className="text-sm text-gray-700 dark:text-gray-200">Post anonymously</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">Hide your identity</p>
             </div>
             <Switch
               checked={isAnonymous}

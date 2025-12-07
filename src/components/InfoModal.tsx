@@ -20,18 +20,18 @@ export function InfoModal({ onClose }: InfoModalProps) {
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        className="bg-gradient-to-br from-white/80 via-white/70 to-purple-50/60 backdrop-blur-2xl rounded-3xl p-8 max-w-md w-full border border-white/60 shadow-xl shadow-purple-200/20"
+        className="bg-gradient-to-br from-white/80 via-white/70 to-purple-50/60 dark:from-gray-800/90 dark:via-gray-900/85 dark:to-purple-900/70 backdrop-blur-2xl rounded-3xl p-8 max-w-md w-full border border-white/60 dark:border-white/10 shadow-xl shadow-purple-200/20 dark:shadow-purple-900/30"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-gray-800">How to Use PrayerMap</h2>
+          <h2 className="text-gray-800 dark:text-white">How to Use PrayerMap</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-white/20 rounded-lg transition-colors"
             aria-label="Close"
           >
-            <X className="w-5 h-5 text-gray-700" aria-hidden="true" />
+            <X className="w-5 h-5 text-gray-700 dark:text-gray-300" aria-hidden="true" />
           </button>
         </div>
 
@@ -43,8 +43,8 @@ export function InfoModal({ onClose }: InfoModalProps) {
               <span className="text-2xl">🙏</span>
             </div>
             <div className="flex-1">
-              <h3 className="text-gray-800 mb-2">Prayer Requests</h3>
-              <p className="text-gray-600 text-[14px]">
+              <h3 className="text-gray-800 dark:text-white mb-2">Prayer Requests</h3>
+              <p className="text-gray-600 dark:text-gray-300 text-[14px]">
                 Tap any 🙏 emoji on the map to view prayer requests and respond with text, audio, or video messages.
               </p>
             </div>
@@ -75,8 +75,8 @@ export function InfoModal({ onClose }: InfoModalProps) {
               </svg>
             </div>
             <div className="flex-1">
-              <h3 className="text-gray-800 mb-2">Memorialized Prayers</h3>
-              <p className="text-gray-600 text-[14px]">
+              <h3 className="text-gray-800 dark:text-white mb-2">Memorialized Prayers</h3>
+              <p className="text-gray-600 dark:text-gray-300 text-[14px]">
                 Beautiful glowing lines connect you to each person you've prayed for, creating a lasting memorial that remains visible on the map for one year.
               </p>
             </div>

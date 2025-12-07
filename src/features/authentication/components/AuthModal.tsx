@@ -67,7 +67,7 @@ export function AuthModal() {
     }
   };
 
-  const inputClasses = "w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 pl-12 text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent transition-all duration-300";
+  const inputClasses = "w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 pl-12 text-gray-700 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/40 focus:border-transparent transition-all duration-300";
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-sky-400/90 via-purple-300/90 to-amber-200/90 backdrop-blur-xl">
@@ -150,10 +150,10 @@ export function AuthModal() {
               </div>
             </motion.div>
             
-            <h1 className="text-3xl text-gray-800 mb-2 font-bold">
+            <h1 className="text-3xl text-gray-800 dark:text-white mb-2 font-bold">
               PrayerMap
             </h1>
-            <p className="text-gray-600 text-center">
+            <p className="text-gray-600 dark:text-gray-300 text-center">
               {showForgotPassword ? 'Reset your password' : 'Prayer. Shared.'}
             </p>
           </motion.div>
@@ -166,8 +166,8 @@ export function AuthModal() {
                 onClick={() => setIsLogin(true)}
                 className={`flex-1 py-3 rounded-xl transition-all duration-300 ${
                   isLogin
-                    ? 'bg-white/30 text-gray-800 shadow-lg'
-                    : 'text-gray-600 hover:text-gray-700'
+                    ? 'bg-white/30 text-gray-800 dark:text-white shadow-lg'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
               >
                 Login
@@ -177,8 +177,8 @@ export function AuthModal() {
                 onClick={() => setIsLogin(false)}
                 className={`flex-1 py-3 rounded-xl transition-all duration-300 ${
                   !isLogin
-                    ? 'bg-white/30 text-gray-800 shadow-lg'
-                    : 'text-gray-600 hover:text-gray-700'
+                    ? 'bg-white/30 text-gray-800 dark:text-white shadow-lg'
+                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200'
                 }`}
               >
                 Sign Up

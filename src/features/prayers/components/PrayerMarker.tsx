@@ -152,7 +152,7 @@ export function PrayerMarker({
           ease: "easeInOut"
         }}
       >
-        <p className="text-xs text-gray-700 truncate">{getPreviewText()}</p>
+        <p className="text-xs text-gray-700 dark:text-gray-200 truncate">{getPreviewText()}</p>
         <div
           className="absolute top-full left-1/2 -translate-x-1/2 -mt-0.5 w-0 h-0 border-l-6 border-r-6 border-t-6 border-transparent border-t-white/40"
         />
