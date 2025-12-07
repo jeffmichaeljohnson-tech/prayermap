@@ -1,7 +1,35 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { Map as MapboxMap } from 'mapbox-gl';
 import type { Prayer } from '../types/prayer';
+import { PRAYER_CATEGORIES } from '../types/prayer';
+import { useAuth } from '@/features/authentication';
+
+// Get category-specific gradient for marker glow
+const getCategoryGlowColor = (category?: string): string => {
+  const categoryInfo = PRAYER_CATEGORIES.find(c => c.id === category);
+  if (!categoryInfo) return 'bg-yellow-300/30'; // Default
+  
+  const glowColors: Record<string, string> = {
+    red: 'bg-red-300/30',
+    blue: 'bg-blue-300/30',
+    amber: 'bg-amber-300/30',
+    pink: 'bg-pink-300/30',
+    purple: 'bg-purple-300/30',
+    green: 'bg-green-300/30',
+    indigo: 'bg-indigo-300/30',
+    yellow: 'bg-yellow-300/30',
+    gray: 'bg-gray-300/30',
+  };
+  
+  return glowColors[categoryInfo.color] || 'bg-yellow-300/30';
+};
+
+// Get category emoji for marker display
+const getCategoryEmoji = (category?: string): string => {
+  const categoryInfo = PRAYER_CATEGORIES.find(c => c.id === category);
+  return categoryInfo?.emoji || '🙏';
+};
 
 interface PrayerMarkerProps {
   prayer: Prayer;
@@ -24,6 +52,38 @@ export function PrayerMarker({
 }: PrayerMarkerProps) {
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
   const [showPrayerList, setShowPrayerList] = useState(false);
+  const { user } = useAuth();
+
+  // Use refs to track position without triggering re-renders
+  const positionRef = useRef<{ x: number; y: number } | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const markerRef = useRef<HTMLDivElement>(null);
+
+  // Prayer response count
+  const responseCount = prayer.prayedBy?.length || 0;
+  const hasUserPrayed = prayer.prayedBy?.includes(user?.id || '');
+
+  // Optimized position update using RAF and direct DOM manipulation
+  const updatePositionDirect = useCallback(() => {
+    if (!map || !markerRef.current) return;
+
+    const lat = prayer.location?.lat;
+    const lng = prayer.location?.lng;
+
+    if (typeof lat !== 'number' || typeof lng !== 'number' || isNaN(lat) || isNaN(lng)) {
+      return;
+    }
+
+    try {
+      const point = map.project([lng, lat]);
+      // Update DOM directly without React re-render
+      markerRef.current.style.left = `${point.x}px`;
+      markerRef.current.style.top = `${point.y}px`;
+      positionRef.current = { x: point.x, y: point.y };
+    } catch (error) {
+      // Silently handle projection errors during rapid movement
+    }
+  }, [map, prayer.location?.lat, prayer.location?.lng]);
 
   useEffect(() => {
     if (!map) return;
@@ -37,24 +97,37 @@ export function PrayerMarker({
       return;
     }
 
-    const updatePosition = () => {
+    // Initial position set (triggers React render once)
+    const updatePositionState = () => {
       try {
         const point = map.project([lng, lat]);
         setPosition({ x: point.x, y: point.y });
+        positionRef.current = { x: point.x, y: point.y };
       } catch (error) {
         console.error('Error projecting prayer location:', error);
       }
     };
 
-    updatePosition();
-    map.on('move', updatePosition);
-    map.on('zoom', updatePosition);
+    // Throttled update using RAF for smooth performance
+    const handleMapMove = () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
+      rafRef.current = requestAnimationFrame(updatePositionDirect);
+    };
+
+    updatePositionState();
+    map.on('move', handleMapMove);
+    map.on('zoom', handleMapMove);
 
     return () => {
-      map.off('move', updatePosition);
-      map.off('zoom', updatePosition);
+      map.off('move', handleMapMove);
+      map.off('zoom', handleMapMove);
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+      }
     };
-  }, [map, prayer.location, prayer.id]);
+  }, [map, prayer.location, prayer.id, updatePositionDirect]);
 
   if (!position) return null;
 
@@ -66,6 +139,7 @@ export function PrayerMarker({
 
   return (
     <div
+      ref={markerRef}
       className="absolute pointer-events-auto"
       style={{
         left: position.x,
@@ -73,7 +147,8 @@ export function PrayerMarker({
         transform: 'translate(-50%, -50%)',
         zIndex: 20, // Ensure markers are above everything
         padding: '20px', // Invisible padding for larger hit area
-        margin: '-20px' // Negative margin to maintain visual position
+        margin: '-20px', // Negative margin to maintain visual position
+        willChange: 'left, top' // GPU acceleration hint
       }}
     >
       {/* Preview Bubble - Always visible with floating animation */}
@@ -116,21 +191,40 @@ export function PrayerMarker({
           ease: "easeInOut"
         }}
       >
-        <div className={`text-4xl ${isPrayed ? 'opacity-60' : 'animate-pulse-glow'}`}>
-          🙏
+        {/* Marker with optional user-prayed ring indicator */}
+        <div className={`text-4xl ${isPrayed ? 'opacity-60' : 'animate-pulse-glow'} ${hasUserPrayed ? 'ring-2 ring-green-400 ring-offset-2 rounded-full p-1' : ''}`}>
+          {hasUserPrayed ? '✓' : '🙏'}
         </div>
 
-        {/* Stack count badge */}
+        {/* Response count badge - shows how many people have prayed */}
+        <AnimatePresence mode="wait">
+          {responseCount > 0 && (
+            <motion.div
+              key={responseCount}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              transition={{ type: 'spring', damping: 15, stiffness: 300 }}
+              className="absolute -top-1 -left-1 min-w-[18px] h-[18px] bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center px-1 shadow-lg"
+            >
+              <span className="text-white text-[10px] font-bold">
+                {responseCount > 99 ? '99+' : responseCount}
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Stack count badge - shows number of prayers at this location */}
         {stackCount > 1 && (
           <div className="absolute -top-1 -right-1 w-5 h-5 bg-purple-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-lg">
             {stackCount}
           </div>
         )}
 
-        {/* Glow effect for active prayers */}
+        {/* Glow effect for active prayers - color based on category */}
         {!isPrayed && (
           <motion.div
-            className="absolute inset-0 rounded-full bg-yellow-300/30 blur-xl"
+            className={`absolute inset-0 rounded-full ${getCategoryGlowColor(prayer.category)} blur-xl`}
             animate={{
               scale: [1, 1.5, 1],
               opacity: [0.3, 0.6, 0.3]
@@ -159,23 +253,41 @@ export function PrayerMarker({
               {stackCount} prayers at this location
             </p>
             <div className="max-h-[200px] overflow-y-auto space-y-1">
-              {allPrayers.map((p, index) => (
-                <button
-                  key={p.id}
-                  onClick={() => {
-                    setShowPrayerList(false);
-                    onSelectPrayer?.(p);
-                  }}
-                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/50 transition-colors"
-                >
-                  <p className="text-sm text-gray-800 font-medium truncate">
-                    {p.title || `Prayer ${index + 1}`}
-                  </p>
-                  <p className="text-xs text-gray-500 truncate">
-                    {p.content.substring(0, 50)}...
-                  </p>
-                </button>
-              ))}
+              {allPrayers.map((p, index) => {
+                const prayerResponseCount = p.prayedBy?.length || 0;
+                const userPrayedForThis = p.prayedBy?.includes(user?.id || '');
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => {
+                      setShowPrayerList(false);
+                      onSelectPrayer?.(p);
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-lg hover:bg-white/50 transition-colors relative"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-gray-800 font-medium truncate">
+                          {p.title || `Prayer ${index + 1}`}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {p.content.substring(0, 50)}...
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {userPrayedForThis && (
+                          <span className="text-green-500 text-xs">✓</span>
+                        )}
+                        {prayerResponseCount > 0 && (
+                          <span className="text-xs text-purple-600 font-medium bg-purple-100 px-1.5 py-0.5 rounded-full">
+                            {prayerResponseCount}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </motion.div>
         )}
