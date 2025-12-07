@@ -95,7 +95,7 @@ function AppContent() {
           <p className="text-gray-600 mb-4">{locationError}</p>
           <button
             onClick={() => window.location.reload()}
-            className="px-6 py-3 bg-gradient-to-r from-yellow-300 to-purple-300 rounded-full text-gray-800 font-medium"
+            className="px-6 py-3 bg-gradient-to-r from-yellow-300 to-purple-300 rounded-full text-on-gradient font-medium"
           >
             Try Again
           </button>

@@ -29,8 +29,9 @@ export function InfoModal({ onClose }: InfoModalProps) {
           <button
             onClick={onClose}
             className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+            aria-label="Close"
           >
-            <X className="w-5 h-5 text-gray-700" />
+            <X className="w-5 h-5 text-gray-700" aria-hidden="true" />
           </button>
         </div>
 
@@ -86,7 +87,7 @@ export function InfoModal({ onClose }: InfoModalProps) {
         <div className="mt-8 pt-6 border-t border-white/30">
           <button
             onClick={onClose}
-            className="w-full py-4 rounded-full bg-gradient-to-r from-yellow-300 to-purple-300 hover:from-yellow-400 hover:to-purple-400 transition-all text-gray-800 font-semibold shadow-lg shadow-purple-200/30"
+            className="w-full py-4 rounded-full bg-gradient-to-r from-yellow-300 to-purple-300 hover:from-yellow-400 hover:to-purple-400 transition-all text-on-gradient font-semibold shadow-lg shadow-purple-200/30"
           >
             Got it!
           </button>

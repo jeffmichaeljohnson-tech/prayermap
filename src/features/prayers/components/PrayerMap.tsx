@@ -541,29 +541,31 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
           <button
             onClick={() => setShowInbox(true)}
             className="p-2 hover:bg-white/20 dark:hover:bg-white/10 rounded-lg transition-colors relative"
+            aria-label={totalUnread > 0 ? `Inbox with ${totalUnread} unread messages` : 'Inbox'}
           >
-            <Inbox className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+            <Inbox className="w-6 h-6 text-gray-700 dark:text-gray-300" aria-hidden="true" />
             {/* Notification badge - only show if there are unread messages */}
             {totalUnread > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 bg-pink-500 text-white text-xs rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-pink-500 text-white text-xs rounded-full flex items-center justify-center" aria-hidden="true">
                 {totalUnread}
               </span>
             )}
           </button>
-          
+
           <h1 className="text-2xl text-gray-800 dark:text-gray-100">PrayerMap</h1>
-          
-          <button 
+
+          <button
             onClick={onOpenSettings}
             className="p-2 hover:bg-white/20 dark:hover:bg-white/10 rounded-lg transition-colors"
+            aria-label="Settings"
           >
-            <Settings className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+            <Settings className="w-6 h-6 text-gray-700 dark:text-gray-300" aria-hidden="true" />
           </button>
         </div>
       </div>
 
       {/* Category Filter Bar */}
-      <div className="absolute top-20 left-0 right-0 px-4 pointer-events-none" style={{ zIndex: 25 }}>
+      <div className="absolute top-24 left-0 right-0 px-4 pointer-events-none" style={{ zIndex: 25 }}>
         <div className="pointer-events-auto">
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {/* All button */}
@@ -571,7 +573,7 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
               onClick={clearFilters}
               className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all ${
                 selectedCategories.length === 0
-                  ? 'bg-gradient-to-r from-yellow-300 to-purple-300 dark:from-yellow-500 dark:to-purple-500 text-gray-800 shadow-md'
+                  ? 'bg-gradient-to-r from-yellow-300 to-purple-300 dark:from-yellow-500 dark:to-purple-500 text-on-gradient shadow-md'
                   : 'glass text-gray-600 dark:text-gray-300 hover:bg-white/30 dark:hover:bg-white/10'
               }`}
               whileTap={{ scale: 0.95 }}
@@ -586,7 +588,7 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
                 onClick={() => toggleCategory(cat.id)}
                 className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium flex items-center gap-1.5 transition-all ${
                   selectedCategories.includes(cat.id)
-                    ? 'bg-gradient-to-r from-yellow-300 to-purple-300 dark:from-yellow-500 dark:to-purple-500 text-gray-800 shadow-md'
+                    ? 'bg-gradient-to-r from-yellow-300 to-purple-300 dark:from-yellow-500 dark:to-purple-500 text-on-gradient shadow-md'
                     : 'glass text-gray-600 dark:text-gray-300 hover:bg-white/30 dark:hover:bg-white/10'
                 }`}
                 whileTap={{ scale: 0.95 }}
@@ -604,15 +606,16 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
         <SunMoonIndicator location={userLocation} />
       </div>
 
-      {/* Request Prayer Button - moved higher */}
+      {/* Request Prayer Button - positioned higher for mobile browser compatibility */}
       <motion.button
         onClick={() => setShowRequestModal(true)}
-        className="absolute bottom-20 left-1/2 -translate-x-1/2 glass-strong rounded-full px-8 py-4 flex items-center gap-3 shadow-xl hover:shadow-2xl transition-shadow"
+        className="absolute bottom-28 left-1/2 -translate-x-1/2 glass-strong rounded-full px-8 py-4 flex items-center gap-3 shadow-xl hover:shadow-2xl transition-shadow"
         style={{ zIndex: 40 }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
+        aria-label="Request prayer"
       >
-        <span className="text-2xl">🙏</span>
+        <span className="text-2xl" aria-hidden="true">🙏</span>
         <span className="text-gray-800 dark:text-gray-100 text-[16px]">Request Prayer</span>
       </motion.button>
 
@@ -620,25 +623,26 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
       {user && (
         <motion.button
           onClick={() => setShowSavedPrayers(true)}
-          className="absolute bottom-20 left-6 glass-strong rounded-full p-4 shadow-xl hover:shadow-2xl transition-shadow"
+          className="absolute bottom-28 left-6 glass-strong rounded-full p-4 shadow-xl hover:shadow-2xl transition-shadow"
           style={{ zIndex: 40 }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          aria-label="Saved prayers"
+          aria-label="View saved prayers"
         >
-          <Bookmark className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+          <Bookmark className="w-6 h-6 text-gray-700 dark:text-gray-300" aria-hidden="true" />
         </motion.button>
       )}
 
       {/* Info Button - lower right corner */}
       <motion.button
         onClick={() => setShowInfo(true)}
-        className="absolute bottom-20 right-6 glass-strong rounded-full p-4 shadow-xl hover:shadow-2xl transition-shadow"
+        className="absolute bottom-28 right-6 glass-strong rounded-full p-4 shadow-xl hover:shadow-2xl transition-shadow"
         style={{ zIndex: 40 }}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
+        aria-label="App information"
       >
-        <Info className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+        <Info className="w-6 h-6 text-gray-700 dark:text-gray-300" aria-hidden="true" />
       </motion.button>
 
       {/* Prayer Detail Modal */}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X, Type, Mic, Video, Loader2 } from 'lucide-react';
 import type { Prayer } from '../types/prayer';
 import { PRAYER_CATEGORIES, type PrayerCategory } from '../types/prayer';
@@ -8,7 +8,7 @@ import { Input } from '../../../components/ui/input';
 import { Textarea } from '../../../components/ui/textarea';
 import { Switch } from '../../../components/ui/switch';
 import { AudioRecorder } from '../../media/components/AudioRecorder';
-import { VideoRecorder } from '../../media/components/VideoRecorder';
+import { FullscreenVideoRecorder } from '../../media/components/FullScreenVideoRecorder';
 import { uploadAudio, uploadVideo } from '../../media/services/storageService';
 import { useAuth } from '../../authentication/hooks/useAuth';
 import { formatDuration } from '../../media/hooks/useAudioRecorder';
@@ -24,7 +24,7 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
   const [contentType, setContentType] = useState<'text' | 'audio' | 'video'>('text');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [category, setCategory] = useState<PrayerCategory>('other');
+  const [category, setCategory] = useState<PrayerCategory>('request');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioDuration, setAudioDuration] = useState(0);
@@ -32,6 +32,7 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
   const [videoDuration, setVideoDuration] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [showFullscreenVideo, setShowFullscreenVideo] = useState(false);
 
   const handleAudioRecordingComplete = (blob: Blob, duration: number) => {
     setAudioBlob(blob);
@@ -45,6 +46,15 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
     setVideoDuration(duration);
     setContent(`Video prayer (${formatDuration(duration)})`);
     setUploadError(null);
+    setShowFullscreenVideo(false);
+  };
+
+  const handleVideoCancel = () => {
+    setShowFullscreenVideo(false);
+    // Reset to text if no video was recorded
+    if (!videoBlob) {
+      setContentType('text');
+    }
   };
 
   const handleSubmit = async () => {
@@ -152,6 +162,11 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
       setContent('');
     }
     setUploadError(null);
+
+    // Immediately show fullscreen recorder when video is selected
+    if (type === 'video') {
+      setShowFullscreenVideo(true);
+    }
   };
 
   return (
@@ -190,7 +205,7 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
             onClick={() => handleContentTypeChange('text')}
             className={`relative flex-1 p-3 rounded-xl flex flex-col items-center gap-2 transition-all ring-2 ring-blue-400/30 shadow-lg shadow-blue-400/20 ${
               contentType === 'text'
-                ? 'bg-gradient-to-r from-yellow-300 to-purple-300'
+                ? 'bg-gradient-to-r from-yellow-300 to-purple-300 text-on-gradient'
                 : 'glass hover:glass-strong'
             }`}
           >
@@ -216,15 +231,15 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
                 }}
               />
             )}
-            <Type className="w-5 h-5 text-gray-700" />
-            <span className="text-sm text-gray-700">Text</span>
+            <Type className={`w-5 h-5 ${contentType === 'text' ? 'text-on-gradient' : 'text-gray-700'}`} />
+            <span className={`text-sm ${contentType === 'text' ? 'text-on-gradient' : 'text-gray-700'}`}>Text</span>
           </button>
-          
+
           <button
             onClick={() => handleContentTypeChange('audio')}
             className={`relative flex-1 p-3 rounded-xl flex flex-col items-center gap-2 transition-all ring-2 ring-blue-400/30 shadow-lg shadow-blue-400/20 ${
               contentType === 'audio'
-                ? 'bg-gradient-to-r from-yellow-300 to-purple-300'
+                ? 'bg-gradient-to-r from-yellow-300 to-purple-300 text-on-gradient'
                 : 'glass hover:glass-strong'
             }`}
           >
@@ -250,15 +265,15 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
                 }}
               />
             )}
-            <Mic className="w-5 h-5 text-gray-700" />
-            <span className="text-sm text-gray-700">Audio</span>
+            <Mic className={`w-5 h-5 ${contentType === 'audio' ? 'text-on-gradient' : 'text-gray-700'}`} />
+            <span className={`text-sm ${contentType === 'audio' ? 'text-on-gradient' : 'text-gray-700'}`}>Audio</span>
           </button>
-          
+
           <button
             onClick={() => handleContentTypeChange('video')}
             className={`relative flex-1 p-3 rounded-xl flex flex-col items-center gap-2 transition-all ring-2 ring-blue-400/30 shadow-lg shadow-blue-400/20 ${
               contentType === 'video'
-                ? 'bg-gradient-to-r from-yellow-300 to-purple-300'
+                ? 'bg-gradient-to-r from-yellow-300 to-purple-300 text-on-gradient'
                 : 'glass hover:glass-strong'
             }`}
           >
@@ -284,8 +299,8 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
                 }}
               />
             )}
-            <Video className="w-5 h-5 text-gray-700" />
-            <span className="text-sm text-gray-700">Video</span>
+            <Video className={`w-5 h-5 ${contentType === 'video' ? 'text-on-gradient' : 'text-gray-700'}`} />
+            <span className={`text-sm ${contentType === 'video' ? 'text-on-gradient' : 'text-gray-700'}`}>Video</span>
           </button>
         </div>
 
@@ -316,7 +331,7 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
                   onClick={() => setCategory(cat.id)}
                   className={`py-2 px-3 rounded-xl text-sm flex items-center justify-center gap-1.5 transition-all ${
                     category === cat.id
-                      ? 'bg-gradient-to-r from-yellow-300 to-purple-300 text-gray-800 ring-2 ring-purple-300'
+                      ? 'bg-gradient-to-r from-yellow-300 to-purple-300 text-on-gradient ring-2 ring-purple-300'
                       : 'glass text-gray-600 hover:glass-strong'
                   }`}
                 >
@@ -362,18 +377,27 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
 
           {contentType === 'video' && (
             <div className="glass rounded-xl p-4">
-              <p className="text-sm text-gray-700 mb-4 text-center">Record your video prayer request</p>
-              <VideoRecorder
-                onRecordingComplete={handleVideoRecordingComplete}
-                maxDuration={60}
-              />
+              {videoBlob ? (
+                <div className="text-center">
+                  <div className="flex items-center justify-center gap-2 text-green-600 mb-3">
+                    <Video className="w-5 h-5" />
+                    <span className="text-sm font-medium">Recording ready ({formatDuration(videoDuration)})</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowFullscreenVideo(true)}
+                    className="text-sm text-purple-600 hover:text-purple-700 underline"
+                  >
+                    Re-record video
+                  </button>
+                </div>
+              ) : (
+                <div className="text-center">
+                  <p className="text-sm text-gray-500">Tap Video above to record</p>
+                </div>
+              )}
               {uploadError && (
                 <p className="text-sm text-red-500 mt-3 text-center">{uploadError}</p>
-              )}
-              {videoBlob && (
-                <p className="text-sm text-green-600 mt-3 text-center">
-                  Recording ready ({formatDuration(videoDuration)})
-                </p>
               )}
             </div>
           )}
@@ -395,7 +419,7 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
         <Button
           onClick={handleSubmit}
           disabled={!canSubmit()}
-          className="w-full bg-gradient-to-r from-yellow-300 to-purple-300 hover:from-yellow-400 hover:to-purple-400 text-gray-800 rounded-full py-8 text-lg font-semibold disabled:opacity-50"
+          className="w-full bg-gradient-to-r from-yellow-300 to-purple-300 hover:from-yellow-400 hover:to-purple-400 text-on-gradient rounded-full py-8 text-lg font-semibold disabled:opacity-50"
         >
           {isUploading ? (
             <span className="flex items-center gap-2">
@@ -407,6 +431,17 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
           )}
         </Button>
       </motion.div>
+
+      {/* Fullscreen Video Recorder */}
+      <AnimatePresence>
+        {showFullscreenVideo && (
+          <FullscreenVideoRecorder
+            onRecordingComplete={handleVideoRecordingComplete}
+            onCancel={handleVideoCancel}
+            maxDuration={60}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

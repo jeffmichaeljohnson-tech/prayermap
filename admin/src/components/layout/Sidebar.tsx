@@ -12,9 +12,9 @@ const navItems: NavItem[] = [
   { label: 'Analytics', href: '/admin/analytics', icon: '📈' },
   { label: 'Moderation', href: '/admin/moderation', icon: '🛡️' },
   { label: 'Prayers', href: '/admin/prayers', icon: '🙏' },
-  { label: 'Archived', href: '/admin/archived', icon: '📦' },
   { label: 'Messages', href: '/admin/messages', icon: '💬' },
   { label: 'Users', href: '/admin/users', icon: '👥' },
+  { label: 'Archived', href: '/admin/archived', icon: '📦' },
   { label: 'Audit Logs', href: '/admin/audit-logs', icon: '📋' },
   { label: 'Settings', href: '/admin/settings', icon: '⚙️' },
 ];

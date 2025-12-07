@@ -153,7 +153,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
               <Button
                 onClick={handleSendSuggestion}
                 disabled={!suggestion.trim() || isSendingSuggestion}
-                className="w-full bg-gradient-to-r from-yellow-300 to-purple-300 hover:from-yellow-400 hover:to-purple-400 text-gray-800 rounded-full py-3"
+                className="w-full bg-gradient-to-r from-yellow-300 to-purple-300 hover:from-yellow-400 hover:to-purple-400 text-on-gradient rounded-full py-3"
               >
                 {isSendingSuggestion ? 'Sending...' : 'Send Suggestion'}
               </Button>
@@ -239,7 +239,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
               <Button
                 onClick={handleChangePassword}
                 disabled={!newPassword || newPassword !== confirmPassword || isChangingPassword}
-                className="w-full bg-gradient-to-r from-yellow-300 to-purple-300 hover:from-yellow-400 hover:to-purple-400 text-gray-800 rounded-full py-3"
+                className="w-full bg-gradient-to-r from-yellow-300 to-purple-300 hover:from-yellow-400 hover:to-purple-400 text-on-gradient rounded-full py-3"
               >
                 {isChangingPassword ? 'Updating...' : 'Update Password'}
               </Button>

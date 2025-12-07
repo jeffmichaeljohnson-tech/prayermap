@@ -126,6 +126,11 @@ h1, h2, h3, h4, h5, h6 {
   color: hsl(var(--text-secondary) / 0.8);
 }
 
+/* Force dark text on light gradient backgrounds (e.g., buttons) */
+.text-on-gradient {
+  color: hsl(220 20% 20%) !important;
+}
+
 /* Dark mode background for main areas */
 .dark .bg-gradient-to-br {
   background: linear-gradient(

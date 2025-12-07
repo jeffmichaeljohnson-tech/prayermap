@@ -50,12 +50,11 @@ export function PrayerMarker({
   allPrayers = [],
   onSelectPrayer
 }: PrayerMarkerProps) {
-  const [position, setPosition] = useState<{ x: number; y: number } | null>(null);
+  const [isReady, setIsReady] = useState(false);
   const [showPrayerList, setShowPrayerList] = useState(false);
   const { user } = useAuth();
 
   // Use refs to track position without triggering re-renders
-  const positionRef = useRef<{ x: number; y: number } | null>(null);
   const rafRef = useRef<number | null>(null);
   const markerRef = useRef<HTMLDivElement>(null);
 
@@ -63,8 +62,8 @@ export function PrayerMarker({
   const responseCount = prayer.prayedBy?.length || 0;
   const hasUserPrayed = prayer.prayedBy?.includes(user?.id || '');
 
-  // Optimized position update using RAF and direct DOM manipulation
-  const updatePositionDirect = useCallback(() => {
+  // Optimized position update using direct DOM manipulation
+  const updatePosition = useCallback(() => {
     if (!map || !markerRef.current) return;
 
     const lat = prayer.location?.lat;
@@ -76,11 +75,9 @@ export function PrayerMarker({
 
     try {
       const point = map.project([lng, lat]);
-      // Update DOM directly without React re-render
-      markerRef.current.style.left = `${point.x}px`;
-      markerRef.current.style.top = `${point.y}px`;
-      positionRef.current = { x: point.x, y: point.y };
-    } catch (error) {
+      // Update DOM directly - this is the ONLY place position is set
+      markerRef.current.style.transform = `translate(${point.x}px, ${point.y}px) translate(-50%, -50%)`;
+    } catch {
       // Silently handle projection errors during rapid movement
     }
   }, [map, prayer.location?.lat, prayer.location?.lng]);
@@ -97,26 +94,18 @@ export function PrayerMarker({
       return;
     }
 
-    // Initial position set (triggers React render once)
-    const updatePositionState = () => {
-      try {
-        const point = map.project([lng, lat]);
-        setPosition({ x: point.x, y: point.y });
-        positionRef.current = { x: point.x, y: point.y };
-      } catch (error) {
-        console.error('Error projecting prayer location:', error);
-      }
-    };
+    // Set initial position and mark as ready
+    updatePosition();
+    setIsReady(true);
 
-    // Throttled update using RAF for smooth performance
+    // Update on every frame during map movement for smooth tracking
     const handleMapMove = () => {
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
       }
-      rafRef.current = requestAnimationFrame(updatePositionDirect);
+      rafRef.current = requestAnimationFrame(updatePosition);
     };
 
-    updatePositionState();
     map.on('move', handleMapMove);
     map.on('zoom', handleMapMove);
 
@@ -127,9 +116,9 @@ export function PrayerMarker({
         cancelAnimationFrame(rafRef.current);
       }
     };
-  }, [map, prayer.location, prayer.id, updatePositionDirect]);
+  }, [map, prayer.location, prayer.id, updatePosition]);
 
-  if (!position) return null;
+  if (!isReady) return null;
 
   const getPreviewText = () => {
     if (prayer.title) return prayer.title;
@@ -142,13 +131,12 @@ export function PrayerMarker({
       ref={markerRef}
       className="absolute pointer-events-auto"
       style={{
-        left: position.x,
-        top: position.y,
-        transform: 'translate(-50%, -50%)',
+        left: 0,
+        top: 0,
         zIndex: 20, // Ensure markers are above everything
         padding: '20px', // Invisible padding for larger hit area
         margin: '-20px', // Negative margin to maintain visual position
-        willChange: 'left, top' // GPU acceleration hint
+        willChange: 'transform' // GPU acceleration hint for transform
       }}
     >
       {/* Preview Bubble - Always visible with floating animation */}

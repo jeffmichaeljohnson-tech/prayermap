@@ -501,7 +501,7 @@ export function PrayerDetailModal({ prayer, userLocation, onClose, onPray, onDel
                     onClick={() => handleReplyTypeClick('text')}
                     className={`relative flex-1 p-3 rounded-xl flex flex-col items-center gap-2 transition-all ring-2 ring-blue-400/30 shadow-lg shadow-blue-400/20 ${
                       replyType === 'text'
-                        ? 'bg-gradient-to-r from-yellow-300 to-purple-300'
+                        ? 'bg-gradient-to-r from-yellow-300 to-purple-300 text-on-gradient'
                         : 'glass hover:glass-strong'
                     }`}
                   >
@@ -527,15 +527,15 @@ export function PrayerDetailModal({ prayer, userLocation, onClose, onPray, onDel
                         }}
                       />
                     )}
-                    <Type className="w-5 h-5 text-gray-700" />
-                    <span className="text-sm text-gray-700">Text</span>
+                    <Type className={`w-5 h-5 ${replyType === 'text' ? 'text-on-gradient' : 'text-gray-700'}`} />
+                    <span className={`text-sm ${replyType === 'text' ? 'text-on-gradient' : 'text-gray-700'}`}>Text</span>
                   </button>
 
                   <button
                     onClick={() => handleReplyTypeClick('audio')}
                     className={`relative flex-1 p-3 rounded-xl flex flex-col items-center gap-2 transition-all ring-2 ring-blue-400/30 shadow-lg shadow-blue-400/20 ${
                       replyType === 'audio'
-                        ? 'bg-gradient-to-r from-yellow-300 to-purple-300'
+                        ? 'bg-gradient-to-r from-yellow-300 to-purple-300 text-on-gradient'
                         : 'glass hover:glass-strong'
                     }`}
                   >
@@ -561,15 +561,15 @@ export function PrayerDetailModal({ prayer, userLocation, onClose, onPray, onDel
                         }}
                       />
                     )}
-                    <Mic className="w-5 h-5 text-gray-700" />
-                    <span className="text-sm text-gray-700">Voice</span>
+                    <Mic className={`w-5 h-5 ${replyType === 'audio' ? 'text-on-gradient' : 'text-gray-700'}`} />
+                    <span className={`text-sm ${replyType === 'audio' ? 'text-on-gradient' : 'text-gray-700'}`}>Voice</span>
                   </button>
 
                   <button
                     onClick={() => handleReplyTypeClick('video')}
                     className={`relative flex-1 p-3 rounded-xl flex flex-col items-center gap-2 transition-all ring-2 ring-blue-400/30 shadow-lg shadow-blue-400/20 ${
                       replyType === 'video'
-                        ? 'bg-gradient-to-r from-yellow-300 to-purple-300'
+                        ? 'bg-gradient-to-r from-yellow-300 to-purple-300 text-on-gradient'
                         : 'glass hover:glass-strong'
                     }`}
                   >
@@ -595,8 +595,8 @@ export function PrayerDetailModal({ prayer, userLocation, onClose, onPray, onDel
                         }}
                       />
                     )}
-                    <Video className="w-5 h-5 text-gray-700" />
-                    <span className="text-sm text-gray-700">Video</span>
+                    <Video className={`w-5 h-5 ${replyType === 'video' ? 'text-on-gradient' : 'text-gray-700'}`} />
+                    <span className={`text-sm ${replyType === 'video' ? 'text-on-gradient' : 'text-gray-700'}`}>Video</span>
                   </button>
                 </div>
 
@@ -690,7 +690,7 @@ export function PrayerDetailModal({ prayer, userLocation, onClose, onPray, onDel
                   {/* Pray Button */}
                   <Button
                     onClick={handlePray}
-                    className="flex-1 bg-gradient-to-r from-yellow-300 to-purple-300 hover:from-yellow-400 hover:to-purple-400 text-gray-800 rounded-full py-6 flex items-center justify-center gap-2 shadow-lg"
+                    className="flex-1 bg-gradient-to-r from-yellow-300 to-purple-300 hover:from-yellow-400 hover:to-purple-400 text-on-gradient rounded-full py-6 flex items-center justify-center gap-2 shadow-lg"
                   >
                     <Send className="w-5 h-5" />
                     <span>Send Prayer</span>
@@ -776,7 +776,7 @@ export function PrayerDetailModal({ prayer, userLocation, onClose, onPray, onDel
 
                           <Button
                             onClick={handlePray}
-                            className="flex-1 bg-gradient-to-r from-yellow-300 to-purple-300 hover:from-yellow-400 hover:to-purple-400 text-gray-800 rounded-full"
+                            className="flex-1 bg-gradient-to-r from-yellow-300 to-purple-300 hover:from-yellow-400 hover:to-purple-400 text-on-gradient rounded-full"
                             disabled={replyType === 'text' && !replyContent.trim() && !replyAudioBlob}
                           >
                             <Send className="w-4 h-4 mr-2" />

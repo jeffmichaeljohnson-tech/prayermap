@@ -331,7 +331,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
               <Button
                 onClick={handleUpdateName}
                 disabled={!displayName.trim() || displayName === user?.user_metadata?.name || isUpdatingName}
-                className="w-full bg-gradient-to-r from-yellow-300 to-purple-300 hover:from-yellow-400 hover:to-purple-400 text-gray-800 rounded-full py-3"
+                className="w-full bg-gradient-to-r from-yellow-300 to-purple-300 hover:from-yellow-400 hover:to-purple-400 text-on-gradient rounded-full py-3"
               >
                 {isUpdatingName ? 'Updating...' : 'Update Name'}
               </Button>
@@ -407,7 +407,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
               <Button
                 onClick={handleSendSuggestion}
                 disabled={!suggestion.trim() || isSendingSuggestion}
-                className="w-full bg-gradient-to-r from-yellow-300 to-purple-300 hover:from-yellow-400 hover:to-purple-400 text-gray-800 rounded-full py-3"
+                className="w-full bg-gradient-to-r from-yellow-300 to-purple-300 hover:from-yellow-400 hover:to-purple-400 text-on-gradient rounded-full py-3"
               >
                 {isSendingSuggestion ? 'Sending...' : 'Send Suggestion'}
               </Button>
@@ -493,7 +493,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
               <Button
                 onClick={handleChangePassword}
                 disabled={!newPassword || newPassword !== confirmPassword || isChangingPassword}
-                className="w-full bg-gradient-to-r from-yellow-300 to-purple-300 hover:from-yellow-400 hover:to-purple-400 text-gray-800 rounded-full py-3"
+                className="w-full bg-gradient-to-r from-yellow-300 to-purple-300 hover:from-yellow-400 hover:to-purple-400 text-on-gradient rounded-full py-3"
               >
                 {isChangingPassword ? 'Updating...' : 'Update Password'}
               </Button>
@@ -653,7 +653,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
               onClick={() => setTheme('light')}
               className={`p-3 rounded-xl flex flex-col items-center gap-2 transition-all ${
                 theme === 'light'
-                  ? 'bg-gradient-to-r from-yellow-300 to-purple-300 dark:from-yellow-500 dark:to-purple-500 text-gray-800'
+                  ? 'bg-gradient-to-r from-yellow-300 to-purple-300 dark:from-yellow-500 dark:to-purple-500 text-on-gradient'
                   : 'glass hover:bg-white/30 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300'
               }`}
             >
@@ -665,7 +665,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
               onClick={() => setTheme('dark')}
               className={`p-3 rounded-xl flex flex-col items-center gap-2 transition-all ${
                 theme === 'dark'
-                  ? 'bg-gradient-to-r from-yellow-300 to-purple-300 dark:from-yellow-500 dark:to-purple-500 text-gray-800'
+                  ? 'bg-gradient-to-r from-yellow-300 to-purple-300 dark:from-yellow-500 dark:to-purple-500 text-on-gradient'
                   : 'glass hover:bg-white/30 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300'
               }`}
             >
@@ -677,7 +677,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
               onClick={() => setTheme('system')}
               className={`p-3 rounded-xl flex flex-col items-center gap-2 transition-all ${
                 theme === 'system'
-                  ? 'bg-gradient-to-r from-yellow-300 to-purple-300 dark:from-yellow-500 dark:to-purple-500 text-gray-800'
+                  ? 'bg-gradient-to-r from-yellow-300 to-purple-300 dark:from-yellow-500 dark:to-purple-500 text-on-gradient'
                   : 'glass hover:bg-white/30 dark:hover:bg-white/10 text-gray-700 dark:text-gray-300'
               }`}
             >

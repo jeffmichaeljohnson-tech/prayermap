@@ -12,7 +12,7 @@ export { AudioPlayer } from './components/AudioPlayer';
 export { AudioRecorder } from './components/AudioRecorder';
 export { AudioMessagePlayer } from './components/AudioMessagePlayer';
 export { VideoRecorder } from './components/VideoRecorder';
-export { FullScreenVideoRecorder } from './components/FullScreenVideoRecorder';
+export { FullscreenVideoRecorder } from './components/FullScreenVideoRecorder';
 export { VideoMessagePlayer } from './components/VideoMessagePlayer';
 
 // Hooks

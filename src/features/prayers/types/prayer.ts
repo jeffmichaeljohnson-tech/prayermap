@@ -1,14 +1,7 @@
 // Prayer Categories - used for organizing and filtering prayers
 export const PRAYER_CATEGORIES = [
-  { id: 'health', label: 'Health', emoji: '🏥', color: 'red' },
-  { id: 'family', label: 'Family', emoji: '👨‍👩‍👧‍👦', color: 'blue' },
-  { id: 'work', label: 'Work', emoji: '💼', color: 'amber' },
-  { id: 'relationships', label: 'Relationships', emoji: '❤️', color: 'pink' },
-  { id: 'spiritual', label: 'Spiritual', emoji: '✝️', color: 'purple' },
-  { id: 'financial', label: 'Financial', emoji: '💰', color: 'green' },
-  { id: 'guidance', label: 'Guidance', emoji: '🧭', color: 'indigo' },
-  { id: 'gratitude', label: 'Gratitude', emoji: '🙏', color: 'yellow' },
-  { id: 'other', label: 'Other', emoji: '💭', color: 'gray' },
+  { id: 'request', label: 'Request', emoji: '🙏', color: 'purple' },
+  { id: 'gratitude', label: 'Gratitude', emoji: '💛', color: 'yellow' },
 ] as const;
 
 export type PrayerCategory = typeof PRAYER_CATEGORIES[number]['id'];

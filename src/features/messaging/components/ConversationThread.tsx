@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Send, Mic, Video, Loader2 } from 'lucide-react';
 import { AudioRecorder } from '../../media/components/AudioRecorder';
-import { VideoRecorder } from '../../media/components/VideoRecorder';
+import { FullscreenVideoRecorder } from '../../media/components/FullScreenVideoRecorder';
 import { AudioMessagePlayer } from '../../media/components/AudioMessagePlayer';
 import { VideoMessagePlayer } from '../../media/components/VideoMessagePlayer';
 import { uploadMessageMedia, uploadThumbnail } from '../../media/services/storageService';
@@ -86,6 +86,7 @@ export function ConversationThread({
   const [isRecording, setIsRecording] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [showFullscreenVideo, setShowFullscreenVideo] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new messages arrive
@@ -153,6 +154,7 @@ export function ConversationThread({
   ) => {
     if (!conversation?.id) return;
 
+    setShowFullscreenVideo(false);
     setIsUploading(true);
     setUploadError(null);
 
@@ -189,7 +191,13 @@ export function ConversationThread({
     } finally {
       setIsUploading(false);
       setIsRecording(false);
+      setInputMode('text');
     }
+  };
+
+  const handleVideoCancel = () => {
+    setShowFullscreenVideo(false);
+    setInputMode('text');
   };
 
   const handleCancelRecording = () => {
@@ -327,7 +335,7 @@ export function ConversationThread({
               onClick={() => setInputMode('text')}
               className={`flex-1 py-2 px-4 rounded-xl transition-all ring-2 ring-blue-400/30 shadow-lg shadow-blue-400/20 ${
                 inputMode === 'text'
-                  ? 'bg-gradient-to-r from-yellow-300 to-purple-300 text-gray-800'
+                  ? 'bg-gradient-to-r from-yellow-300 to-purple-300 text-on-gradient'
                   : 'glass text-gray-600 hover:glass-strong'
               }`}
             >
@@ -338,7 +346,7 @@ export function ConversationThread({
               onClick={() => setInputMode('audio')}
               className={`flex-1 py-2 px-4 rounded-xl transition-all ring-2 ring-blue-400/30 shadow-lg shadow-blue-400/20 ${
                 inputMode === 'audio'
-                  ? 'bg-gradient-to-r from-yellow-300 to-purple-300 text-gray-800'
+                  ? 'bg-gradient-to-r from-yellow-300 to-purple-300 text-on-gradient'
                   : 'glass text-gray-600 hover:glass-strong'
               }`}
             >
@@ -347,10 +355,13 @@ export function ConversationThread({
             </button>
             <button
               type="button"
-              onClick={() => setInputMode('video')}
+              onClick={() => {
+                setInputMode('video');
+                setShowFullscreenVideo(true);
+              }}
               className={`flex-1 py-2 px-4 rounded-xl transition-all ring-2 ring-blue-400/30 shadow-lg shadow-blue-400/20 ${
                 inputMode === 'video'
-                  ? 'bg-gradient-to-r from-yellow-300 to-purple-300 text-gray-800'
+                  ? 'bg-gradient-to-r from-yellow-300 to-purple-300 text-on-gradient'
                   : 'glass text-gray-600 hover:glass-strong'
               }`}
             >
@@ -381,42 +392,44 @@ export function ConversationThread({
               <Send className="w-5 h-5 text-gray-800" />
             </button>
           </div>
-        ) : (
+        ) : inputMode === 'audio' ? (
           <div className="space-y-3">
             {isRecording ? (
-              // Show the appropriate recorder component
-              inputMode === 'audio' ? (
-                <AudioRecorder
-                  onRecordingComplete={handleAudioComplete}
-                  onCancel={handleCancelRecording}
-                  maxDuration={120} // 2 minutes for audio
-                />
-              ) : (
-                <VideoRecorder
-                  onRecordingComplete={handleVideoComplete}
-                  onCancel={handleCancelRecording}
-                  maxDuration={90} // 90 seconds for video
-                />
-              )
+              <AudioRecorder
+                onRecordingComplete={handleAudioComplete}
+                onCancel={handleCancelRecording}
+                maxDuration={120}
+              />
             ) : (
-              // Show "Start Recording" button
               <button
                 type="button"
                 onClick={handleStartRecording}
                 disabled={isUploading}
                 className="w-full py-4 bg-gradient-to-r from-blue-500/30 to-purple-500/30 hover:from-blue-500/40 hover:to-purple-500/40 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition-all flex items-center justify-center gap-2"
               >
-                {inputMode === 'audio' ? (
-                  <Mic className="w-5 h-5" />
-                ) : (
-                  <Video className="w-5 h-5" />
-                )}
-                <span>Start Recording {inputMode === 'audio' ? 'Audio' : 'Video'}</span>
+                <Mic className="w-5 h-5" />
+                <span>Start Recording Audio</span>
               </button>
             )}
           </div>
+        ) : (
+          // Video mode - fullscreen recorder handles everything
+          <div className="text-center py-4 text-gray-500 text-sm">
+            Tap Video above to record a message
+          </div>
         )}
       </div>
+
+      {/* Fullscreen Video Recorder */}
+      <AnimatePresence>
+        {showFullscreenVideo && (
+          <FullscreenVideoRecorder
+            onRecordingComplete={handleVideoComplete}
+            onCancel={handleVideoCancel}
+            maxDuration={90}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

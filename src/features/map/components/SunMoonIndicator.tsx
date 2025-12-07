@@ -45,19 +45,19 @@ export function SunMoonIndicator({ location }: SunMoonIndicatorProps) {
   }
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: 0.5, duration: 0.8 }}
-      className="glass-strong rounded-2xl p-4 flex flex-col items-center gap-3"
+      className="glass-strong rounded-xl p-2.5 flex flex-col items-center gap-1"
     >
       {/* Sun or Moon Icon */}
-      <div className="relative w-12 h-12 flex items-center justify-center">
+      <div className="relative w-8 h-8 flex items-center justify-center">
         {isNightTime ? (
           // Ethereal Glass Moon
           <motion.div
             key="moon"
-            className="relative w-10 h-10"
+            className="relative w-6 h-6"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{
               opacity: 1,
@@ -108,7 +108,7 @@ export function SunMoonIndicator({ location }: SunMoonIndicatorProps) {
           // Ethereal Sun
           <motion.div
             key="sun"
-            className="relative w-10 h-10"
+            className="relative w-6 h-6"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{
               opacity: 1,
@@ -176,13 +176,13 @@ export function SunMoonIndicator({ location }: SunMoonIndicatorProps) {
                   key={i}
                   className="absolute w-0.5 bg-gradient-to-t from-yellow-300/0 via-yellow-400/40 to-yellow-300/0 rounded-full"
                   style={{
-                    height: '20px',
+                    height: '12px',
                     transform: `rotate(${i * 60}deg)`,
                     transformOrigin: 'center center',
                   }}
                   animate={{
                     opacity: [0.4, 0.8, 0.4],
-                    height: ['20px', '24px', '20px'],
+                    height: ['12px', '14px', '12px'],
                   }}
                   transition={{
                     duration: 3,
@@ -196,17 +196,17 @@ export function SunMoonIndicator({ location }: SunMoonIndicatorProps) {
           </motion.div>
         )}
       </div>
-      
+
       {/* Event Label and Time */}
       <div className="text-center">
-        <p className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">
+        <p className="text-[9px] uppercase tracking-wider text-gray-500">
           {nextEventLabel}
         </p>
-        <p className="text-gray-700">
-          {nextEvent.toLocaleTimeString('en-US', { 
-            hour: 'numeric', 
+        <p className="text-sm text-gray-700 font-medium">
+          {nextEvent.toLocaleTimeString('en-US', {
+            hour: 'numeric',
             minute: '2-digit',
-            hour12: true 
+            hour12: true
           })}
         </p>
       </div>
