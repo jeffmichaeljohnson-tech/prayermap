@@ -63,7 +63,7 @@ Status:  ➡️  [progress note]
 | Requirement | Target | Non-Negotiable |
 |-------------|--------|----------------|
 | Real-time updates | < 2 seconds | Users SEE prayer happen |
-| Memorial lines | ETERNAL | Never expire, never delete |
+| Memorial lines | 1 YEAR | Configurable duration, soft-delete on expiry |
 | Universal map | Same for all | Shared spiritual space |
 | Animations | 60fps | Spiritual beauty |
 
@@ -104,3 +104,52 @@ Before writing code:
 - What already exists?
 
 **Three similar lines > premature abstraction**
+
+---
+
+## 7. VERCEL DEPLOYMENT RULE (DEVELOPMENT-FIRST)
+
+**ALWAYS deploy to the `develop` branch (Vercel development environment) by default.**
+
+### Deployment Workflow
+
+```bash
+# 1. Commit changes on develop branch
+git add . && git commit -m "feat: description"
+
+# 2. Push to develop (triggers Vercel development deployment)
+git push origin develop
+
+# 3. STOP HERE - await human verification on development URL
+# DO NOT merge to main unless explicitly requested
+```
+
+### Branch → Environment Mapping
+
+| Branch | Vercel Environment | URL | When to Use |
+|--------|-------------------|-----|-------------|
+| `develop` | Development/Preview | develop-prayermap.vercel.app | **DEFAULT** - All changes |
+| `main` | Production | prayermap.net | **ONLY when user explicitly requests** |
+
+### Rules
+
+1. **DEFAULT**: Push to `develop` branch only
+2. **NEVER** merge to `main` or push to production unless user explicitly says:
+   - "Deploy to production"
+   - "Push to main"
+   - "Go live"
+3. **ALWAYS** confirm with user before any production deployment
+4. After pushing to develop, tell user: "Deployed to development. Verify at [dev URL]"
+
+### Forbidden Actions (Without Explicit Permission)
+
+- ❌ `git checkout main && git merge develop`
+- ❌ `git push origin main`
+- ❌ Any action that deploys to production
+
+### Required Confirmation for Production
+
+```
+User: "Deploy to production" or "Push to main"
+Agent: "Confirmed. Merging to main and deploying to production..."
+```

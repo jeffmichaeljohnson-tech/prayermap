@@ -60,4 +60,37 @@ docs: update API documentation for prayers endpoint
 
 ## Protected Branches
 - `main` - Production, requires PR
-- `develop` - Integration branch
+- `develop` - Integration branch (DEFAULT for all work)
+
+## Vercel Deployment Workflow
+
+**CRITICAL: Always deploy to `develop` first. Never push to `main` without explicit user permission.**
+
+### Default Workflow (Development)
+```bash
+# All changes go to develop branch
+git add . && git commit -m "feat: description"
+git push origin develop
+# Vercel automatically deploys to development environment
+# STOP - await user verification
+```
+
+### Production Deployment (ONLY when explicitly requested)
+```bash
+# User must say: "Deploy to production" or "Push to main"
+git checkout main
+git merge develop
+git push origin main
+git checkout develop
+```
+
+### Branch → Environment
+| Branch | Environment | URL |
+|--------|-------------|-----|
+| `develop` | Development | develop-prayermap.vercel.app |
+| `main` | Production | prayermap.net |
+
+### Rules
+1. DEFAULT: Push only to `develop`
+2. NEVER merge to `main` without explicit user request
+3. ALWAYS verify on development URL before production

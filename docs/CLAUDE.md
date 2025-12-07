@@ -163,11 +163,11 @@ WHERE routine_schema = 'public';
 ---
 
 ### 🚨 1. THE LIVING MAP PRINCIPLE (ABSOLUTE PRIORITY)
-**[LIVING-MAP-PRINCIPLE.md](./LIVING-MAP-PRINCIPLE.md)** contains the CORE SPIRITUAL MISSION that overrides ALL other considerations. PrayerMap is the world's first LIVING MAP where users witness prayer happening in real-time and see eternal memorial connections. If ANY technical decision conflicts with the Living Map, THE LIVING MAP WINS.
+**[LIVING-MAP-PRINCIPLE.md](./LIVING-MAP-PRINCIPLE.md)** contains the CORE SPIRITUAL MISSION that overrides ALL other considerations. PrayerMap is the world's first LIVING MAP where users witness prayer happening in real-time and see memorial connections that persist for 1 year (admin-configurable). If ANY technical decision conflicts with the Living Map, THE LIVING MAP WINS.
 
 **Key Requirements:**
 - **Real-time updates**: Users see prayer activity as it happens (<2 seconds)
-- **Eternal memorial lines**: Prayer connections NEVER disappear from the map
+- **1-year memorial lines**: Prayer connections persist for 1 year (admin-configurable)
 - **Universal shared map**: Everyone sees the same complete prayer history
 - **Live witnessing**: The spiritual experience of watching prayer happen
 
@@ -240,6 +240,7 @@ All operations must implement structured logging and monitoring. See [MONITORING
 7. **Never skip observability** - All operations must be logged and monitored
 8. **Never add user friction** - Count and minimize every step
 9. **Never commit secrets** - Environment variables only
+10. **Never deploy to production without explicit permission** - Always push to `develop` branch only. Never merge to `main` unless user explicitly says "deploy to production" or "push to main"
 
 ### Always Do
 1. **Always confirm deployment SHA before requesting verification** - Check Vercel that your commit is live
@@ -253,6 +254,7 @@ All operations must implement structured logging and monitoring. See [MONITORING
 9. **Always commit and push** - Don't leave work uncommitted between agents
 10. **Always test on actual devices** - iOS and Android, not just browser
 11. **Always query memory before decisions** - Learn from past work
+12. **Always deploy to development first** - Push to `develop` branch → Vercel development environment. Only merge to `main` (production) when explicitly requested by user
 
 ---
 
