@@ -4,8 +4,9 @@ import { Mail, Lock, User, Sparkles, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export function AuthModal() {
-  const { signIn, signUp, signInWithApple } = useAuth();
+  const { signIn, signUp, signInWithApple, resetPassword } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -23,7 +24,14 @@ export function AuthModal() {
     setLoading(true);
 
     try {
-      if (isLogin) {
+      if (showForgotPassword) {
+        const { error } = await resetPassword(formData.email);
+        if (error) {
+          setError(error.message);
+        } else {
+          setSuccessMessage('Check your email for a password reset link.');
+        }
+      } else if (isLogin) {
         const { error } = await signIn(formData.email, formData.password);
         if (error) {
           setError(error.message);
@@ -146,35 +154,37 @@ export function AuthModal() {
               PrayerMap
             </h1>
             <p className="text-gray-600 text-center">
-              Prayer. Shared.
+              {showForgotPassword ? 'Reset your password' : 'Prayer. Shared.'}
             </p>
           </motion.div>
 
-          {/* Toggle buttons */}
-          <div className="flex gap-2 mb-6 bg-white/10 rounded-2xl p-1">
-            <button
-              type="button"
-              onClick={() => setIsLogin(true)}
-              className={`flex-1 py-3 rounded-xl transition-all duration-300 ${
-                isLogin
-                  ? 'bg-white/30 text-gray-800 shadow-lg'
-                  : 'text-gray-600 hover:text-gray-700'
-              }`}
-            >
-              Login
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsLogin(false)}
-              className={`flex-1 py-3 rounded-xl transition-all duration-300 ${
-                !isLogin
-                  ? 'bg-white/30 text-gray-800 shadow-lg'
-                  : 'text-gray-600 hover:text-gray-700'
-              }`}
-            >
-              Sign Up
-            </button>
-          </div>
+          {/* Toggle buttons - hidden in forgot password mode */}
+          {!showForgotPassword && (
+            <div className="flex gap-2 mb-6 bg-white/10 rounded-2xl p-1">
+              <button
+                type="button"
+                onClick={() => setIsLogin(true)}
+                className={`flex-1 py-3 rounded-xl transition-all duration-300 ${
+                  isLogin
+                    ? 'bg-white/30 text-gray-800 shadow-lg'
+                    : 'text-gray-600 hover:text-gray-700'
+                }`}
+              >
+                Login
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsLogin(false)}
+                className={`flex-1 py-3 rounded-xl transition-all duration-300 ${
+                  !isLogin
+                    ? 'bg-white/30 text-gray-800 shadow-lg'
+                    : 'text-gray-600 hover:text-gray-700'
+                }`}
+              >
+                Sign Up
+              </button>
+            </div>
+          )}
 
           {/* Error message */}
           <AnimatePresence>
@@ -256,24 +266,44 @@ export function AuthModal() {
               />
             </div>
 
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
-              <motion.input
-                type="password"
-                placeholder="Password"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                onFocus={() => setFocusedField('password')}
-                onBlur={() => setFocusedField(null)}
-                className={inputClasses}
-                required
-                animate={{
-                  boxShadow: focusedField === 'password' 
-                    ? '0 0 30px rgba(255, 255, 255, 0.3)' 
-                    : '0 0 0px rgba(255, 255, 255, 0)',
-                }}
-              />
-            </div>
+            {/* Password field - hidden in forgot password mode */}
+            {!showForgotPassword && (
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                <motion.input
+                  type="password"
+                  placeholder="Password"
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onFocus={() => setFocusedField('password')}
+                  onBlur={() => setFocusedField(null)}
+                  className={inputClasses}
+                  required
+                  animate={{
+                    boxShadow: focusedField === 'password'
+                      ? '0 0 30px rgba(255, 255, 255, 0.3)'
+                      : '0 0 0px rgba(255, 255, 255, 0)',
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Forgot password link - only shown on login */}
+            {isLogin && !showForgotPassword && (
+              <div className="text-right">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForgotPassword(true);
+                    setError(null);
+                    setSuccessMessage(null);
+                  }}
+                  className="text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                >
+                  Forgot password?
+                </button>
+              </div>
+            )}
 
             {/* Submit button */}
             <motion.button
@@ -313,57 +343,61 @@ export function AuthModal() {
                       animate={{ rotate: 360 }}
                       transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                     />
-                    {isLogin ? 'Signing in...' : 'Creating account...'}
+                    {showForgotPassword ? 'Sending...' : isLogin ? 'Signing in...' : 'Creating account...'}
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-5 h-5" />
-                    {isLogin ? 'Enter PrayerMap' : 'Join PrayerMap'}
+                    {showForgotPassword ? 'Send Reset Link' : isLogin ? 'Enter PrayerMap' : 'Join PrayerMap'}
                     <Sparkles className="w-5 h-5" />
                   </>
                 )}
               </span>
             </motion.button>
 
-            {/* Divider */}
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/20"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-transparent text-gray-500">or</span>
-              </div>
-            </div>
+            {/* Divider and Apple sign in - hidden in forgot password mode */}
+            {!showForgotPassword && (
+              <>
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-white/20"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-4 bg-transparent text-gray-500">or</span>
+                  </div>
+                </div>
 
-            {/* Sign in with Apple */}
-            <motion.button
-              type="button"
-              onClick={handleAppleSignIn}
-              disabled={loading}
-              className="relative w-full py-4 rounded-xl overflow-hidden group bg-black hover:bg-gray-900 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              whileHover={!loading ? { scale: 1.02 } : {}}
-              whileTap={!loading ? { scale: 0.98 } : {}}
-            >
-              <span className="relative flex items-center justify-center gap-3 text-white font-semibold">
-                {loading ? (
-                  <>
-                    <motion.div
-                      className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                    />
-                    Signing in...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
-                    </svg>
-                    Sign in with Apple
-                  </>
-                )}
-              </span>
-            </motion.button>
+                {/* Sign in with Apple */}
+                <motion.button
+                  type="button"
+                  onClick={handleAppleSignIn}
+                  disabled={loading}
+                  className="relative w-full py-4 rounded-xl overflow-hidden group bg-black hover:bg-gray-900 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                  whileHover={!loading ? { scale: 1.02 } : {}}
+                  whileTap={!loading ? { scale: 0.98 } : {}}
+                >
+                  <span className="relative flex items-center justify-center gap-3 text-white font-semibold">
+                    {loading ? (
+                      <>
+                        <motion.div
+                          className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        />
+                        Signing in...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09l.01-.01zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                        </svg>
+                        Sign in with Apple
+                      </>
+                    )}
+                  </span>
+                </motion.button>
+              </>
+            )}
           </form>
 
           {/* Footer text */}
@@ -373,14 +407,44 @@ export function AuthModal() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
-            {isLogin ? "New to PrayerMap? " : "Already have an account? "}
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-gray-700 hover:text-gray-800 underline transition-colors"
-            >
-              {isLogin ? "Sign up" : "Login"}
-            </button>
+            {showForgotPassword ? (
+              <>
+                Remember your password?{' '}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setError(null);
+                    setSuccessMessage(null);
+                  }}
+                  className="text-gray-700 hover:text-gray-800 underline transition-colors"
+                >
+                  Back to login
+                </button>
+              </>
+            ) : isLogin ? (
+              <>
+                New to PrayerMap?{' '}
+                <button
+                  type="button"
+                  onClick={() => setIsLogin(false)}
+                  className="text-gray-700 hover:text-gray-800 underline transition-colors"
+                >
+                  Sign up
+                </button>
+              </>
+            ) : (
+              <>
+                Already have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => setIsLogin(true)}
+                  className="text-gray-700 hover:text-gray-800 underline transition-colors"
+                >
+                  Login
+                </button>
+              </>
+            )}
           </motion.p>
         </div>
       </motion.div>
