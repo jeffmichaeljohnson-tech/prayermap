@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import type { Prayer, PrayerCategory } from '../types/prayer';
+import { PRAYER_CATEGORIES } from '../types/prayer';
 import {
   fetchNearbyPrayers,
   fetchPrayersInBounds,
@@ -95,8 +96,10 @@ export function usePrayers({
     }
 
     // Filter by category if specified
-    if (categories && categories.length > 0) {
-      filtered = filtered.filter((p) => categories.includes(p.category || 'other'));
+    // If all categories are selected, show all prayers (same as "All" filter)
+    const allCategoriesSelected = categories && categories.length >= PRAYER_CATEGORIES.length;
+    if (categories && categories.length > 0 && !allCategoriesSelected) {
+      filtered = filtered.filter((p) => categories.includes(p.category || 'request'));
     }
 
     return filtered;
