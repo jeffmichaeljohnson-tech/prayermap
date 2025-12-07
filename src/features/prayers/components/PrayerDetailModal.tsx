@@ -19,11 +19,19 @@ import {
 import { sharePrayer, canShare } from '../../../services/shareService';
 import { useSavedPrayers } from '../hooks/useSavedPrayers';
 
+// Response data passed when user prays
+export interface PrayerResponseData {
+  message: string;
+  contentType: 'text' | 'audio' | 'video';
+  isAnonymous: boolean;
+  audioBlob?: Blob;
+}
+
 interface PrayerDetailModalProps {
   prayer: Prayer;
   userLocation: { lat: number; lng: number };
   onClose: () => void;
-  onPray: (prayer: Prayer) => void;
+  onPray: (prayer: Prayer, responseData: PrayerResponseData) => void;
   onDelete?: (prayerId: string, userId: string) => Promise<boolean>;
   onBlockUser?: (blockedUserId: string) => void;
 }
@@ -108,18 +116,32 @@ export function PrayerDetailModal({ prayer, userLocation, onClose, onPray, onDel
     setIsPraying(true);
     setShowSpotlight(true);
 
+    // Build response data from user input
+    const responseData: PrayerResponseData = {
+      message: replyContent.trim() || 'Praying for you!',
+      contentType: replyType,
+      isAnonymous: isAnonymous,
+      audioBlob: replyAudioBlob || undefined,
+    };
+
     setTimeout(() => {
-      onPray(prayer);
+      onPray(prayer, responseData);
     }, 2500);
   };
 
   const handleQuickPray = useCallback(() => {
-    // Quick one-touch prayer response
+    // Quick one-touch prayer response (default message, not anonymous)
     setIsPraying(true);
     setShowSpotlight(true);
 
+    const responseData: PrayerResponseData = {
+      message: 'Praying for you!',
+      contentType: 'text',
+      isAnonymous: false,
+    };
+
     setTimeout(() => {
-      onPray(prayer);
+      onPray(prayer, responseData);
     }, 2500);
   }, [prayer, onPray]);
 

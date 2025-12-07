@@ -7,7 +7,7 @@ import type { Prayer, PrayerConnection, PrayerCategory } from '../types/prayer';
 import { PRAYER_CATEGORIES } from '../types/prayer';
 import { PrayerMarker } from './PrayerMarker';
 import { ClusterMarker } from './ClusterMarker';
-import { PrayerDetailModal } from './PrayerDetailModal';
+import { PrayerDetailModal, type PrayerResponseData } from './PrayerDetailModal';
 import { RequestPrayerModal } from './RequestPrayerModal';
 import { PrayerAnimationLayer } from './PrayerAnimationLayer';
 import { PrayerCreationAnimation } from './PrayerCreationAnimation';
@@ -352,7 +352,7 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
     setAnimatingPrayer(null);
   }, [addConnection]);
 
-  const handlePrayerSubmit = async (prayer: Prayer) => {
+  const handlePrayerSubmit = async (prayer: Prayer, responseData: PrayerResponseData) => {
     if (!user) return;
 
     // Close modal and trigger the beautiful animation
@@ -365,15 +365,15 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
     // Start the animation
     setAnimatingPrayer({ prayer, userLocation });
 
-    // Submit the prayer response to Supabase
+    // Submit the prayer response to Supabase using the actual user input
     const success = await respondToPrayer(
       prayer.id,
       user.id,
       userName,
-      'Praying for you!',
-      'text',
-      undefined,
-      false,
+      responseData.message,
+      responseData.contentType,
+      undefined, // TODO: Handle audio/video upload if responseData.audioBlob exists
+      responseData.isAnonymous,
       userLocation // Pass user's location to create prayer connection line
     );
 
@@ -389,7 +389,7 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
         fromLocation: prayer.location,
         toLocation: userLocation,
         requesterName: prayer.is_anonymous ? 'Anonymous' : (prayer.user_name || 'Anonymous'),
-        replierName: userName,
+        replierName: responseData.isAnonymous ? 'Anonymous' : userName,
         createdAt: createdDate,
         expiresAt: expiresDate
       };
