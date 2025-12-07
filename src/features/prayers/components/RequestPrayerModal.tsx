@@ -231,8 +231,8 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
                 }}
               />
             )}
-            <Type className={`w-5 h-5 ${contentType === 'text' ? 'text-on-gradient' : 'text-gray-700'}`} />
-            <span className={`text-sm ${contentType === 'text' ? 'text-on-gradient' : 'text-gray-700'}`}>Text</span>
+            <Type className={`w-5 h-5 ${contentType === 'text' ? 'text-on-gradient' : 'text-gray-800 dark:text-gray-300'}`} />
+            <span className={`text-sm ${contentType === 'text' ? 'text-on-gradient' : 'text-gray-800 dark:text-gray-300'}`}>Text</span>
           </button>
 
           <button
@@ -265,8 +265,8 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
                 }}
               />
             )}
-            <Mic className={`w-5 h-5 ${contentType === 'audio' ? 'text-on-gradient' : 'text-gray-700'}`} />
-            <span className={`text-sm ${contentType === 'audio' ? 'text-on-gradient' : 'text-gray-700'}`}>Audio</span>
+            <Mic className={`w-5 h-5 ${contentType === 'audio' ? 'text-on-gradient' : 'text-gray-800 dark:text-gray-300'}`} />
+            <span className={`text-sm ${contentType === 'audio' ? 'text-on-gradient' : 'text-gray-800 dark:text-gray-300'}`}>Audio</span>
           </button>
 
           <button
@@ -299,8 +299,8 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
                 }}
               />
             )}
-            <Video className={`w-5 h-5 ${contentType === 'video' ? 'text-on-gradient' : 'text-gray-700'}`} />
-            <span className={`text-sm ${contentType === 'video' ? 'text-on-gradient' : 'text-gray-700'}`}>Video</span>
+            <Video className={`w-5 h-5 ${contentType === 'video' ? 'text-on-gradient' : 'text-gray-800 dark:text-gray-300'}`} />
+            <span className={`text-sm ${contentType === 'video' ? 'text-on-gradient' : 'text-gray-800 dark:text-gray-300'}`}>Video</span>
           </button>
         </div>
 
@@ -332,7 +332,7 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
                   className={`py-2 px-3 rounded-xl text-sm flex items-center justify-center gap-1.5 transition-all ${
                     category === cat.id
                       ? 'bg-gradient-to-r from-yellow-300 to-purple-300 text-on-gradient ring-2 ring-purple-300'
-                      : 'glass text-gray-600 dark:text-gray-300 hover:glass-strong'
+                      : 'glass text-gray-800 dark:text-gray-300 hover:glass-strong'
                   }`}
                 >
                   <span>{cat.emoji}</span>
@@ -404,8 +404,8 @@ export function RequestPrayerModal({ userLocation, onClose, onSubmit }: RequestP
 
           <div className="flex items-center justify-between glass rounded-xl p-4">
             <div>
-              <p className="text-sm text-gray-700 dark:text-gray-200">Post anonymously</p>
-              <p className="text-xs text-gray-600 dark:text-gray-400">Hide your identity</p>
+              <p className="text-sm text-gray-900 dark:text-gray-200 font-medium">Post anonymously</p>
+              <p className="text-xs text-gray-700 dark:text-gray-400">Hide your identity</p>
             </div>
             <Switch
               checked={isAnonymous}

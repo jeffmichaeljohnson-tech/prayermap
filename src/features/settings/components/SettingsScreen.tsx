@@ -211,9 +211,9 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
           onClick={onBack}
           className="p-2 hover:bg-white/20 dark:hover:bg-white/10 rounded-lg transition-colors"
         >
-          <ArrowLeft className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+          <ArrowLeft className="w-6 h-6 text-gray-800 dark:text-gray-300" />
         </button>
-        <h2 className="text-gray-800 dark:text-gray-100">Settings</h2>
+        <h2 className="text-gray-900 dark:text-gray-100 font-semibold">Settings</h2>
       </div>
 
       <div className="max-w-md mx-auto space-y-6">
@@ -225,11 +225,11 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
         >
           <div className="flex items-center gap-3 mb-6">
             <div className="p-3 glass rounded-xl">
-              <BarChart3 className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+              <BarChart3 className="w-6 h-6 text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <h3 className="text-gray-800 dark:text-gray-100">Your Prayer Journey</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Your impact in the community</p>
+              <h3 className="text-gray-900 dark:text-gray-100 font-semibold">Your Prayer Journey</h3>
+              <p className="text-sm text-gray-700 dark:text-gray-400">Your impact in the community</p>
             </div>
           </div>
 
@@ -242,29 +242,29 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
               {/* Prayers Sent */}
               <div className="glass rounded-2xl p-4 text-center">
                 <Send className="w-6 h-6 mx-auto mb-2 text-blue-500 dark:text-blue-400" />
-                <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">{stats.prayersSent}</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">Prayers Sent</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.prayersSent}</p>
+                <p className="text-xs text-gray-700 dark:text-gray-400">Prayers Sent</p>
               </div>
 
               {/* Prayers Received */}
               <div className="glass rounded-2xl p-4 text-center">
                 <Heart className="w-6 h-6 mx-auto mb-2 text-pink-500 dark:text-pink-400" />
-                <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">{stats.prayersReceived}</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">Prayers Received</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.prayersReceived}</p>
+                <p className="text-xs text-gray-700 dark:text-gray-400">Prayers Received</p>
               </div>
 
               {/* Current Streak */}
               <div className="glass rounded-2xl p-4 text-center">
                 <Flame className="w-6 h-6 mx-auto mb-2 text-orange-500 dark:text-orange-400" />
-                <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">{stats.currentStreak}</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">Day Streak</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.currentStreak}</p>
+                <p className="text-xs text-gray-700 dark:text-gray-400">Day Streak</p>
               </div>
 
               {/* Requests Created */}
               <div className="glass rounded-2xl p-4 text-center">
                 <span className="text-2xl block mb-2">🙏</span>
-                <p className="text-2xl font-bold text-gray-800 dark:text-gray-100">{stats.prayersCreated}</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">Requests Made</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.prayersCreated}</p>
+                <p className="text-xs text-gray-700 dark:text-gray-400">Requests Made</p>
               </div>
             </div>
           ) : (
@@ -281,17 +281,17 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
         >
           <div className="flex items-center gap-3 mb-6">
             <div className="p-3 glass rounded-xl">
-              <User className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+              <User className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <h3 className="text-gray-800 dark:text-gray-100">Display Name</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">How others see you in PrayerMap</p>
+              <h3 className="text-gray-900 dark:text-gray-100 font-semibold">Display Name</h3>
+              <p className="text-sm text-gray-700 dark:text-gray-400">How others see you in PrayerMap</p>
             </div>
           </div>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm text-gray-800 dark:text-gray-300 mb-2">
                 Your Name
               </label>
               <Input
@@ -299,7 +299,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="Enter your display name"
-                className="glass border-white/30 text-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
+                className="glass border-white/30 text-gray-900 dark:text-gray-100 placeholder:text-gray-600 dark:placeholder:text-gray-500"
                 maxLength={50}
               />
               <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
@@ -348,17 +348,17 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
         >
           <div className="flex items-center gap-3 mb-6">
             <div className="p-3 glass rounded-xl">
-              <MessageSquare className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+              <MessageSquare className="w-6 h-6 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <h3 className="text-gray-800 dark:text-gray-100">Suggestion Box</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Share your feedback with us</p>
+              <h3 className="text-gray-900 dark:text-gray-100 font-semibold">Suggestion Box</h3>
+              <p className="text-sm text-gray-700 dark:text-gray-400">Share your feedback with us</p>
             </div>
           </div>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm text-gray-800 dark:text-gray-300 mb-2">
                 Your Suggestion
               </label>
               <Textarea
@@ -366,7 +366,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
                 onChange={(e) => setSuggestion(e.target.value)}
                 placeholder="Tell us how we can improve PrayerMap..."
                 rows={5}
-                className="glass border-white/30 text-gray-800 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-500 resize-none"
+                className="glass border-white/30 text-gray-900 dark:text-gray-100 placeholder:text-gray-600 dark:placeholder:text-gray-500 resize-none"
               />
             </div>
 
@@ -424,17 +424,17 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
         >
           <div className="flex items-center gap-3 mb-6">
             <div className="p-3 glass rounded-xl">
-              <Lock className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+              <Lock className="w-6 h-6 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <h3 className="text-gray-800 dark:text-gray-100">Change Password</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Update your account password</p>
+              <h3 className="text-gray-900 dark:text-gray-100 font-semibold">Change Password</h3>
+              <p className="text-sm text-gray-700 dark:text-gray-400">Update your account password</p>
             </div>
           </div>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm text-gray-800 dark:text-gray-300 mb-2">
                 New Password
               </label>
               <Input
@@ -442,12 +442,12 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Enter new password (min 6 characters)"
-                className="glass border-white/30 text-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
+                className="glass border-white/30 text-gray-900 dark:text-gray-100 placeholder:text-gray-600 dark:placeholder:text-gray-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm text-gray-800 dark:text-gray-300 mb-2">
                 Confirm New Password
               </label>
               <Input
@@ -455,7 +455,7 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm new password"
-                className="glass border-white/30 text-gray-800 dark:text-gray-100 dark:placeholder:text-gray-500"
+                className="glass border-white/30 text-gray-900 dark:text-gray-100 placeholder:text-gray-600 dark:placeholder:text-gray-500"
               />
             </div>
 
@@ -525,11 +525,11 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="p-3 glass rounded-xl">
-                  <Bell className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+                  <Bell className="w-6 h-6 text-pink-600 dark:text-pink-400" />
                 </div>
                 <div>
-                  <h3 className="text-gray-800 dark:text-gray-100">Push Notifications</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Get notified when someone prays for you</p>
+                  <h3 className="text-gray-900 dark:text-gray-100 font-semibold">Push Notifications</h3>
+                  <p className="text-sm text-gray-700 dark:text-gray-400">Get notified when someone prays for you</p>
                 </div>
               </div>
               <button
@@ -559,11 +559,11 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
           >
             <div className="flex items-center gap-3 mb-4">
               <div className="p-3 glass rounded-xl">
-                <Clock className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+                <Clock className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
               </div>
               <div className="flex-1">
-                <h3 className="text-gray-800 dark:text-gray-100">Daily Prayer Reminder</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <h3 className="text-gray-900 dark:text-gray-100 font-semibold">Daily Prayer Reminder</h3>
+                <p className="text-sm text-gray-700 dark:text-gray-400">
                   Get reminded to pray each day
                 </p>
               </div>
@@ -612,11 +612,11 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-3 glass rounded-xl">
-                <RefreshCw className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+                <RefreshCw className="w-6 h-6 text-teal-600 dark:text-teal-400" />
               </div>
               <div>
-                <h3 className="text-gray-800 dark:text-gray-100">Tutorial</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Watch the introduction again</p>
+                <h3 className="text-gray-900 dark:text-gray-100 font-semibold">Tutorial</h3>
+                <p className="text-sm text-gray-700 dark:text-gray-400">Watch the introduction again</p>
               </div>
             </div>
             <button
@@ -640,11 +640,11 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
         >
           <div className="flex items-center gap-3 mb-4">
             <div className="p-3 glass rounded-xl">
-              <Moon className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+              <Moon className="w-6 h-6 text-violet-600 dark:text-violet-400" />
             </div>
             <div>
-              <h3 className="text-gray-800 dark:text-gray-100">Appearance</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Choose your theme</p>
+              <h3 className="text-gray-900 dark:text-gray-100 font-semibold">Appearance</h3>
+              <p className="text-sm text-gray-700 dark:text-gray-400">Choose your theme</p>
             </div>
           </div>
 
@@ -699,8 +699,8 @@ export function SettingsScreen({ onBack }: SettingsScreenProps) {
               <LogOut className="w-6 h-6 text-red-500 dark:text-red-400" />
             </div>
             <div>
-              <h3 className="text-gray-800 dark:text-gray-100">Sign Out</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Sign out of your account</p>
+              <h3 className="text-gray-900 dark:text-gray-100 font-semibold">Sign Out</h3>
+              <p className="text-sm text-gray-700 dark:text-gray-400">Sign out of your account</p>
             </div>
           </div>
 

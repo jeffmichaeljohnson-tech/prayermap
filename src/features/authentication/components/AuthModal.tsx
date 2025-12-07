@@ -150,10 +150,10 @@ export function AuthModal() {
               </div>
             </motion.div>
             
-            <h1 className="text-3xl text-gray-800 dark:text-white mb-2 font-bold">
+            <h1 className="text-3xl text-gray-900 dark:text-white mb-2 font-bold">
               PrayerMap
             </h1>
-            <p className="text-gray-600 dark:text-gray-300 text-center">
+            <p className="text-gray-700 dark:text-gray-300 text-center">
               {showForgotPassword ? 'Reset your password' : 'Prayer. Shared.'}
             </p>
           </motion.div>
@@ -164,10 +164,10 @@ export function AuthModal() {
               <button
                 type="button"
                 onClick={() => setIsLogin(true)}
-                className={`flex-1 py-3 rounded-xl transition-all duration-300 ${
+                className={`flex-1 py-3 rounded-xl transition-all duration-300 font-medium ${
                   isLogin
-                    ? 'bg-white/30 text-gray-800 dark:text-white shadow-lg'
-                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200'
+                    ? 'bg-white/30 text-gray-900 dark:text-white shadow-lg'
+                    : 'text-gray-700 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-200'
                 }`}
               >
                 Login
@@ -175,10 +175,10 @@ export function AuthModal() {
               <button
                 type="button"
                 onClick={() => setIsLogin(false)}
-                className={`flex-1 py-3 rounded-xl transition-all duration-300 ${
+                className={`flex-1 py-3 rounded-xl transition-all duration-300 font-medium ${
                   !isLogin
-                    ? 'bg-white/30 text-gray-800 dark:text-white shadow-lg'
-                    : 'text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-200'
+                    ? 'bg-white/30 text-gray-900 dark:text-white shadow-lg'
+                    : 'text-gray-700 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-200'
                 }`}
               >
                 Sign Up
@@ -298,7 +298,7 @@ export function AuthModal() {
                     setError(null);
                     setSuccessMessage(null);
                   }}
-                  className="text-sm text-gray-600 hover:text-gray-800 transition-colors"
+                  className="text-sm text-gray-700 hover:text-gray-900 transition-colors"
                 >
                   Forgot password?
                 </button>
@@ -363,7 +363,7 @@ export function AuthModal() {
                     <div className="w-full border-t border-white/20"></div>
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="px-4 bg-transparent text-gray-500">or</span>
+                    <span className="px-4 bg-transparent text-gray-600">or</span>
                   </div>
                 </div>
 
@@ -402,7 +402,7 @@ export function AuthModal() {
 
           {/* Footer text */}
           <motion.p
-            className="text-center text-gray-500 text-sm mt-6"
+            className="text-center text-gray-600 text-sm mt-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
@@ -417,7 +417,7 @@ export function AuthModal() {
                     setError(null);
                     setSuccessMessage(null);
                   }}
-                  className="text-gray-700 hover:text-gray-800 underline transition-colors"
+                  className="text-gray-800 hover:text-gray-900 underline transition-colors font-medium"
                 >
                   Back to login
                 </button>
@@ -428,7 +428,7 @@ export function AuthModal() {
                 <button
                   type="button"
                   onClick={() => setIsLogin(false)}
-                  className="text-gray-700 hover:text-gray-800 underline transition-colors"
+                  className="text-gray-800 hover:text-gray-900 underline transition-colors font-medium"
                 >
                   Sign up
                 </button>
@@ -439,7 +439,7 @@ export function AuthModal() {
                 <button
                   type="button"
                   onClick={() => setIsLogin(true)}
-                  className="text-gray-700 hover:text-gray-800 underline transition-colors"
+                  className="text-gray-800 hover:text-gray-900 underline transition-colors font-medium"
                 >
                   Login
                 </button>

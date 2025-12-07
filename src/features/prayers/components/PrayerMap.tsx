@@ -540,10 +540,10 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
         <div className="glass-strong rounded-2xl p-4 flex items-center justify-between pointer-events-auto">
           <button
             onClick={() => setShowInbox(true)}
-            className="p-2 hover:bg-white/20 dark:hover:bg-white/10 rounded-lg transition-colors relative"
+            className="p-2 hover:bg-white/20 dark:hover:bg-white/10 rounded-lg transition-colors relative group"
             aria-label={totalUnread > 0 ? `Inbox with ${totalUnread} unread messages` : 'Inbox'}
           >
-            <Inbox className="w-6 h-6 text-gray-700 dark:text-gray-300" aria-hidden="true" />
+            <Inbox className="w-6 h-6 text-pink-500 dark:text-pink-400 group-hover:text-pink-600 dark:group-hover:text-pink-300 transition-colors drop-shadow-sm" aria-hidden="true" />
             {/* Notification badge - only show if there are unread messages */}
             {totalUnread > 0 && (
               <span className="absolute -top-1 -right-1 w-5 h-5 bg-pink-500 text-white text-xs rounded-full flex items-center justify-center" aria-hidden="true">
@@ -552,14 +552,14 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
             )}
           </button>
 
-          <h1 className="text-2xl text-gray-800 dark:text-gray-100">PrayerMap</h1>
+          <h1 className="text-2xl text-gray-900 dark:text-gray-100 font-semibold">PrayerMap</h1>
 
           <button
             onClick={onOpenSettings}
-            className="p-2 hover:bg-white/20 dark:hover:bg-white/10 rounded-lg transition-colors"
+            className="p-2 hover:bg-white/20 dark:hover:bg-white/10 rounded-lg transition-colors group"
             aria-label="Settings"
           >
-            <Settings className="w-6 h-6 text-gray-700 dark:text-gray-300" aria-hidden="true" />
+            <Settings className="w-6 h-6 text-purple-500 dark:text-purple-400 group-hover:text-purple-600 dark:group-hover:text-purple-300 transition-colors drop-shadow-sm" aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -616,7 +616,7 @@ export function PrayerMap({ userLocation, onOpenSettings }: PrayerMapProps) {
         aria-label="Request prayer"
       >
         <span className="text-2xl" aria-hidden="true">🙏</span>
-        <span className="text-gray-800 dark:text-gray-100 text-[16px]">Request Prayer</span>
+        <span className="text-gray-900 dark:text-gray-100 text-[16px] font-medium">Request Prayer</span>
       </motion.button>
 
       {/* Saved Prayers Button - lower left corner */}

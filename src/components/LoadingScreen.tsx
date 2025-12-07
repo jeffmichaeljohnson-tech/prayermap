@@ -34,16 +34,16 @@ export function LoadingScreen() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, duration: 0.8 }}
-          className="text-gray-800 dark:text-white tracking-wider"
+          className="text-gray-900 dark:text-white tracking-wider font-semibold text-2xl"
         >
           PrayerMap
         </motion.h1>
-        
+
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1, duration: 0.8 }}
-          className="text-gray-700 dark:text-gray-300 mt-2 italic"
+          className="text-gray-800 dark:text-gray-300 mt-2 italic"
         >
           We could all pray harder for our neighbor.
         </motion.p>
