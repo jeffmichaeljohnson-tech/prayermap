@@ -1,8 +1,8 @@
 # PrayerMap — Product Requirements Document
 
-**Version:** 2.2  
-**Status:** Ready for Implementation  
-**Last Updated:** November 29, 2025
+**Version:** 3.0
+**Status:** Ready for Implementation
+**Last Updated:** December 8, 2025
 
 ---
 
@@ -123,8 +123,10 @@ iPhone users interested in prayer (Phase 1), Android users interested in prayer 
 - Users have option to mark their prayer request as answered or to delete their prayer request
 
 **Notifications (Phase 2):**
-- iOS and Android system notifications when someone within 25 miles (configurable) requests prayer
-- "Prayer Buddy" notifications for out-of-area family/friends (v2.0)
+- iOS and Android system notifications when someone within radius requests prayer
+- Default radius: 15 miles (user configurable: 1-25 miles)
+- Full native push notifications (not WebView-limited)
+- "Prayer Buddy" notifications for out-of-area family/friends (Phase 3+)
 
 ---
 
@@ -265,7 +267,7 @@ Phase 4 (5-6s):     Return
 ### 8. Settings ⚙️
 
 **Options:**
-- Notification radius (default: 25 miles, range: 5-100 miles)
+- Notification radius (default: 15 miles, range: 1-25 miles)
 - Push notifications (on/off)
 - Account management (Sign in with Apple)
 - Contact: contact@prayermap.net
@@ -279,7 +281,7 @@ Phase 4 (5-6s):     Return
 | Setting | Default | User Configurable | Notes |
 |---------|---------|-------------------|-------|
 | Map Viewing | 50 miles (80km) | No | System-controlled, loads all prayers in view |
-| Notifications | 25 miles (40km) | Yes (5-100 miles) | Push notifications for new local prayers |
+| Notifications | 15 miles (24km) | Yes (1-25 miles) | Push notifications for new local prayers |
 
 ---
 
@@ -555,46 +557,70 @@ LIMIT 1000;
 
 ## Implementation Roadmap
 
-### Phase 1: MVP ✅
+### Phase 1: Web MVP ✅
 
-**Goal:** Core loop working
+**Goal:** Core loop working on web
 
 - [x] Map with prayer markers
 - [x] Prayer detail modal
 - [x] "Pray First. Then Press." action
-- [x] Request prayer (text only)
-- [x] Simple loading screen
+- [x] Request prayer (text, audio, video)
+- [x] 6-second prayer animation
+- [x] Memorial lines (connections)
+- [x] Inbox with tabs
 - [x] Sign in with Apple
-- [x] Deploy to Vercel
+- [x] Deploy to Vercel (prayermap.net)
 
-**Deliverable:** Working on prayermap.net
+**Deliverable:** Working on prayermap.net ✅
 
-### Phase 2: Growth
+### Phase 2: Universal Mobile App (Expo + React Native) 🚧
 
-**Goal:** Enhanced experience
+**Goal:** Native iOS + Android + Web from single codebase
 
-- [ ] Audio prayer recording
-- [ ] Video prayer recording
-- [ ] 6-second prayer animation
-- [ ] Memorial lines (connections)
-- [ ] Inbox with tabs
-- [ ] Push notifications
-- [ ] 3D map features
-- [ ] Chat/Response threads
+**Technology:**
+- Expo SDK 52+
+- React Native with NativeWind (Tailwind)
+- @rnmapbox/maps (native Mapbox)
+- Reanimated 4 + Skia (60 FPS animations)
+- Expo Router (file-based navigation)
 
-**Deliverable:** Full-featured web app
+**Features:**
+- [ ] Full memorial lines animation (Skia rendering)
+- [ ] Real-time updates (<2 seconds)
+- [ ] Full native push notifications
+- [ ] Location-based prayer discovery
+- [ ] Phone-sized web experience (universal codebase)
+- [ ] TestFlight + Google Play beta
+- [ ] App Store + Play Store submissions
 
-### Phase 3: Native
+**Deliverable:** iOS + Android apps, unified web experience
 
-**Goal:** iOS app
+**Reference:** [MOBILE-STRATEGY.md](./MOBILE-STRATEGY.md)
 
-- [ ] SwiftUI native app
-- [ ] Apple Watch complication
-- [ ] Siri integration
-- [ ] Native push notifications
-- [ ] App Store submission
+### Phase 3: Drive Feature
 
-**Deliverable:** iOS app in App Store
+**Goal:** Prayer while driving
+
+- [ ] Heads-up navigation with prayer overlay
+- [ ] Audio prayers while driving
+- [ ] Voice-activated prayer submission
+- [ ] CarPlay / Android Auto integration
+- [ ] Safety-first UX
+
+**Deliverable:** Drive mode in apps
+
+**Reference:** [DRIVE-FEATURE-SPEC.md](./DRIVE-FEATURE-SPEC.md)
+
+### Phase 4: Wearables & Widgets
+
+**Goal:** Ambient prayer presence
+
+- [ ] Apple Watch app (notifications, quick responses)
+- [ ] iOS Widgets (prayer count, nearby activity)
+- [ ] Android Widgets
+- [ ] Siri/Assistant integration
+
+**Deliverable:** Wearable and widget experiences
 
 ---
 
@@ -729,6 +755,7 @@ The following are **not** part of PrayerMap v1:
 | 2.0 | Nov 2025 | AWS S3 for media, expanded design system |
 | 2.1 | Nov 2025 | 50-mile viewing radius, XCode development |
 | 2.2 | Nov 2025 | Standardized radius settings, schema fix for multiple prayers, Figma repo as canonical source |
+| 3.0 | Dec 2025 | **MAJOR**: Roadmap restructure - Skip Capacitor, go directly to Expo + React Native. Phase 2 = Universal Mobile (iOS/Android/Web from single codebase). Phase 3 = Drive Feature. Phase 4 = Wearables. Notification radius changed to 15 miles default, 25 miles max. |
 
 ---
 

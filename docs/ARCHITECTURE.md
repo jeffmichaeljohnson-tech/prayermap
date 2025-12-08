@@ -11,18 +11,24 @@ This document captures key architectural decisions and their rationale for Praye
 │                        CLIENT LAYER                              │
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐          │
-│  │   Browser    │  │    PWA       │  │  iOS Native  │          │
-│  │   (React)    │  │  (Installed) │  │  (Phase 3)   │          │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘          │
-│         │                 │                  │                  │
-│         └─────────────────┴──────────────────┘                  │
-│                           │                                      │
-│                    ┌──────┴──────┐                              │
-│                    │   MapBox    │                              │
-│                    │   GL JS     │                              │
-│                    └──────┬──────┘                              │
-└───────────────────────────┼─────────────────────────────────────┘
+│  ┌────────────────────────────────────────────────────────────┐ │
+│  │              EXPO + REACT NATIVE (Universal)               │ │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │ │
+│  │  │     iOS      │  │   Android    │  │     Web      │     │ │
+│  │  │  (Native)    │  │   (Native)   │  │  (RN Web)    │     │ │
+│  │  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘     │ │
+│  │         │                 │                  │             │ │
+│  │         └─────────────────┴──────────────────┘             │ │
+│  │                           │                                │ │
+│  │  ┌────────────────────────┴────────────────────────────┐  │ │
+│  │  │ @rnmapbox/maps │ NativeWind │ Reanimated │ Skia     │  │ │
+│  │  └─────────────────────────────────────────────────────┘  │ │
+│  └────────────────────────────────────────────────────────────┘ │
+│                                                                  │
+│  ┌──────────────┐ (Legacy - Phase 1)                            │
+│  │   Browser    │ React + MapBox GL JS + Framer Motion          │
+│  └──────────────┘                                                │
+└───────────────────────────────────────────────────────────────────┘
                             │
                             │ HTTPS
                             ▼
@@ -229,22 +235,27 @@ Use React Query (TanStack Query) for server state.
 
 ### ADR-006: PWA Before Native App
 
-**Status:** Accepted
+**Status:** SUPERSEDED by ADR-011 (December 2025)
 
-**Context:**  
+**Context:**
 Need to launch quickly while supporting mobile users.
 
-**Decision:**  
+**Original Decision:**
 Ship as Progressive Web App first, native iOS in Phase 3.
 
-**Rationale:**
+**What Changed:**
+After completing Phase 1 web MVP, we decided to skip Capacitor and go directly to Expo + React Native for Phase 2. This provides better native capabilities (full notifications, 60 FPS animations) without throwaway Capacitor work.
+
+**See:** ADR-011, ADR-012, ADR-013, ADR-014 for current mobile strategy.
+
+**Original Rationale (preserved for context):**
 1. **Speed** — 1 week to MVP vs 2+ months for native
 2. **Cross-Platform** — Works on iOS, Android, Desktop
 3. **Iteration** — Faster to update than App Store
 4. **Testing** — Validate product-market fit before native investment
 5. **Cost** — One codebase to maintain
 
-**Consequences:**
+**Original Consequences:**
 - ✅ Launch in 1 week
 - ✅ Single codebase
 - ✅ Easy updates
@@ -358,6 +369,129 @@ Memorial lines persist for 1 year from creation.
 - ✅ Clean automatic expiration
 - ⚠️ Need background job for cleanup
 - ⚠️ Users may want to extend/delete
+
+---
+
+### ADR-011: Expo + React Native over Capacitor
+
+**Status:** Accepted (December 2025)
+
+**Context:**
+Need native mobile apps for iOS and Android with full notification support and 60 FPS animations.
+
+**Decision:**
+Skip Capacitor entirely and build with Expo + React Native from the start.
+
+**Rationale:**
+1. **Native Performance** — Real native components, not WebView
+2. **Full Notifications** — Background execution, silent push, rich notifications
+3. **Animations** — Reanimated 4 + Skia deliver 60 FPS animations
+4. **Universal Codebase** — Same code runs on iOS, Android, and Web (React Native Web)
+5. **No Throwaway Work** — Capacitor would be replaced anyway
+6. **App Store Quality** — Native apps pass review more reliably
+
+**Alternatives Considered:**
+- **Capacitor**: WebView limitations block "wow" animations and full notifications
+- **Flutter**: Different language (Dart), can't share code with existing web
+- **Native Swift/Kotlin**: Double development effort, no web sharing
+
+**Consequences:**
+- ✅ Full native capabilities from day one
+- ✅ Single codebase for all platforms
+- ✅ Professional app store presence
+- ⚠️ Learning curve for React Native patterns
+- ⚠️ Need to translate Framer Motion to Reanimated
+
+**Reference:** [MOBILE-STRATEGY.md](./MOBILE-STRATEGY.md)
+
+---
+
+### ADR-012: NativeWind for Styling
+
+**Status:** Accepted (December 2025)
+
+**Context:**
+Need consistent styling across web and React Native with Tailwind classes.
+
+**Decision:**
+Use NativeWind 4 for React Native styling.
+
+**Rationale:**
+1. **Same Classes** — `className="bg-white rounded-xl"` works in React Native
+2. **Tailwind Familiarity** — Team already knows Tailwind
+3. **Design System** — Same tokens work across platforms
+4. **Dark Mode** — Built-in dark mode support
+5. **Performance** — Compiles to StyleSheet objects
+
+**Consequences:**
+- ✅ Minimal styling rewrite
+- ✅ Consistent design across platforms
+- ✅ Fast development with familiar patterns
+- ⚠️ Some web-specific classes need alternatives
+- ⚠️ Debugging styles requires NativeWind understanding
+
+---
+
+### ADR-013: Universal Codebase Strategy
+
+**Status:** Accepted (December 2025)
+
+**Context:**
+Need to maintain iOS, Android, and Web with minimal duplication.
+
+**Decision:**
+Use monorepo with shared packages and React Native Web for universal codebase.
+
+**Architecture:**
+```
+apps/mobile/          # Expo app (iOS, Android, Web)
+packages/core/        # Shared business logic
+packages/api/         # Supabase client
+packages/ui/          # Shared components
+```
+
+**Rationale:**
+1. **Change Once** — Update code in one place, deploys everywhere
+2. **Shared Logic** — API calls, validation, types are identical
+3. **Consistent UX** — Same components ensure design consistency
+4. **Developer Efficiency** — One mental model, one codebase
+
+**Consequences:**
+- ✅ 80%+ code sharing across platforms
+- ✅ Faster feature development
+- ✅ Consistent bug fixes
+- ⚠️ Must consider all platforms when coding
+- ⚠️ Platform-specific code in conditional blocks
+
+---
+
+### ADR-014: @rnmapbox/maps for Native Maps
+
+**Status:** Accepted (December 2025)
+
+**Context:**
+Need native Mapbox integration for React Native with same capabilities as web.
+
+**Decision:**
+Use @rnmapbox/maps (official Mapbox React Native library).
+
+**Rationale:**
+1. **Native SDK** — Uses native Mapbox SDK under the hood
+2. **Same Styles** — Ethereal Dawn map style works identically
+3. **Consistency** — API similar to MapBox GL JS
+4. **Performance** — Native rendering, 60 FPS panning/zooming
+5. **Official Support** — Maintained by Mapbox team
+
+**Memorial Lines Strategy:**
+- Data remains in Supabase (unchanged)
+- Lines rendered with React Native Skia for GPU acceleration
+- Same quadratic Bezier curves as web
+
+**Consequences:**
+- ✅ Native map performance
+- ✅ Same map styling as web
+- ✅ Consistent memorial line rendering
+- ⚠️ Need to translate markers/layers from GL JS
 
 ---
 

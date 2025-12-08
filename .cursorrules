@@ -6,12 +6,23 @@ This file provides specific guidance for Cursor AI when working on PrayerMap.
 
 ## Project Context
 
-You are working on **PrayerMap**, a location-based spiritual platform built with:
+You are working on **PrayerMap**, a location-based spiritual platform.
 
+### Phase 1: Web MVP (Current - Complete)
 - **Frontend:** React 18, TypeScript, Vite, TailwindCSS, Framer Motion
 - **Backend:** Supabase (PostgreSQL + PostGIS), AWS S3
 - **Maps:** MapBox GL JS v3
 - **Design:** "Ethereal Glass" glassmorphic design system
+
+### Phase 2: Universal Mobile App (Planned)
+- **Framework:** Expo SDK 52+ (React Native)
+- **Navigation:** Expo Router
+- **Styling:** NativeWind 4 (Tailwind for RN)
+- **Animations:** React Native Reanimated 4 + Skia
+- **Maps:** @rnmapbox/maps
+- **State:** TanStack Query + Zustand (same as web)
+
+> **Strategy Decision (2025-12-08):** Skip Capacitor, go directly to Expo + React Native for full native capabilities. See `docs/MOBILE-STRATEGY.md`.
 
 **Mission:** 100% non-profit ministry connecting people through prayer.
 
@@ -276,6 +287,14 @@ When generating code, **NEVER:**
 8. ❌ Use external state management (Redux, MobX)
 9. ❌ Add social features beyond prayer support
 10. ❌ Skip accessibility attributes
+
+### Phase 2 (Mobile) Specific - Do NOT:
+
+11. ❌ Use Capacitor patterns (deprecated)
+12. ❌ Use `framer-motion` in React Native (use Reanimated)
+13. ❌ Use `mapbox-gl` directly in RN (use @rnmapbox/maps)
+14. ❌ Use CSS-in-JS libraries (use NativeWind)
+15. ❌ Use `react-dom` imports in shared code
 
 ---
 

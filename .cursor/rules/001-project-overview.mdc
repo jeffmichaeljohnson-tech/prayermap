@@ -14,11 +14,11 @@ PrayerMap is a location-based spiritual platform enabling users to share prayer 
 **Status:** 100% non-profit ministry
 
 ## The Living Map Principle (ABSOLUTE PRIORITY)
-PrayerMap is the world's first LIVING MAP where users witness prayer in real-time and see eternal memorial connections.
+PrayerMap is the world's first LIVING MAP where users witness prayer in real-time and see memorial connections that persist for 1 year (admin-configurable).
 
 **Non-Negotiable Requirements:**
 - Real-time updates <2 seconds
-- Memorial lines are ETERNAL (never expire, never delete)
+- Memorial lines persist for 1 year (admin-configurable, soft-deleted on expiry)
 - Universal shared map (everyone sees same prayer history)
 - Live witnessing experience is THE product
 
@@ -28,7 +28,7 @@ PrayerMap is the world's first LIVING MAP where users witness prayer in real-tim
 - **Maps:** Mapbox GL JS
 - **State:** TanStack Query (React Query)
 - **Backend:** Supabase (PostgreSQL + Auth + Realtime + Edge Functions)
-- **Deployment:** Vercel (web) + Capacitor (iOS/Android)
+- **Deployment:** Vercel (web) + Expo (iOS/Android/Web universal)
 
 ## Project IDs
 - **Supabase:** oomrmfhvsxtxgqqthisz

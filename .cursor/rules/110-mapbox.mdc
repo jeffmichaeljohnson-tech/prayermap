@@ -1,10 +1,16 @@
 ---
-description: Mapbox GL JS integration patterns
-globs: ["**/*map*", "**/*Map*", "src/components/map/**/*"]
+description: Mapbox integration patterns (Web + React Native)
+globs: ["**/*map*", "**/*Map*", "src/components/map/**/*", "apps/mobile/**/*map*"]
 alwaysApply: false
 ---
 
-# Mapbox GL JS Integration
+# Mapbox Integration (Web + React Native)
+
+> **Platform Note:** Web uses `mapbox-gl`, React Native uses `@rnmapbox/maps`. Same concepts, different APIs.
+
+---
+
+## Web (Mapbox GL JS)
 
 ## Setup
 ```typescript
@@ -39,7 +45,7 @@ marker.setPopup(
 ```
 
 ## Memorial Lines (CRITICAL)
-Memorial lines are ETERNAL - they never expire or get deleted.
+Memorial lines persist for 1 year (admin-configurable). Expired lines are soft-deleted (hidden, not destroyed).
 
 ```typescript
 // Add line source
@@ -115,3 +121,144 @@ navigator.geolocation.getCurrentPosition(
 - Lazy load map on mobile
 - Debounce map events
 - Use vector tiles for large datasets
+
+---
+
+## React Native (@rnmapbox/maps)
+
+> **Phase 2:** Universal mobile app uses `@rnmapbox/maps` for native performance.
+
+### Setup
+
+```tsx
+import MapboxGL from '@rnmapbox/maps';
+
+// Set token once at app start
+MapboxGL.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_TOKEN!);
+
+export function PrayerMapNative() {
+  return (
+    <MapboxGL.MapView
+      style={{ flex: 1 }}
+      styleURL="mapbox://styles/mapbox/light-v11"
+    >
+      <MapboxGL.Camera
+        centerCoordinate={[lng, lat]}
+        zoomLevel={12}
+        animationDuration={2000}
+      />
+    </MapboxGL.MapView>
+  );
+}
+```
+
+### Prayer Markers (Native)
+
+```tsx
+// Custom marker with React Native component
+<MapboxGL.MarkerView
+  id={prayer.id}
+  coordinate={[prayer.lng, prayer.lat]}
+  anchor={{ x: 0.5, y: 1 }}
+>
+  <PrayerMarker prayer={prayer} />
+</MapboxGL.MarkerView>
+
+// Or use PointAnnotation for simpler cases
+<MapboxGL.PointAnnotation
+  id={prayer.id}
+  coordinate={[prayer.lng, prayer.lat]}
+>
+  <View className="w-10 h-10 bg-primary-gold rounded-full items-center justify-center">
+    <Text className="text-xl">🙏</Text>
+  </View>
+</MapboxGL.PointAnnotation>
+```
+
+### Memorial Lines (Native with Skia)
+
+```tsx
+// Memorial lines use React Native Skia for GPU-accelerated rendering
+import { Canvas, Path, LinearGradient, vec } from '@shopify/react-native-skia';
+
+export function MemorialLineNative({ from, to }: { from: Point; to: Point }) {
+  const path = useMemo(() => {
+    const p = Skia.Path.Make();
+    const controlY = Math.min(from.y, to.y) - 80;
+    p.moveTo(from.x, from.y);
+    p.quadTo((from.x + to.x) / 2, controlY, to.x, to.y);
+    return p;
+  }, [from, to]);
+
+  return (
+    <Canvas style={StyleSheet.absoluteFill} pointerEvents="none">
+      <Path path={path} style="stroke" strokeWidth={2}>
+        <LinearGradient
+          start={vec(from.x, from.y)}
+          end={vec(to.x, to.y)}
+          colors={['#FFD700', '#70B8E8', '#A78BFA']}
+        />
+      </Path>
+    </Canvas>
+  );
+}
+```
+
+### User Location (Native)
+
+```tsx
+<MapboxGL.MapView style={{ flex: 1 }}>
+  <MapboxGL.UserLocation
+    visible={true}
+    showsUserHeadingIndicator={true}
+    onUpdate={(location) => {
+      // Handle location updates
+    }}
+  />
+</MapboxGL.MapView>
+```
+
+### Camera Animation (Native)
+
+```tsx
+const cameraRef = useRef<MapboxGL.Camera>(null);
+
+// Fly to location
+const flyTo = (lng: number, lat: number) => {
+  cameraRef.current?.flyTo([lng, lat], 2000);
+};
+
+// Fit to bounds
+const fitBounds = (ne: [number, number], sw: [number, number]) => {
+  cameraRef.current?.fitBounds(ne, sw, 50, 2000);
+};
+
+<MapboxGL.Camera ref={cameraRef} />
+```
+
+### Platform Selection
+
+```tsx
+// Use platform-specific files
+// PrayerMap.tsx        → shared logic
+// PrayerMap.web.tsx    → mapbox-gl
+// PrayerMap.native.tsx → @rnmapbox/maps
+
+// Or conditional rendering
+import { Platform } from 'react-native';
+
+const MapComponent = Platform.select({
+  web: () => require('./PrayerMap.web').default,
+  default: () => require('./PrayerMap.native').default,
+})();
+```
+
+### Key Differences: Web vs Native
+
+| Feature | Web (mapbox-gl) | Native (@rnmapbox/maps) |
+|---------|-----------------|-------------------------|
+| Token | `mapboxgl.accessToken` | `MapboxGL.setAccessToken()` |
+| Container | `container: ref` | `style={{ flex: 1 }}` |
+| Markers | `new mapboxgl.Marker()` | `<MapboxGL.MarkerView>` |
+| Lines | GeoJSON layers | Skia Canvas overlay |
+| Events | `map.on('click')` | `onPress` prop |

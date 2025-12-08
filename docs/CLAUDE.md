@@ -54,6 +54,84 @@ git status && git log -3 --oneline  # Git state
 
 ---
 
+## 🧠 Pinecone Memory System (Self-Prompting)
+
+### What is Pinecone Memory?
+
+This project uses **Pinecone vector database** for persistent memory across AI sessions. Two indexes store project knowledge:
+
+| Index | Purpose |
+|-------|---------|
+| `pinecone-prayermap` | PrayerMap-specific decisions, architecture, bugs, solutions |
+| `pinecone-ora` | Reusable patterns, processes, best practices (cross-project) |
+
+### Self-Prompting Requirements
+
+**YOU (the AI) are responsible for:**
+
+1. **Querying Pinecone at session start** - Search for relevant context before starting work
+2. **Saving important decisions** - Before session end, save key decisions to memory
+3. **Referencing past work** - Don't repeat mistakes or reinvent solutions
+
+### Automatic Memory Queries
+
+Based on your current task, query Pinecone for relevant context:
+
+| Task Type | Query Terms |
+|-----------|-------------|
+| Mobile development | "mobile strategy", "expo react native", "phase 2" |
+| Notifications | "notification system", "push notifications", "radius settings" |
+| Animations | "animation spec", "framer motion", "reanimated" |
+| Drive feature | "drive feature", "phase 3", "navigation" |
+| Architecture | "ADR", "architecture decision", "tech stack" |
+| Database | "RLS policy", "supabase", "database schema" |
+| Any task | "lessons learned", "past bugs", "[feature name]" |
+
+### Memory Query Pattern
+
+```
+// At session start, run:
+mcp__pinecone-prayermap__search_nodes({ query: "[relevant topic]" })
+
+// Before implementing anything new:
+mcp__pinecone-prayermap__search_nodes({ query: "[feature or problem]" })
+
+// At session end, save important decisions:
+mcp__pinecone-prayermap__create_entities({ entities: [...] })
+```
+
+### What to Save to Memory
+
+**ALWAYS save:**
+- Major architectural decisions
+- Bug root causes and solutions
+- User preferences and decisions
+- New patterns or approaches
+- Things that should NOT be repeated
+
+**Format:**
+```json
+{
+  "name": "Decision: [Brief Title]",
+  "entityType": "decision|bug|pattern|preference",
+  "observations": [
+    "Context: Why this decision was made",
+    "Decision: What was decided",
+    "Rationale: Why this approach",
+    "Date: YYYY-MM-DD"
+  ]
+}
+```
+
+### User Memory Command
+
+The user may say **"memory"** at session start. This triggers:
+1. Query both Pinecone indexes for recent context
+2. Summarize relevant past decisions
+3. Apply any stored preferences or patterns
+
+---
+
 ## ⚠️ CRITICAL PRINCIPLES (Never Forget)
 
 ### 🚨 0. VERIFICATION ENFORCEMENT SYSTEM (ABSOLUTE TRUTH REQUIREMENT)
@@ -202,12 +280,15 @@ All operations must implement structured logging and monitoring. See [MONITORING
 - **[SECURITY-SPEC.md](./SECURITY-SPEC.md)** - RLS policy design and security requirements
 - **[ENVIRONMENT-STRATEGY.md](./ENVIRONMENT-STRATEGY.md)** - Environment variable management
 - **[IMPLEMENTATION-GUIDE.md](./IMPLEMENTATION-GUIDE.md)** - Setup, patterns, and standards
-- **[MOBILE-GUIDE.md](./MOBILE-GUIDE.md)** - iOS & Android deployment workflows
+- **[MOBILE-STRATEGY.md](./MOBILE-STRATEGY.md)** - Expo + React Native universal app strategy (Phase 2)
+- **[ANIMATION-SPEC.md](./ANIMATION-SPEC.md)** - Animation preservation and React Native translation
+- **[DRIVE-FEATURE-SPEC.md](./DRIVE-FEATURE-SPEC.md)** - Phase 3 Drive mode specification
 - **[MONITORING-GUIDE.md](./MONITORING-GUIDE.md)** - Observability and quality gates
 - **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** - Common issues and debugging
 
 ### TIER 4: Reference
-- **[PRD.md](./PRD.md)** - Product requirements and specifications
+- **[PRD.md](./PRD.md)** - Product requirements and specifications (v3.0 - updated phases)
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - System architecture and ADRs (including mobile ADRs)
 - **[README.md](./README.md)** - Project overview and basic setup
 
 ### TIER 5: Operations
@@ -292,6 +373,15 @@ This streamlined CLAUDE.md now serves as a lightweight entry point to our compre
 
 ---
 
-**Last Updated:** 2025-12-03
-**Version:** 4.1 (Added Database-First Debugging principle - lessons from memorial lines fix)
+**Last Updated:** 2025-12-08
+**Version:** 5.0 (Major update: Pinecone memory system, mobile strategy documentation, Phase 2/3/4 roadmap)
 **Next Review:** When documentation structure changes
+
+---
+
+## Changelog
+
+| Version | Date | Changes |
+|---------|------|---------|
+| 4.1 | 2025-12-03 | Added Database-First Debugging principle |
+| 5.0 | 2025-12-08 | **MAJOR**: Added Pinecone memory system section, mobile strategy docs (MOBILE-STRATEGY.md, ANIMATION-SPEC.md, DRIVE-FEATURE-SPEC.md), updated documentation structure |
