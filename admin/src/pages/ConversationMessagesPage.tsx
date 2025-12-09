@@ -1,21 +1,23 @@
 /**
- * Enhanced Messages Management Page
- * View and manage prayer_responses with split-panel detail view and conversation threading
+ * Conversation Messages Management Page
+ * View and manage conversation thread messages with split-panel detail view
  */
 
 import { useState, useMemo } from 'react'
-import { useMessages, useDeleteMessage, useUpdateMessage, type AdminMessage } from '../hooks/useMessages'
+import {
+  useConversationMessages,
+  useDeleteConversationMessage,
+  useUpdateConversationMessage,
+  type AdminConversationMessage,
+} from '../hooks/useConversationMessages'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { ConfirmDialog } from '../components/ui/confirm-dialog'
-import { ConversationViewer } from '../components/ConversationViewer'
 import {
-  MessageSquare,
+  MessagesSquare,
   Search,
   ChevronRight,
   Trash2,
-  AlertTriangle,
-  Eye,
   Loader2,
   X,
   Mic,
@@ -29,22 +31,20 @@ import {
 
 type ContentTypeFilter = 'all' | 'text' | 'audio' | 'video'
 
-export function MessagesPage() {
+export function ConversationMessagesPage() {
   const [page, setPage] = useState(0)
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
-  const [selectedMessage, setSelectedMessage] = useState<AdminMessage | null>(null)
-  const [deletingMessage, setDeletingMessage] = useState<AdminMessage | null>(null)
+  const [selectedMessage, setSelectedMessage] = useState<AdminConversationMessage | null>(null)
+  const [deletingMessage, setDeletingMessage] = useState<AdminConversationMessage | null>(null)
   const [contentTypeFilter, setContentTypeFilter] = useState<ContentTypeFilter>('all')
-  const [showConversation, setShowConversation] = useState(false)
-
-  const [editingMessage, setEditingMessage] = useState<AdminMessage | null>(null)
+  const [editingMessage, setEditingMessage] = useState<AdminConversationMessage | null>(null)
   const [editedContent, setEditedContent] = useState('')
 
   const pageSize = 20
-  const { data, isLoading, error } = useMessages({ page, pageSize, search })
-  const deleteMessage = useDeleteMessage()
-  const updateMessage = useUpdateMessage()
+  const { data, isLoading, error } = useConversationMessages({ page, pageSize, search })
+  const deleteMessage = useDeleteConversationMessage()
+  const updateMessage = useUpdateConversationMessage()
 
   // Filter messages by content type (client-side since we have limited data)
   const filteredMessages = useMemo(() => {
@@ -65,12 +65,11 @@ export function MessagesPage() {
     setPage(0)
   }
 
-  const handleSelectMessage = (message: AdminMessage) => {
+  const handleSelectMessage = (message: AdminConversationMessage) => {
     setSelectedMessage(message)
-    setShowConversation(false)
   }
 
-  const handleDelete = (message: AdminMessage) => {
+  const handleDelete = (message: AdminConversationMessage) => {
     setDeletingMessage(message)
   }
 
@@ -83,9 +82,9 @@ export function MessagesPage() {
     }
   }
 
-  const handleEdit = (message: AdminMessage) => {
+  const handleEdit = (message: AdminConversationMessage) => {
     setEditingMessage(message)
-    setEditedContent(message.message || '')
+    setEditedContent(message.content || '')
   }
 
   const handleCancelEdit = () => {
@@ -97,11 +96,11 @@ export function MessagesPage() {
     if (!editingMessage) return
     await updateMessage.mutateAsync({
       id: editingMessage.id,
-      message_content: editedContent,
+      content: editedContent,
     })
     // Update the selected message with new content
     if (selectedMessage?.id === editingMessage.id) {
-      setSelectedMessage({ ...selectedMessage, message: editedContent })
+      setSelectedMessage({ ...selectedMessage, content: editedContent })
     }
     setEditingMessage(null)
     setEditedContent('')
@@ -124,7 +123,7 @@ export function MessagesPage() {
   }
 
   const truncateText = (text: string | null, maxLength: number = 80) => {
-    if (!text) return '(No message)'
+    if (!text) return '(No content)'
     if (text.length <= maxLength) return text
     return text.substring(0, maxLength) + '...'
   }
@@ -151,19 +150,6 @@ export function MessagesPage() {
     }
   }
 
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-      case 'flagged':
-        return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
-      case 'hidden':
-        return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
-      default:
-        return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
-    }
-  }
-
   return (
     <div className="flex h-[calc(100vh-4rem)]">
       {/* Messages List Panel */}
@@ -176,8 +162,8 @@ export function MessagesPage() {
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-xl font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
-              <MessageSquare className="w-5 h-5 text-blue-600" />
-              Messages
+              <MessagesSquare className="w-5 h-5 text-green-600" />
+              Conversation Messages
             </h1>
             <span className="text-sm text-gray-500 dark:text-gray-400">
               {filteredMessages.length}
@@ -234,8 +220,8 @@ export function MessagesPage() {
             </div>
           ) : filteredMessages.length === 0 ? (
             <div className="text-center py-12 text-gray-500">
-              <MessageSquare className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p>No messages found</p>
+              <MessagesSquare className="w-12 h-12 mx-auto mb-3 opacity-30" />
+              <p>No conversation messages found</p>
               {search && (
                 <button onClick={handleClearSearch} className="text-blue-600 text-sm mt-2 hover:underline">
                   Clear search
@@ -250,7 +236,7 @@ export function MessagesPage() {
                   onClick={() => handleSelectMessage(msg)}
                   className={`p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${
                     selectedMessage?.id === msg.id
-                      ? 'bg-blue-50 dark:bg-blue-900/20 border-l-2 border-blue-500'
+                      ? 'bg-green-50 dark:bg-green-900/20 border-l-2 border-green-500'
                       : ''
                   }`}
                 >
@@ -258,15 +244,11 @@ export function MessagesPage() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="font-medium text-sm text-gray-900 dark:text-white truncate">
-                          {msg.is_anonymous ? (
-                            <span className="italic text-gray-500">Anonymous</span>
-                          ) : (
-                            msg.responder_name || msg.responder_email || 'Unknown'
-                          )}
+                          {msg.sender_name || msg.sender_email || 'Unknown'}
                         </span>
-                        <span className="text-gray-400">→</span>
+                        <span className="text-gray-400">in</span>
                         <span className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                          Prayer #{msg.prayer_id.slice(0, 8)}
+                          {msg.prayer_title || `Prayer #${msg.prayer_id.slice(0, 8)}`}
                         </span>
                       </div>
                     </div>
@@ -283,11 +265,17 @@ export function MessagesPage() {
                     </div>
                   </div>
                   <p className="text-sm text-gray-700 dark:text-gray-300 line-clamp-2">
-                    {msg.content_type === 'text' ? truncateText(msg.message) : `[${msg.content_type} message]`}
+                    {msg.content_type === 'text' ? truncateText(msg.content) : `[${msg.content_type} message]`}
                   </p>
                   <div className="flex items-center justify-between mt-2">
-                    <span className={`px-2 py-0.5 rounded text-xs ${getStatusBadgeClass(msg.status)}`}>
-                      {msg.status}
+                    <span
+                      className={`px-2 py-0.5 rounded text-xs ${
+                        msg.read_at
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                          : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                      }`}
+                    >
+                      {msg.read_at ? 'Read' : 'Unread'}
                     </span>
                     <span className="text-xs text-gray-400">{formatRelativeTime(msg.created_at)}</span>
                   </div>
@@ -330,15 +318,6 @@ export function MessagesPage() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => setShowConversation(true)}
-                className="text-blue-600 border-blue-200 hover:bg-blue-50"
-              >
-                <Eye className="w-4 h-4 mr-1" />
-                View Thread
-              </Button>
-              <Button
-                size="sm"
-                variant="outline"
                 onClick={() => handleEdit(selectedMessage)}
                 className="text-amber-600 border-amber-200 hover:bg-amber-50"
               >
@@ -372,34 +351,38 @@ export function MessagesPage() {
                 <p className="font-mono text-xs text-gray-900 dark:text-white break-all">{selectedMessage.id}</p>
               </div>
               <div>
-                <p className="text-gray-500 dark:text-gray-400 text-xs mb-1 uppercase tracking-wide">Prayer ID</p>
-                <p className="font-mono text-xs text-gray-900 dark:text-white break-all">{selectedMessage.prayer_id}</p>
+                <p className="text-gray-500 dark:text-gray-400 text-xs mb-1 uppercase tracking-wide">Conversation ID</p>
+                <p className="font-mono text-xs text-gray-900 dark:text-white break-all">
+                  {selectedMessage.conversation_id}
+                </p>
               </div>
               <div>
-                <p className="text-gray-500 dark:text-gray-400 text-xs mb-1 uppercase tracking-wide">From (Responder)</p>
+                <p className="text-gray-500 dark:text-gray-400 text-xs mb-1 uppercase tracking-wide">Sender</p>
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                    <User className="w-4 h-4 text-blue-600" />
+                  <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                    <User className="w-4 h-4 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-gray-900 dark:text-white">
-                      {selectedMessage.is_anonymous ? (
-                        <span className="italic text-gray-500">Sent anonymously</span>
-                      ) : (
-                        selectedMessage.responder_email || 'Unknown'
-                      )}
-                    </p>
-                    {selectedMessage.responder_name && !selectedMessage.is_anonymous && (
-                      <p className="text-xs text-gray-500">{selectedMessage.responder_name}</p>
+                    <p className="text-gray-900 dark:text-white">{selectedMessage.sender_email || 'Unknown'}</p>
+                    {selectedMessage.sender_name && (
+                      <p className="text-xs text-gray-500">{selectedMessage.sender_name}</p>
                     )}
                   </div>
                 </div>
               </div>
               <div>
-                <p className="text-gray-500 dark:text-gray-400 text-xs mb-1 uppercase tracking-wide">Responder ID</p>
-                <p className="font-mono text-xs text-gray-900 dark:text-white break-all">
-                  {selectedMessage.responder_id}
+                <p className="text-gray-500 dark:text-gray-400 text-xs mb-1 uppercase tracking-wide">Sender ID</p>
+                <p className="font-mono text-xs text-gray-900 dark:text-white break-all">{selectedMessage.sender_id}</p>
+              </div>
+              <div>
+                <p className="text-gray-500 dark:text-gray-400 text-xs mb-1 uppercase tracking-wide">Prayer</p>
+                <p className="text-gray-900 dark:text-white">
+                  {selectedMessage.prayer_title || `#${selectedMessage.prayer_id.slice(0, 8)}`}
                 </p>
+              </div>
+              <div>
+                <p className="text-gray-500 dark:text-gray-400 text-xs mb-1 uppercase tracking-wide">Prayer ID</p>
+                <p className="font-mono text-xs text-gray-900 dark:text-white break-all">{selectedMessage.prayer_id}</p>
               </div>
               <div>
                 <p className="text-gray-500 dark:text-gray-400 text-xs mb-1 uppercase tracking-wide">Sent At</p>
@@ -417,9 +400,15 @@ export function MessagesPage() {
                 </span>
               </div>
               <div>
-                <p className="text-gray-500 dark:text-gray-400 text-xs mb-1 uppercase tracking-wide">Status</p>
-                <span className={`inline-flex px-2 py-1 rounded text-xs ${getStatusBadgeClass(selectedMessage.status)}`}>
-                  {selectedMessage.status}
+                <p className="text-gray-500 dark:text-gray-400 text-xs mb-1 uppercase tracking-wide">Read Status</p>
+                <span
+                  className={`inline-flex px-2 py-1 rounded text-xs ${
+                    selectedMessage.read_at
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                      : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                  }`}
+                >
+                  {selectedMessage.read_at ? 'Read' : 'Unread'}
                 </span>
               </div>
               <div>
@@ -436,11 +425,16 @@ export function MessagesPage() {
               <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                 {selectedMessage.content_type === 'text' ? (
                   <p className="whitespace-pre-wrap text-gray-900 dark:text-white">
-                    {selectedMessage.message || '(No message text)'}
+                    {selectedMessage.content || '(No content)'}
                   </p>
                 ) : (
                   <div className="space-y-2">
                     <p className="text-gray-500 italic">[{selectedMessage.content_type} message]</p>
+                    {selectedMessage.media_duration_seconds && (
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Duration: {selectedMessage.media_duration_seconds}s
+                      </p>
+                    )}
                     {selectedMessage.media_url && (
                       <a
                         href={selectedMessage.media_url}
@@ -452,10 +446,10 @@ export function MessagesPage() {
                         View media file
                       </a>
                     )}
-                    {selectedMessage.message && (
+                    {selectedMessage.content && (
                       <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
                         <p className="text-xs text-gray-500 mb-1">Transcription/Description:</p>
-                        <p className="text-gray-900 dark:text-white">{selectedMessage.message}</p>
+                        <p className="text-gray-900 dark:text-white">{selectedMessage.content}</p>
                       </div>
                     )}
                   </div>
@@ -467,18 +461,17 @@ export function MessagesPage() {
             <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
               <p className="text-gray-500 dark:text-gray-400 text-xs mb-3 uppercase tracking-wide">Quick Actions</p>
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" className="text-yellow-700 border-yellow-200 hover:bg-yellow-50">
-                  <AlertTriangle className="w-4 h-4 mr-1" />
-                  Warn Sender
-                </Button>
                 <Button
                   variant="outline"
-                  onClick={() => window.open(`/users?id=${selectedMessage.responder_id}`, '_blank')}
+                  onClick={() => window.open(`/users?id=${selectedMessage.sender_id}`, '_blank')}
                 >
                   <User className="w-4 h-4 mr-1" />
                   View Sender Profile
                 </Button>
-                <Button variant="outline" onClick={() => window.open(`/prayers?id=${selectedMessage.prayer_id}`, '_blank')}>
+                <Button
+                  variant="outline"
+                  onClick={() => window.open(`/prayers?id=${selectedMessage.prayer_id}`, '_blank')}
+                >
                   <ExternalLink className="w-4 h-4 mr-1" />
                   View Prayer
                 </Button>
@@ -488,18 +481,13 @@ export function MessagesPage() {
         </div>
       )}
 
-      {/* Conversation Thread Modal */}
-      {showConversation && selectedMessage && (
-        <ConversationViewer prayerResponseId={selectedMessage.id} onClose={() => setShowConversation(false)} />
-      )}
-
       {/* Delete Confirmation */}
       <ConfirmDialog
         isOpen={!!deletingMessage}
         onClose={() => setDeletingMessage(null)}
         onConfirm={confirmDelete}
         title="Delete Message"
-        description="Are you sure you want to delete this message? This action cannot be undone and will also delete any associated conversation."
+        description="Are you sure you want to delete this message? This action cannot be undone."
         confirmText="Delete"
         isDestructive
         isLoading={deleteMessage.isPending}
@@ -529,13 +517,13 @@ export function MessagesPage() {
                 <textarea
                   value={editedContent}
                   onChange={(e) => setEditedContent(e.target.value)}
-                  className="w-full h-40 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full h-40 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Enter message content..."
                 />
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
                 <p>Message ID: {editingMessage.id}</p>
-                <p>Original sender: {editingMessage.responder_email || 'Anonymous'}</p>
+                <p>Sender: {editingMessage.sender_email || 'Unknown'}</p>
               </div>
             </div>
             <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
@@ -544,8 +532,8 @@ export function MessagesPage() {
               </Button>
               <Button
                 onClick={handleSaveEdit}
-                disabled={updateMessage.isPending || editedContent === editingMessage.message}
-                className="bg-amber-600 hover:bg-amber-700 text-white"
+                disabled={updateMessage.isPending || editedContent === editingMessage.content}
+                className="bg-green-600 hover:bg-green-700 text-white"
               >
                 {updateMessage.isPending ? (
                   <Loader2 className="w-4 h-4 mr-1 animate-spin" />

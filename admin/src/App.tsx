@@ -14,6 +14,7 @@ import { ModerationPage } from './pages/ModerationPage'
 import { PrayersPage } from './pages/PrayersPage'
 import { ArchivedPrayersPage } from './pages/ArchivedPrayersPage'
 import { MessagesPage } from './pages/MessagesPage'
+import { ConversationMessagesPage } from './pages/ConversationMessagesPage'
 import { UsersPage } from './pages/UsersPage'
 import { AuditLogsPage } from './pages/AuditLogsPage'
 import { SettingsPage } from './pages/SettingsPage'
@@ -181,6 +182,7 @@ function AppRoutes() {
         <Route path="prayers" element={<PrayersPage />} />
         <Route path="archived" element={<ArchivedPrayersPage />} />
         <Route path="messages" element={<MessagesPage />} />
+        <Route path="conversations" element={<ConversationMessagesPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="audit-logs" element={<AuditLogsPage />} />
         <Route path="settings" element={<SettingsPage />} />

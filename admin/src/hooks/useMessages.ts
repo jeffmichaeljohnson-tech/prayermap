@@ -34,6 +34,7 @@ interface UpdateMessageParams {
   id: string
   status?: string
   moderation_notes?: string
+  message_content?: string
 }
 
 /**
@@ -116,6 +117,7 @@ export function useUpdateMessage() {
         p_message_id: params.id,
         p_status: params.status ?? null,
         p_moderation_notes: params.moderation_notes ?? null,
+        p_message_content: params.message_content ?? null,
       } as Record<string, unknown>)
 
       if (error) {
