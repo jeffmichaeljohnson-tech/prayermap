@@ -46,7 +46,7 @@ export function useMessages(options: UseMessagesOptions = {}) {
   return useQuery({
     queryKey: ['admin-messages', page, pageSize, search],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('get_all_messages_admin', {
+      const { data, error } = await supabase.rpc('admin_get_messages', {
         p_limit: pageSize,
         p_offset: page * pageSize,
         p_search: search || null,
