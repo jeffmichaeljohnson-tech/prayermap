@@ -134,21 +134,31 @@ export function useUpdateUser() {
 }
 
 /**
- * Delete a user (cascades to prayers, profiles, etc.)
- * USE WITH EXTREME CAUTION
+ * Delete a user completely (cascades to prayers, profiles, etc.)
+ * USE WITH EXTREME CAUTION - This action cannot be undone
  */
 export function useDeleteUser() {
-  return useMutation({
-    mutationFn: async (_id: string) => {
-      // Note: This deletes from auth.users which cascades to profiles and prayers
-      // This requires service role access, which we don't have in the frontend
-      // Instead, we'll just soft-delete by removing admin roles or implement via Edge Function
+  const queryClient = useQueryClient()
 
-      // For now, just throw an error explaining the limitation
-      throw new Error('User deletion requires backend service role access. Please use Supabase dashboard.')
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.rpc('delete_user_admin', {
+        p_user_id: userId,
+      } as Record<string, unknown>)
+
+      if (error) {
+        console.error('Error deleting user:', error)
+        throw new Error(error.message)
+      }
+
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] })
+      toast.success('User deleted successfully')
     },
     onError: (error: Error) => {
-      toast.error(error.message)
+      toast.error(`Failed to delete user: ${error.message}`)
     },
   })
 }

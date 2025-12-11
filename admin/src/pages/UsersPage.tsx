@@ -4,10 +4,11 @@
  */
 
 import { useState } from 'react'
-import { useUsers, useUpdateUser, type AdminUser } from '../hooks/useUsers'
+import { useUsers, useUpdateUser, useDeleteUser, type AdminUser } from '../hooks/useUsers'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Dialog, DialogHeader, DialogTitle, DialogContent, DialogFooter } from '../components/ui/dialog'
+import { ConfirmDialog } from '../components/ui/confirm-dialog'
 
 export function UsersPage() {
   const [page, setPage] = useState(0)
@@ -15,10 +16,12 @@ export function UsersPage() {
   const [searchInput, setSearchInput] = useState('')
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null)
   const [viewingUser, setViewingUser] = useState<AdminUser | null>(null)
+  const [deletingUser, setDeletingUser] = useState<AdminUser | null>(null)
 
   const pageSize = 10
   const { data, isLoading, error } = useUsers({ page, pageSize, search })
   const updateUser = useUpdateUser()
+  const deleteUser = useDeleteUser()
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -130,6 +133,15 @@ export function UsersPage() {
                       <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                         <Button size="sm" variant="outline" onClick={() => setEditingUser(user)}>
                           Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => setDeletingUser(user)}
+                          disabled={user.is_admin}
+                          title={user.is_admin ? 'Cannot delete admin users' : 'Delete user'}
+                        >
+                          Delete
                         </Button>
                       </div>
                     </td>
@@ -249,6 +261,23 @@ export function UsersPage() {
           setEditingUser(null)
         }}
         isLoading={updateUser.isPending}
+      />
+
+      {/* Delete User Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={!!deletingUser}
+        onClose={() => setDeletingUser(null)}
+        onConfirm={async () => {
+          if (!deletingUser) return
+          await deleteUser.mutateAsync(deletingUser.id)
+          setDeletingUser(null)
+        }}
+        title="Delete User"
+        description={`Are you sure you want to delete ${deletingUser?.email || 'this user'}? This will permanently delete their account, all their prayers, prayer responses, and any associated data. This action cannot be undone.`}
+        confirmText="Delete User"
+        cancelText="Cancel"
+        isDestructive={true}
+        isLoading={deleteUser.isPending}
       />
     </div>
   )
