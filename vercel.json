@@ -4,7 +4,7 @@
   "outputDirectory": "dist",
   "framework": "vite",
   "rewrites": [
-    { "source": "/auth/callback", "destination": "/auth/callback/index.html" },
-    { "source": "/((?!auth/callback).*)", "destination": "/" }
+    { "source": "/auth/callback", "destination": "/api/auth/callback" },
+    { "source": "/((?!auth/callback|api/).*)", "destination": "/" }
   ]
 }
