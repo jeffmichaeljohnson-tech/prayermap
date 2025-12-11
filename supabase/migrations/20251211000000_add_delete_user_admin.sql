@@ -76,12 +76,13 @@ BEGIN
   DELETE FROM auth.users WHERE id = p_user_id;
 
   -- Step 10: Log the action
-  INSERT INTO public.audit_logs (admin_id, action, details)
+  INSERT INTO public.audit_logs (admin_id, action, table_name, record_id, old_values)
   VALUES (
     auth.uid(),
     'delete_user',
+    'auth.users',
+    p_user_id,
     jsonb_build_object(
-      'deleted_user_id', p_user_id,
       'deleted_user_email', target_user.email,
       'deleted_at', now()
     )
