@@ -8,12 +8,28 @@ import * as Linking from 'expo-linking';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
+// Ethereal fonts
+import {
+  Cinzel_400Regular,
+  Cinzel_500Medium,
+  Cinzel_600SemiBold,
+  Cinzel_700Bold,
+} from '@expo-google-fonts/cinzel';
+import {
+  Inter_300Light,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
+
 // NativeWind global styles (temporarily disabled)
 // import '../global.css';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { useAuthStore } from '@/lib/useAuthStore';
 import { supabase } from '@/lib/supabase';
+import { colors } from '@/constants/theme';
 
 // Create a client for TanStack Query
 const queryClient = new QueryClient({
@@ -38,10 +54,35 @@ export const unstable_settings = {
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
+// Custom ethereal light theme
+const EtherealLightTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: colors.purple[400],
+    background: colors.ethereal.sky,
+    card: colors.glass.white85,
+    text: colors.gray[800],
+    border: colors.glass.white30,
+    notification: colors.amber[400],
+  },
+};
+
 export default function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     ...FontAwesome.font,
+    // Cinzel - Display/Header font
+    Cinzel: Cinzel_400Regular,
+    'Cinzel-Medium': Cinzel_500Medium,
+    'Cinzel-SemiBold': Cinzel_600SemiBold,
+    'Cinzel-Bold': Cinzel_700Bold,
+    // Inter - Body font
+    Inter: Inter_400Regular,
+    'Inter-Light': Inter_300Light,
+    'Inter-Medium': Inter_500Medium,
+    'Inter-SemiBold': Inter_600SemiBold,
+    'Inter-Bold': Inter_700Bold,
   });
   const initialize = useAuthStore((state) => state.initialize);
   const isInitialized = useAuthStore((state) => state.isInitialized);
@@ -126,7 +167,7 @@ function RootLayoutNav() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : EtherealLightTheme}>
         <Stack>
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="auth" options={{ presentation: 'modal', headerShown: false }} />
