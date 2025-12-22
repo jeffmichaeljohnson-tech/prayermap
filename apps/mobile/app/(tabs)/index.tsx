@@ -705,7 +705,14 @@ export default function MapScreen() {
           animationDuration={pendingPrayerLocation ? 1500 : 2000}
         />
 
+        {/* Prayer Memorial Lines - persistent connections between prayers */}
+        {/* Rendered FIRST so they appear BELOW the location puck */}
+        {isMapReady && connections.length > 0 && (
+          <PrayerConnectionLine connections={connections} />
+        )}
+
         {/* User location puck with 3D bearing indicator */}
+        {/* Rendered AFTER prayer lines so it appears ON TOP */}
         {locationPermission && (
           <LocationPuck
             puckBearing="heading"
@@ -717,11 +724,6 @@ export default function MapScreen() {
               radius: 50,
             }}
           />
-        )}
-
-        {/* Prayer Memorial Lines - persistent connections between prayers */}
-        {isMapReady && connections.length > 0 && (
-          <PrayerConnectionLine connections={connections} />
         )}
 
         {/* Prayer Animation Layer - dramatic 6-second animation when someone prays */}

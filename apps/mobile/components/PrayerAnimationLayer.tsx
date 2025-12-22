@@ -335,58 +335,105 @@ function PrayerAnimationLayerComponent({
       {/* Path trail (faint during animation, permanent after) */}
       {showPermanent && (
         <>
-          {/* Glow layer */}
-          <ShapeSource id={`prayer-anim-glow-${animationKey}`} shape={pathGeoJSON}>
+          {/* Glow layer - full spectrum gradient glow */}
+          <ShapeSource
+            id={`prayer-anim-glow-${animationKey}`}
+            shape={pathGeoJSON}
+            lineMetrics={true}
+          >
             <LineLayer
               id={`prayer-anim-glow-layer-${animationKey}`}
+              slot="top"
               style={{
-                lineColor: CONNECTION_COLORS.permanent.glow,
                 lineWidth: 8,
-                lineOpacity: 0.4,
+                lineOpacity: 0.3,
                 lineBlur: 4,
                 lineCap: 'round',
                 lineJoin: 'round',
-              }}
-            />
-          </ShapeSource>
-
-          {/* Main gradient line */}
-          <ShapeSource id={`prayer-anim-main-${animationKey}`} shape={pathGeoJSON}>
-            <LineLayer
-              id={`prayer-anim-main-layer-${animationKey}`}
-              style={{
+                lineEmissiveStrength: 1,
+                // Full spectrum gradient glow
                 lineGradient: [
                   'interpolate',
                   ['linear'],
                   ['line-progress'],
-                  0, CONNECTION_COLORS.permanent.start,
-                  0.5, CONNECTION_COLORS.dawnBlue,
-                  1, CONNECTION_COLORS.permanent.end,
+                  0, CONNECTION_COLORS.gradient.purple,
+                  0.25, CONNECTION_COLORS.gradient.blue,
+                  0.5, CONNECTION_COLORS.gradient.green,
+                  0.75, CONNECTION_COLORS.gradient.yellow,
+                  1, CONNECTION_COLORS.gradient.gold,
                 ],
+              }}
+            />
+          </ShapeSource>
+
+          {/* Main gradient line - full spectrum */}
+          <ShapeSource
+            id={`prayer-anim-main-${animationKey}`}
+            shape={pathGeoJSON}
+            lineMetrics={true}
+          >
+            <LineLayer
+              id={`prayer-anim-main-layer-${animationKey}`}
+              slot="top"
+              style={{
                 lineWidth: 3,
                 lineOpacity: 0.9,
                 lineCap: 'round',
                 lineJoin: 'round',
+                lineEmissiveStrength: 1,
+                // Full spectrum: Purple → Blue → Green → Yellow → Gold
+                lineGradient: [
+                  'interpolate',
+                  ['linear'],
+                  ['line-progress'],
+                  0, CONNECTION_COLORS.gradient.purple,
+                  0.25, CONNECTION_COLORS.gradient.blue,
+                  0.5, CONNECTION_COLORS.gradient.green,
+                  0.75, CONNECTION_COLORS.gradient.yellow,
+                  1, CONNECTION_COLORS.gradient.gold,
+                ],
+              }}
+            />
+          </ShapeSource>
+
+          {/* White highlight center for glow effect */}
+          <ShapeSource
+            id={`prayer-anim-highlight-${animationKey}`}
+            shape={pathGeoJSON}
+            lineMetrics={true}
+          >
+            <LineLayer
+              id={`prayer-anim-highlight-layer-${animationKey}`}
+              slot="top"
+              style={{
+                lineWidth: 1,
+                lineOpacity: 0.6,
+                lineCap: 'round',
+                lineJoin: 'round',
+                lineEmissiveStrength: 1,
+                lineColor: 'rgba(255, 255, 255, 0.8)',
               }}
             />
           </ShapeSource>
         </>
       )}
 
-      {/* Yellow trail (growing line during Phase 1) */}
+      {/* Yellow/Gold trail (growing line during Phase 1) */}
       {yellowTrailGeoJSON && (
         <>
           {/* Trail glow */}
           <ShapeSource id={`yellow-trail-glow-${animationKey}`} shape={yellowTrailGeoJSON}>
             <LineLayer
               id={`yellow-trail-glow-layer-${animationKey}`}
+              slot="top"
               style={{
-                lineColor: CONNECTION_COLORS.outbound.glow,
+                lineColor: CONNECTION_COLORS.gradient.gold,
                 lineWidth: 6,
                 lineOpacity: 0.5,
                 lineBlur: 3,
                 lineCap: 'round',
                 lineJoin: 'round',
+                lineEmissiveStrength: 1,
               }}
             />
           </ShapeSource>
@@ -394,30 +441,34 @@ function PrayerAnimationLayerComponent({
           <ShapeSource id={`yellow-trail-main-${animationKey}`} shape={yellowTrailGeoJSON}>
             <LineLayer
               id={`yellow-trail-main-layer-${animationKey}`}
+              slot="top"
               style={{
-                lineColor: CONNECTION_COLORS.outbound.start,
+                lineColor: CONNECTION_COLORS.gradient.gold,
                 lineWidth: 2.5,
-                lineOpacity: 0.8,
+                lineOpacity: 0.9,
                 lineCap: 'round',
                 lineJoin: 'round',
+                lineEmissiveStrength: 1,
               }}
             />
           </ShapeSource>
         </>
       )}
 
-      {/* Yellow traveling light (Phase 1) */}
+      {/* Yellow/Gold traveling light (Phase 1) */}
       {yellowLightGeoJSON && (
         <>
           {/* Outer glow */}
           <ShapeSource id={`yellow-light-glow-${animationKey}`} shape={yellowLightGeoJSON}>
             <CircleLayer
               id={`yellow-light-glow-layer-${animationKey}`}
+              slot="top"
               style={{
                 circleRadius: 20,
-                circleColor: CONNECTION_COLORS.outbound.glow,
+                circleColor: CONNECTION_COLORS.gradient.gold,
                 circleBlur: 1,
                 circleOpacity: 0.6,
+                circleEmissiveStrength: 1,
               }}
             />
           </ShapeSource>
@@ -425,12 +476,14 @@ function PrayerAnimationLayerComponent({
           <ShapeSource id={`yellow-light-core-${animationKey}`} shape={yellowLightGeoJSON}>
             <CircleLayer
               id={`yellow-light-core-layer-${animationKey}`}
+              slot="top"
               style={{
                 circleRadius: 8,
-                circleColor: CONNECTION_COLORS.outbound.start,
+                circleColor: CONNECTION_COLORS.gradient.gold,
                 circleStrokeColor: '#FFFFFF',
                 circleStrokeWidth: 2,
                 circleOpacity: 1,
+                circleEmissiveStrength: 1,
               }}
             />
           </ShapeSource>
@@ -444,13 +497,15 @@ function PrayerAnimationLayerComponent({
           <ShapeSource id={`purple-trail-glow-${animationKey}`} shape={purpleTrailGeoJSON}>
             <LineLayer
               id={`purple-trail-glow-layer-${animationKey}`}
+              slot="top"
               style={{
-                lineColor: CONNECTION_COLORS.inbound.glow,
+                lineColor: CONNECTION_COLORS.gradient.purple,
                 lineWidth: 6,
                 lineOpacity: 0.5,
                 lineBlur: 3,
                 lineCap: 'round',
                 lineJoin: 'round',
+                lineEmissiveStrength: 1,
               }}
             />
           </ShapeSource>
@@ -458,12 +513,14 @@ function PrayerAnimationLayerComponent({
           <ShapeSource id={`purple-trail-main-${animationKey}`} shape={purpleTrailGeoJSON}>
             <LineLayer
               id={`purple-trail-main-layer-${animationKey}`}
+              slot="top"
               style={{
-                lineColor: CONNECTION_COLORS.inbound.start,
+                lineColor: CONNECTION_COLORS.gradient.purple,
                 lineWidth: 2.5,
-                lineOpacity: 0.8,
+                lineOpacity: 0.9,
                 lineCap: 'round',
                 lineJoin: 'round',
+                lineEmissiveStrength: 1,
               }}
             />
           </ShapeSource>
@@ -477,11 +534,13 @@ function PrayerAnimationLayerComponent({
           <ShapeSource id={`purple-light-glow-${animationKey}`} shape={purpleLightGeoJSON}>
             <CircleLayer
               id={`purple-light-glow-layer-${animationKey}`}
+              slot="top"
               style={{
                 circleRadius: 20,
-                circleColor: CONNECTION_COLORS.inbound.glow,
+                circleColor: CONNECTION_COLORS.gradient.purple,
                 circleBlur: 1,
                 circleOpacity: 0.6,
+                circleEmissiveStrength: 1,
               }}
             />
           </ShapeSource>
@@ -489,12 +548,14 @@ function PrayerAnimationLayerComponent({
           <ShapeSource id={`purple-light-core-${animationKey}`} shape={purpleLightGeoJSON}>
             <CircleLayer
               id={`purple-light-core-layer-${animationKey}`}
+              slot="top"
               style={{
                 circleRadius: 8,
-                circleColor: CONNECTION_COLORS.inbound.start,
+                circleColor: CONNECTION_COLORS.gradient.purple,
                 circleStrokeColor: '#FFFFFF',
                 circleStrokeWidth: 2,
                 circleOpacity: 1,
+                circleEmissiveStrength: 1,
               }}
             />
           </ShapeSource>

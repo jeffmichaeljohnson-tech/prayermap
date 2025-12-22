@@ -83,6 +83,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       '@rnmapbox/maps',
       {
         RNMapboxMapsDownloadToken: process.env.MAPBOX_DOWNLOAD_TOKEN,
+        // Match @rnmapbox/maps@10.2.10 expected version (supports lineGradient + lineEmissiveStrength)
+        RNMapboxMapsVersion: '11.16.2',
       },
     ],
     [

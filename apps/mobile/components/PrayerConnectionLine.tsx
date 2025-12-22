@@ -1,40 +1,30 @@
 import React, { memo, useMemo } from 'react';
-import { ShapeSource, LineLayer, CircleLayer } from '@rnmapbox/maps';
+import { ShapeSource, LineLayer } from '@rnmapbox/maps';
 import type { PrayerConnection } from '@/lib/types/connection';
 
 interface PrayerConnectionLineProps {
   connections: PrayerConnection[];
 }
 
-// Vibrant ethereal colors - NO dark colors
-const ETHEREAL_COLORS = {
-  // Gold spectrum
-  brightGold: '#FFD700',
-  sunGold: '#FFDF00',
-  warmGold: '#FFE55C',
-  paleGold: '#FFED99',
-  // Pink/Rose spectrum
-  hotPink: '#FF69B4',
-  rose: '#FF85A2',
-  softPink: '#FFA0B4',
-  palePink: '#FFBBC8',
-  // Purple/Violet spectrum
-  brightPurple: '#DA70D6',
-  orchid: '#DA85DC',
-  lavender: '#DDA0DD',
-  paleLavender: '#E6BBE6',
-  // White core
-  white: '#FFFFFF',
-  softWhite: '#FFF8F0',
+// Web app gradient colors - full spectrum from responder to prayer
+// Direction: Responder (start) → Prayer destination (end)
+// Purple → Blue → Green → Yellow → Gold
+const GRADIENT_COLORS = {
+  purple: '#9B59B6',      // Start - responder location
+  blue: '#3498DB',        // 25% along line
+  green: '#2ECC71',       // 50% along line
+  yellow: '#F1C40F',      // 75% along line
+  gold: '#F39C12',        // End - prayer destination
 };
 
 // Create a smooth curved line between two points
+// Responder location (from) → Prayer location (to)
 function createCurvedLine(
   startLng: number,
   startLat: number,
   endLng: number,
   endLat: number,
-  numPoints: number = 40
+  numPoints: number = 50
 ): [number, number][] {
   const points: [number, number][] = [];
 
@@ -42,8 +32,8 @@ function createCurvedLine(
   const midLat = (startLat + endLat) / 2;
 
   // Perpendicular offset for graceful arc
-  const perpLng = -(endLat - startLat) * 0.12;
-  const perpLat = (endLng - startLng) * 0.12;
+  const perpLng = -(endLat - startLat) * 0.15;
+  const perpLat = (endLng - startLng) * 0.15;
 
   const controlLng = midLng + perpLng;
   const controlLat = midLat + perpLat;
@@ -59,7 +49,7 @@ function createCurvedLine(
   return points;
 }
 
-// Convert connections to curved GeoJSON
+// Convert connections to curved GeoJSON with lineMetrics support
 function connectionsToCurvedGeoJSON(connections: PrayerConnection[]): GeoJSON.FeatureCollection {
   return {
     type: 'FeatureCollection',
@@ -72,6 +62,8 @@ function connectionsToCurvedGeoJSON(connections: PrayerConnection[]): GeoJSON.Fe
       },
       geometry: {
         type: 'LineString',
+        // from = responder location (gradient start: purple)
+        // to = prayer location (gradient end: gold)
         coordinates: createCurvedLine(
           conn.from_lng,
           conn.from_lat,
@@ -80,38 +72,6 @@ function connectionsToCurvedGeoJSON(connections: PrayerConnection[]): GeoJSON.Fe
         ),
       },
     })),
-  };
-}
-
-// Generate glowing endpoints
-function generateEndpoints(connections: PrayerConnection[]): GeoJSON.FeatureCollection {
-  const features: GeoJSON.Feature[] = [];
-
-  connections.forEach((conn) => {
-    // Prayer location (destination)
-    features.push({
-      type: 'Feature',
-      properties: { type: 'prayer' },
-      geometry: {
-        type: 'Point',
-        coordinates: [conn.to_lng, conn.to_lat],
-      },
-    });
-
-    // Responder location (source)
-    features.push({
-      type: 'Feature',
-      properties: { type: 'responder' },
-      geometry: {
-        type: 'Point',
-        coordinates: [conn.from_lng, conn.from_lat],
-      },
-    });
-  });
-
-  return {
-    type: 'FeatureCollection',
-    features,
   };
 }
 
@@ -124,11 +84,6 @@ function PrayerConnectionLineComponent({
     [connections]
   );
 
-  const endpointGeoJSON = useMemo(
-    () => generateEndpoints(connections),
-    [connections]
-  );
-
   if (connections.length === 0) {
     return null;
   }
@@ -136,140 +91,93 @@ function PrayerConnectionLineComponent({
   return (
     <>
       {/* ============================================
-          LAYER 1: Outer soft purple glow
-          Wide, diffuse ethereal aura
+          Subtle outer glow for ethereal effect
+          Much thinner than before to match web app
           ============================================ */}
-      <ShapeSource id="line-glow-purple" shape={curvedGeoJSON}>
+      <ShapeSource
+        id="line-glow"
+        shape={curvedGeoJSON}
+        lineMetrics={true}
+      >
         <LineLayer
-          id="line-glow-purple-layer"
+          id="line-glow-layer"
+          slot="top"
           style={{
-            lineColor: ETHEREAL_COLORS.paleLavender,
-            lineWidth: 28,
+            lineWidth: 8,
             lineOpacity: 0.3,
-            lineBlur: 10,
+            lineBlur: 4,
             lineCap: 'round',
             lineJoin: 'round',
+            lineEmissiveStrength: 1,
+            // Gradient glow matching the main line colors
+            lineGradient: [
+              'interpolate',
+              ['linear'],
+              ['line-progress'],
+              0, GRADIENT_COLORS.purple,
+              0.25, GRADIENT_COLORS.blue,
+              0.5, GRADIENT_COLORS.green,
+              0.75, GRADIENT_COLORS.yellow,
+              1, GRADIENT_COLORS.gold,
+            ],
           }}
         />
       </ShapeSource>
 
       {/* ============================================
-          LAYER 2: Middle pink/rose glow
-          Warm middle layer
+          Main gradient line - thin and elegant
+          Full spectrum: Purple → Blue → Green → Yellow → Gold
+          lineMetrics must be true for lineGradient to work
           ============================================ */}
-      <ShapeSource id="line-glow-pink" shape={curvedGeoJSON}>
+      <ShapeSource
+        id="line-gradient"
+        shape={curvedGeoJSON}
+        lineMetrics={true}
+      >
         <LineLayer
-          id="line-glow-pink-layer"
+          id="line-gradient-layer"
+          slot="top"
           style={{
-            lineColor: ETHEREAL_COLORS.palePink,
-            lineWidth: 20,
-            lineOpacity: 0.35,
-            lineBlur: 6,
-            lineCap: 'round',
-            lineJoin: 'round',
-          }}
-        />
-      </ShapeSource>
-
-      {/* ============================================
-          LAYER 3: Inner gold glow
-          Warm golden core glow
-          ============================================ */}
-      <ShapeSource id="line-glow-gold" shape={curvedGeoJSON}>
-        <LineLayer
-          id="line-glow-gold-layer"
-          style={{
-            lineColor: ETHEREAL_COLORS.paleGold,
-            lineWidth: 12,
-            lineOpacity: 0.5,
-            lineBlur: 3,
-            lineCap: 'round',
-            lineJoin: 'round',
-          }}
-        />
-      </ShapeSource>
-
-      {/* ============================================
-          LAYER 4: Bright core line
-          Soft white/cream visible line
-          ============================================ */}
-      <ShapeSource id="line-core" shape={curvedGeoJSON}>
-        <LineLayer
-          id="line-core-layer"
-          style={{
-            lineColor: ETHEREAL_COLORS.softWhite,
             lineWidth: 3,
-            lineOpacity: 0.7,
+            lineOpacity: 0.9,
             lineCap: 'round',
             lineJoin: 'round',
+            lineEmissiveStrength: 1, // Glow in night mode
+            // Full spectrum gradient along the line
+            // 0 = start (responder/purple) → 1 = end (prayer/gold)
+            lineGradient: [
+              'interpolate',
+              ['linear'],
+              ['line-progress'],
+              0, GRADIENT_COLORS.purple,
+              0.25, GRADIENT_COLORS.blue,
+              0.5, GRADIENT_COLORS.green,
+              0.75, GRADIENT_COLORS.yellow,
+              1, GRADIENT_COLORS.gold,
+            ],
           }}
         />
       </ShapeSource>
 
       {/* ============================================
-          LAYER 5: Endpoint markers
-          Glowing halos at connection points
+          Bright center highlight for "glowing" effect
+          Thin white/light core that makes it pop
           ============================================ */}
-      <ShapeSource id="endpoints" shape={endpointGeoJSON}>
-        {/* Prayer location - purple/pink glow */}
-        <CircleLayer
-          id="endpoint-prayer-outer"
-          filter={['==', ['get', 'type'], 'prayer']}
+      <ShapeSource
+        id="line-highlight"
+        shape={curvedGeoJSON}
+        lineMetrics={true}
+      >
+        <LineLayer
+          id="line-highlight-layer"
+          slot="top"
           style={{
-            circleRadius: 16,
-            circleColor: ETHEREAL_COLORS.lavender,
-            circleOpacity: 0.3,
-            circleBlur: 1,
-          }}
-        />
-        <CircleLayer
-          id="endpoint-prayer-mid"
-          filter={['==', ['get', 'type'], 'prayer']}
-          style={{
-            circleRadius: 8,
-            circleColor: ETHEREAL_COLORS.softPink,
-            circleOpacity: 0.5,
-            circleBlur: 0.5,
-          }}
-        />
-        <CircleLayer
-          id="endpoint-prayer-core"
-          filter={['==', ['get', 'type'], 'prayer']}
-          style={{
-            circleRadius: 4,
-            circleColor: ETHEREAL_COLORS.white,
-            circleOpacity: 0.8,
-          }}
-        />
-
-        {/* Responder location - gold glow */}
-        <CircleLayer
-          id="endpoint-responder-outer"
-          filter={['==', ['get', 'type'], 'responder']}
-          style={{
-            circleRadius: 14,
-            circleColor: ETHEREAL_COLORS.paleGold,
-            circleOpacity: 0.35,
-            circleBlur: 1,
-          }}
-        />
-        <CircleLayer
-          id="endpoint-responder-mid"
-          filter={['==', ['get', 'type'], 'responder']}
-          style={{
-            circleRadius: 6,
-            circleColor: ETHEREAL_COLORS.warmGold,
-            circleOpacity: 0.6,
-            circleBlur: 0.5,
-          }}
-        />
-        <CircleLayer
-          id="endpoint-responder-core"
-          filter={['==', ['get', 'type'], 'responder']}
-          style={{
-            circleRadius: 3,
-            circleColor: ETHEREAL_COLORS.white,
-            circleOpacity: 0.8,
+            lineWidth: 1,
+            lineOpacity: 0.6,
+            lineCap: 'round',
+            lineJoin: 'round',
+            lineEmissiveStrength: 1,
+            lineColor: 'rgba(255, 255, 255, 0.8)',
           }}
         />
       </ShapeSource>

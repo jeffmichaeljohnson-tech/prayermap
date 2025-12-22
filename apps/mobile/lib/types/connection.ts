@@ -28,27 +28,37 @@ export interface BoundingBox {
 }
 
 // Ethereal color palette from design system
+// Full spectrum gradient: Purple → Blue → Green → Yellow → Gold
+// Direction: Responder (start/purple) → Prayer destination (end/gold)
 export const CONNECTION_COLORS = {
-  // Phase 1: Yellow/Gold light traveling outward (responder → prayer)
+  // Phase 1: Gold light traveling outward (responder → prayer)
   outbound: {
-    start: '#FCC114', // amber-300 / Soft Gold
-    end: '#FBBF24',   // amber-400
-    glow: 'rgba(252, 193, 20, 0.6)',
+    start: '#F39C12', // Gold
+    end: '#F1C40F',   // Yellow
+    glow: 'rgba(243, 156, 18, 0.6)',
   },
   // Phase 2: Purple light returning (prayer → responder)
   inbound: {
-    start: '#C399F2', // purple-400 / Gentle Purple
-    end: '#A78BFA',   // violet-400
-    glow: 'rgba(195, 153, 242, 0.6)',
+    start: '#9B59B6', // Purple
+    end: '#3498DB',   // Blue
+    glow: 'rgba(155, 89, 182, 0.6)',
+  },
+  // Full spectrum gradient colors (matching web app)
+  gradient: {
+    purple: '#9B59B6',   // 0% - Start (responder location)
+    blue: '#3498DB',     // 25%
+    green: '#2ECC71',    // 50%
+    yellow: '#F1C40F',   // 75%
+    gold: '#F39C12',     // 100% - End (prayer destination)
   },
   // Phase 3: Permanent gradient connection line
   permanent: {
-    start: '#FCC114', // Gold (responder side)
-    end: '#C399F2',   // Purple (prayer side)
-    glow: 'rgba(195, 153, 242, 0.3)',
+    start: '#9B59B6', // Purple (responder side)
+    end: '#F39C12',   // Gold (prayer side)
+    glow: 'rgba(155, 89, 182, 0.3)',
   },
   // Dawn blue for accents
-  dawnBlue: '#61C2F7',
+  dawnBlue: '#3498DB',
 };
 
 // Animation timing constants (from design system)
