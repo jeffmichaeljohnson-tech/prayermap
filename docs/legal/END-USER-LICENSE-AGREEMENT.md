@@ -159,6 +159,15 @@ This license does NOT permit PrayerMap to:
 ### 6.5 Representations
 By submitting User Content, you represent that you own all rights or have obtained necessary permissions, and that your content does not infringe any third-party rights.
 
+### 6.6 Anonymous Posting
+When you post content anonymously:
+
+- **User Privacy**: Your identity is hidden from other PrayerMap users, who will see your content marked as "Anonymous"
+- **Administrator Visibility**: For safety, legal compliance, and content moderation purposes, PrayerMap administrators can view the real identity behind anonymous posts
+- **Location Visibility**: The general location of your prayer remains visible on the map regardless of anonymous status
+
+This "pseudo-anonymous" system protects your privacy from other users while enabling us to maintain a safe community and comply with legal requirements.
+
 ---
 
 ## 7. DMCA COPYRIGHT POLICY

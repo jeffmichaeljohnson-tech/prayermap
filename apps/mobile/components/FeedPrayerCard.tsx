@@ -261,6 +261,11 @@ export function FeedPrayerCard({ prayer, isVisible, index }: FeedPrayerCardProps
     console.log('Share pressed for:', prayer.id);
   }, [prayer.id]);
 
+  const handleReport = useCallback(() => {
+    console.log('Report pressed for:', prayer.id);
+    // Report functionality will be handled by parent component
+  }, [prayer.id]);
+
   const handleAmen = useCallback(() => {
     console.log('Amen pressed for:', prayer.id);
   }, [prayer.id]);
@@ -473,6 +478,14 @@ export function FeedPrayerCard({ prayer, isVisible, index }: FeedPrayerCardProps
             <FontAwesome name="share" size={24} color="#fff" />
           </View>
           <Text style={styles.actionLabel}>Share</Text>
+        </Pressable>
+
+        {/* Report button - more subtle styling */}
+        <Pressable style={styles.actionButton} onPress={handleReport}>
+          <View style={[styles.actionIconContainer, styles.reportIconContainer]}>
+            <FontAwesome name="flag-o" size={20} color="rgba(255,255,255,0.6)" />
+          </View>
+          <Text style={[styles.actionLabel, styles.reportLabel]}>Report</Text>
         </Pressable>
       </View>
 
@@ -724,6 +737,16 @@ const styles = StyleSheet.create({
   },
   prayEmoji: {
     fontSize: 28,
+  },
+  reportIconContainer: {
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  reportLabel: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: 11,
   },
   counter: {
     position: 'absolute',

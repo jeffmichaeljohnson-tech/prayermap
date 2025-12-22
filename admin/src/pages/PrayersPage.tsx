@@ -156,7 +156,14 @@ export function PrayersPage() {
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">
                       {prayer.is_anonymous ? (
-                        <span className="text-gray-400 italic">Anonymous</span>
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            🔒 Anonymous
+                          </span>
+                          <span className="text-gray-500 text-xs" title="Real identity (admin only)">
+                            ({prayer.user_name || prayer.user_email || 'Unknown'})
+                          </span>
+                        </div>
                       ) : (
                         prayer.user_name || prayer.user_email || 'Unknown'
                       )}
@@ -247,11 +254,29 @@ export function PrayersPage() {
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">User</label>
-                <p>
-                  {viewingPrayer.is_anonymous
-                    ? 'Anonymous'
-                    : viewingPrayer.user_name || viewingPrayer.user_email || 'Unknown'}
-                </p>
+                {viewingPrayer.is_anonymous ? (
+                  <div className="space-y-1">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                      🔒 Posted Anonymously
+                    </span>
+                    <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mt-2">
+                      <p className="text-xs font-medium text-amber-800 mb-1">
+                        🛡️ Admin-Only: Real Identity
+                      </p>
+                      <p className="text-sm text-gray-700">
+                        <strong>Name:</strong> {viewingPrayer.user_name || '(not set)'}
+                      </p>
+                      <p className="text-sm text-gray-700">
+                        <strong>Email:</strong> {viewingPrayer.user_email || '(not set)'}
+                      </p>
+                      <p className="text-sm text-gray-700">
+                        <strong>User ID:</strong> <code className="text-xs bg-gray-100 px-1 rounded">{viewingPrayer.user_id}</code>
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <p>{viewingPrayer.user_name || viewingPrayer.user_email || 'Unknown'}</p>
+                )}
               </div>
               <div>
                 <label className="text-sm font-medium text-gray-500">Location</label>
