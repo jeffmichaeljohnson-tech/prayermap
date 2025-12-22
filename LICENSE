@@ -1,0 +1,197 @@
+PROPRIETARY SOFTWARE LICENSE
+
+Copyright (c) 2024-2025 PrayerMap. All Rights Reserved.
+
+================================================================================
+                          PRAYERMAP PROPRIETARY LICENSE
+================================================================================
+
+This software and associated documentation files (the "Software") are the
+proprietary and confidential property of PrayerMap. The Software is protected
+by copyright laws, international treaties, trade secret laws, and other
+intellectual property laws.
+
+================================================================================
+                              LICENSE RESTRICTIONS
+================================================================================
+
+NO LICENSE GRANTED
+------------------
+This repository and all contents are provided for reference purposes only.
+NO LICENSE, EXPRESS OR IMPLIED, is granted to any party to use, copy, modify,
+merge, publish, distribute, sublicense, or sell copies of the Software.
+
+VIEWING THIS CODE DOES NOT GRANT ANY RIGHTS.
+
+PROHIBITED ACTIVITIES
+---------------------
+You may NOT, without prior written authorization from PrayerMap:
+
+1. COPY OR REPRODUCE
+   - Copy, clone, fork, or reproduce any portion of this Software
+   - Download or store copies of the source code
+   - Create backups or archives of the Software
+
+2. MODIFY OR DERIVE
+   - Modify, adapt, alter, or translate any portion of the Software
+   - Create derivative works based on the Software
+   - Merge the Software with other software or projects
+
+3. DISTRIBUTE OR TRANSFER
+   - Distribute, publish, or transmit the Software to any third party
+   - Sublicense, lease, rent, or lend the Software
+   - Transfer or assign any rights to the Software
+
+4. REVERSE ENGINEER
+   - Reverse engineer, decompile, or disassemble the Software
+   - Attempt to derive source code, algorithms, or data structures
+   - Analyze the Software to create competing products
+
+5. COMMERCIAL USE
+   - Use the Software for any commercial purpose
+   - Incorporate any portion into commercial products or services
+   - Monetize or profit from the Software in any way
+
+6. COMPETE
+   - Use the Software to develop competing products or services
+   - Use knowledge gained from the Software to build similar applications
+   - Assist others in creating competing products
+
+================================================================================
+                           PROTECTED INTELLECTUAL PROPERTY
+================================================================================
+
+The following are proprietary innovations of PrayerMap and are protected as
+trade secrets, copyrights, and/or potential patent applications:
+
+CORE TECHNOLOGY
+- "Living Map" real-time prayer visualization system
+- Prayer connection line rendering and animation algorithms
+- Memorial line persistence and display technology
+- Ephemeral prayer content with geographic coordinate binding
+- Real-time prayer synchronization architecture
+
+DESIGN SYSTEMS
+- Ethereal Glass design system and visual aesthetics
+- Prayer marker clustering and display algorithms
+- Audio/video prayer recording and playback systems
+- TikTok-style vertical prayer feed implementation
+
+DATA STRUCTURES
+- Prayer database schema and relationships
+- Geographic prayer indexing systems
+- User connection and response tracking
+- Memorial line coordinate calculation methods
+
+USER EXPERIENCE
+- Onboarding flow and user journey design
+- Prayer creation and response workflows
+- Map interaction patterns and gestures
+- Notification and engagement systems
+
+================================================================================
+                              CONFIDENTIALITY
+================================================================================
+
+The Software contains trade secrets and confidential information belonging to
+PrayerMap. Any unauthorized access, use, or disclosure of this information
+may cause irreparable harm to PrayerMap.
+
+If you have accessed this repository without authorization, you are hereby
+notified that such access is unauthorized and you must:
+1. Immediately cease all access to the repository
+2. Delete any copies of the Software in your possession
+3. Refrain from disclosing any information obtained
+
+================================================================================
+                              AUTHORIZED ACCESS
+================================================================================
+
+Access to this repository is restricted to:
+
+1. PrayerMap founders, employees, and authorized contractors
+2. Service providers with signed confidentiality agreements (e.g., hosting,
+   deployment, and infrastructure services)
+3. Individuals with explicit written authorization from PrayerMap
+
+Authorized service integrations (Vercel, Supabase, GitHub Actions, etc.) are
+permitted to access and process the Software solely for the purpose of
+providing their contracted services to PrayerMap.
+
+================================================================================
+                              ENFORCEMENT
+================================================================================
+
+LEGAL REMEDIES
+--------------
+Violation of this license may result in:
+
+1. Civil liability for copyright infringement under 17 U.S.C. § 501
+2. Civil liability for trade secret misappropriation under the Defend Trade
+   Secrets Act (18 U.S.C. § 1836) and state laws
+3. Criminal prosecution under the Economic Espionage Act (18 U.S.C. § 1831)
+4. Criminal prosecution under the Computer Fraud and Abuse Act (18 U.S.C. § 1030)
+5. Injunctive relief, actual damages, statutory damages, and attorneys' fees
+
+INJUNCTIVE RELIEF
+-----------------
+You acknowledge that any breach of this license would cause irreparable harm
+to PrayerMap for which monetary damages would be inadequate. PrayerMap shall
+be entitled to seek injunctive relief, specific performance, and other
+equitable remedies without the necessity of proving actual damages or posting
+any bond.
+
+================================================================================
+                              RELATIONSHIP TO EULA
+================================================================================
+
+This Proprietary License governs access to and use of the SOURCE CODE.
+
+End users of the PrayerMap application are governed by the separate End User
+License Agreement (EULA) available at:
+- https://prayermap.net/terms.html
+- docs/legal/END-USER-LICENSE-AGREEMENT.md
+
+The EULA grants limited rights to USE the compiled application. It does NOT
+grant any rights to the source code, which remains fully protected under this
+Proprietary License.
+
+================================================================================
+                              GOVERNING LAW
+================================================================================
+
+This license shall be governed by and construed in accordance with the laws
+of the State of Texas, United States of America, without regard to conflict
+of law principles.
+
+Any disputes arising under this license shall be subject to the exclusive
+jurisdiction of the state and federal courts located in Texas.
+
+================================================================================
+                              NO WARRANTY
+================================================================================
+
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+
+IN NO EVENT SHALL PRAYERMAP BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+LIABILITY ARISING FROM THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+================================================================================
+                              CONTACT
+================================================================================
+
+For licensing inquiries, authorization requests, or to report unauthorized use:
+
+Email: legal@prayermap.net
+Website: https://prayermap.net
+
+================================================================================
+
+PrayerMap
+A 100% Non-Profit Ministry
+Copyright (c) 2024-2025. All Rights Reserved.
+
+Last Updated: December 22, 2025
