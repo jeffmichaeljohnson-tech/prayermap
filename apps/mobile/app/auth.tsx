@@ -11,6 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -28,7 +29,7 @@ export default function AuthScreen() {
   const [lastInitial, setLastInitial] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const { signIn, signUp, resetPassword, isLoading } = useAuthStore();
+  const { signIn, signUp, signInWithApple, resetPassword, isLoading, isAppleAuthAvailable } = useAuthStore();
 
   const handleSubmit = async () => {
     if (!email.trim()) {
@@ -85,6 +86,15 @@ export default function AuthScreen() {
           [{ text: 'OK', onPress: () => setMode('signIn') }]
         );
       }
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    const { error } = await signInWithApple();
+    if (error) {
+      Alert.alert('Error', error.message);
+    } else {
+      router.back();
     }
   };
 
@@ -232,6 +242,25 @@ export default function AuthScreen() {
                 <Text style={styles.submitButtonText}>{getButtonText()}</Text>
               )}
             </Pressable>
+
+            {/* Apple Sign In - only show on sign in/sign up screens on iOS */}
+            {mode !== 'forgotPassword' && isAppleAuthAvailable && (
+              <>
+                <View style={styles.dividerContainer}>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerText}>or</Text>
+                  <View style={styles.dividerLine} />
+                </View>
+
+                <AppleAuthentication.AppleAuthenticationButton
+                  buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                  buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                  cornerRadius={borderRadius.lg}
+                  style={styles.appleButton}
+                  onPress={handleAppleSignIn}
+                />
+              </>
+            )}
           </View>
 
           {/* Footer */}
@@ -408,5 +437,25 @@ const styles = StyleSheet.create({
   },
   lastInitialText: {
     textAlign: 'center',
+  },
+  dividerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.gray[300],
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    color: colors.gray[500],
+    fontSize: 14,
+    fontFamily: 'Inter',
+  },
+  appleButton: {
+    width: '100%',
+    height: 50,
   },
 });
