@@ -1,10 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "framework": "vite",
+  "buildCommand": null,
+  "outputDirectory": "apps/web-landing",
+  "framework": null,
   "rewrites": [
-    { "source": "/auth/callback", "destination": "/api/auth/callback" },
-    { "source": "/((?!auth/callback|api/).*)", "destination": "/" }
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/terms", "destination": "/terms.html" }
   ]
 }
